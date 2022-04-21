@@ -35,22 +35,14 @@ package in your `package.json`)
 |Capability|Description|
 |--|--|
 |`platformName`|[Required] Must be `TizenTV`|
-|`appium:deviceName`|[Required] Appium requires this capability be sent, but this driver does not do anything
-with it you so can make it whatever you want.|
+|`appium:deviceName`|[Required] Appium requires this capability be sent, but this driver does not do anything with it you so can make it whatever you want.|
 |`appium:deviceAddress`|[Required] The IP address on the local network of the TV you want to automate|
 |`appium:deviceMac`|[Required] The Mac address of the TV|
 |`appium:udid`|[Required] The device ID as returned by `sdb devices`|
 |`appium:app`|An absolute path to your `.wgt` app file, if you want Appium to install the app.|
 |`appium:appPackage`|The app package ID, if you want Appium to use an app already on the TV.|
-|`appium:chromedriverExecutable`|[Required] Most Tizen TVs run a very old version of Chrome.
-Because this driver uses Chromedriver under the hood, you'll need to have a very old version of
-Chromedriver handy that works with the version of Chrome backing the apps on your TV. In our
-testing, we've found Chromedriver 2.36 to work with most TVs. You need to tell the driver where
-you've installed this version of Chromedriver using the `appium:chromedriverExecutable` capability,
-passing in an absolute path to the Chromedriver binary.|
-|`appium:useOpenDebugPort`|If you have already launched an app on the TV in debug mode, and you
-know its remote debugging port, you can have Appium simply attach to it by sending in the port as
-a number as the value of this capability. This is mostly useful for driver development.|
+|`appium:chromedriverExecutable`|[Required] Most Tizen TVs run a very old version of Chrome. Because this driver uses Chromedriver under the hood, you'll need to have a very old version of Chromedriver handy that works with the version of Chrome backing the apps on your TV. In our testing, we've found Chromedriver 2.36 to work with most TVs. You need to tell the driver where you've installed this version of Chromedriver using the `appium:chromedriverExecutable` capability, passing in an absolute path to the Chromedriver binary.|
+|`appium:useOpenDebugPort`|If you have already launched an app on the TV in debug mode, and you know its remote debugging port, you can have Appium simply attach to it by sending in the port as a number as the value of this capability. This is mostly useful for driver development.|
 |`appium:isDeviceApiSsl`|Set it to `true` if you want Appium to connect to the device over SSL.|
 
 ## Commands
