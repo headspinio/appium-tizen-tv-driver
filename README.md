@@ -88,4 +88,5 @@ npm run watch
 
 ## Credits
 
-This project was inspired by previous work done by [@sharkyStudy](https://github.com/sharkyStudy).
+- This driver is developed by [HeadSpin](https://headspin.io) and other open source contributors.
+- It is inspired by and relies on previous work done by [@sharkyStudy](https://github.com/sharkyStudy). Thank you!
