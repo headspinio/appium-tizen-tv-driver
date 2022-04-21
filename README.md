@@ -10,7 +10,7 @@ own it doesn't do anything.
 If you're using the standard Appium CLI tool to manage drivers:
 
 ```
-appium driver install appium-tizen-tv-driver
+appium driver install --source=npm appium-tizen-tv-driver
 ```
 
 (Or if you're using NPM to manage dependencies, just include the `appium-tizen-tv-driver` npm
