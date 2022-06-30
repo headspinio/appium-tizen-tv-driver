@@ -35,6 +35,7 @@ package in your `package.json`)
 |Capability|Description|
 |--|--|
 |`platformName`|[Required] Must be `TizenTV`|
+|`appium:automationName`|[Required] Must be `TizenTV`|
 |`appium:deviceName`|[Required] Appium requires this capability be sent, but this driver does not do anything with it you so can make it whatever you want.|
 |`appium:deviceAddress`|[Required] The IP address on the local network of the TV you want to automate|
 |`appium:deviceMac`|[Required] The Mac address of the TV|
