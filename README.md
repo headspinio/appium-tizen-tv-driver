@@ -65,9 +65,11 @@ End a session, close the app and make the driver ready for new sessions.
 
 - `POST /session/:sessionId/appium/device/press_keycode`
 
-Press a remote key on the TV. The keycodes should be taken from the `KEYS` object exported by the
-[samsung-tv-control](https://www.npmjs.com/package/samsung-tv-control) package. Refer to your
-Appium client library for how to use this method.
+Press a remote key on the TV. The keycodes should be the string taken from the `KEYS` object
+exported by the [samsung-tv-control](https://www.npmjs.com/package/samsung-tv-control) package.
+Refer to your Appium client library for how to use this method. Note that the string should not
+include the initial `KEYS_` prefix that exists on the [object
+fields](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts)
 
 ### Proxied Commands
 
