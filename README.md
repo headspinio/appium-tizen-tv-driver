@@ -43,6 +43,7 @@ package in your `package.json`)
 |`appium:app`|An absolute path to your `.wgt` app file, if you want Appium to install the app.|
 |`appium:appPackage`|The app package ID, if you want Appium to use an app already on the TV.|
 |`appium:chromedriverExecutable`|[Required] Most Tizen TVs run a very old version of Chrome. Because this driver uses Chromedriver under the hood, you'll need to have a very old version of Chromedriver handy that works with the version of Chrome backing the apps on your TV. In our testing, we've found Chromedriver 2.36 to work with most TVs. You need to tell the driver where you've installed this version of Chromedriver using the `appium:chromedriverExecutable` capability, passing in an absolute path to the Chromedriver binary.|
+|`appium:rcPairingMode`|Set to `true` to essentially create an empty session to give you time to accept the remote pairing dialog so that the access token can be saved for later use. This is a good initial step before running actual automation.|
 |`appium:useOpenDebugPort`|If you have already launched an app on the TV in debug mode, and you know its remote debugging port, you can have Appium simply attach to it by sending in the port as a number as the value of this capability. This is mostly useful for driver development.|
 |`appium:isDeviceApiSsl`|Set it to `true` if you want Appium to connect to the device over SSL.|
 
