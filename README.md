@@ -29,6 +29,9 @@ package in your `package.json`)
 - The TV needs to be put into [developer mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
 - The app you want to test needs to be a correctly-signed debug version of your app.
 - The TV needs to be on the same local network as the Appium server.
+- On a first run, the driver will attempt to pair a virtual "remote control" device with the TV.
+  You must be present to accept the permissions for this pairing, otherwise remote control-based
+  commands will not work. See below for the `appium:rcPairingMode` capability.
 
 ## Capabilities
 
