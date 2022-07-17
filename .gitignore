@@ -4,8 +4,3 @@ build
 .DS_Store
 coverage
 package-lock.json
-.ideatizen/AppiumHelper.wgt
-tizen/AppiumHelper/.manifest.tmp
-tizen/AppiumHelper/author-signature.xml
-tizen/AppiumHelper/signature1.xml
-tizen/AppiumHelper.wgt

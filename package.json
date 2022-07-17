@@ -32,8 +32,7 @@
     "index.js",
     "lib",
     "build/index.js",
-    "build/lib",
-    "tizen/AppiumHelper.wgt"
+    "build/lib"
   ],
   "dependencies": {
     "@babel/runtime": "^7.0.0",
@@ -53,11 +52,10 @@
   },
   "scripts": {
     "clean": "rm -rf node_modules && rm -f package-lock.json && npm install",
-    "prepare": "npm run build:helper && gulp prepublish",
+    "prepare": "gulp prepublish",
     "test": "gulp once",
     "watch": "gulp watch",
     "build": "gulp transpile",
-    "build:helper": "tizen package -t wgt -o ./tizen -- ./tizen/AppiumHelper",
     "mocha": "mocha",
     "precommit-msg": "echo 'Pre-commit checks...' && exit 0",
     "precommit-test": "REPORTER=dot gulp once",
