@@ -62,6 +62,21 @@ start an automation session on your app.
 
 End a session, close the app and make the driver ready for new sessions.
 
+### Set Value (Send Keys)
+
+* `POST /session/:sessionId/element/:elementId/value`
+
+Send keys to an input element. Note that the behaviour of this command depends on the
+`appium:sendKeysStrategy` capability and its value. The default value of this capability is
+`proxy`, and in this mode, calling this command will proxy the command via Chromedriver.
+
+If you set the value of this capability to `rc`, the text will instead be sent over the remote
+control protocol implemented by Samsung. In this mode, the actual element ID used is immaterial;
+the remote has no knowledge of "elements". It merely sends text into the active input field. You
+are responsible for making sure an input field is active and that the keyboard is on screen. This
+command will take care of entering the text and closing the keyboard. What happens next is up to
+your application logic.
+
 ### `Press Key Code`
 
 - `POST /session/:sessionId/appium/device/press_keycode`
