@@ -29,9 +29,11 @@ package in your `package.json`)
 - The TV needs to be put into [developer mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
 - The app you want to test needs to be a correctly-signed debug version of your app.
 - The TV needs to be on the same local network as the Appium server.
-- On a first run, the driver will attempt to pair a virtual "remote control" device with the TV.
-  You must be present to accept the permissions for this pairing, otherwise remote control-based
-  commands will not work. See below for the `appium:rcPairingMode` capability.
+- Before running your first session, you should run `appium driver run tizentv pair-remote` to
+  initiate a remote pairing session with the TV. When you accept the remote pairing, a pairing
+  token will be printed to the command line. Use this token as the content of the `appium:rcToken`
+  capability to allow Appium remote control access. The `pair-remote` script takes two arguments:
+  `--host / -h` should refer to the IP of the TV, and `--mac / -m` should be the TV's mac address.
 
 ## Capabilities
 
@@ -46,7 +48,7 @@ package in your `package.json`)
 |`appium:app`|An absolute path to your `.wgt` app file, if you want Appium to install the app.|
 |`appium:appPackage`|The app package ID, if you want Appium to use an app already on the TV.|
 |`appium:chromedriverExecutable`|[Required] Most Tizen TVs run a very old version of Chrome. Because this driver uses Chromedriver under the hood, you'll need to have a very old version of Chromedriver handy that works with the version of Chrome backing the apps on your TV. In our testing, we've found Chromedriver 2.36 to work with most TVs. You need to tell the driver where you've installed this version of Chromedriver using the `appium:chromedriverExecutable` capability, passing in an absolute path to the Chromedriver binary.|
-|`appium:rcPairingMode`|Set to `true` to essentially create an empty session to give you time to accept the remote pairing dialog so that the access token can be saved for later use. This is a good initial step before running actual automation.|
+|`appium:rcToken`|[Required] Set to the same value as the token printed out when running the `pair-remote` driver script|
 |`appium:useOpenDebugPort`|If you have already launched an app on the TV in debug mode, and you know its remote debugging port, you can have Appium simply attach to it by sending in the port as a number as the value of this capability. This is mostly useful for driver development.|
 |`appium:isDeviceApiSsl`|Set it to `true` if you want Appium to connect to the device over SSL.|
 
