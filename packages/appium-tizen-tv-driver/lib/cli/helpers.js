@@ -1,5 +1,5 @@
 import { exec } from 'teen_process';
-import { fs } from 'appium-support';
+import { fs } from 'appium/support';
 import path from 'path';
 import log from '../logger';
 

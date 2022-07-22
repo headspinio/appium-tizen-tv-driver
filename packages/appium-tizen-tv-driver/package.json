@@ -36,20 +36,17 @@
     "build/lib"
   ],
   "dependencies": {
-    "@babel/runtime": "^7.0.0",
-    "appium-base-driver": "^8.0.0-beta.6",
-    "appium-chromedriver": "^4.27.1",
-    "appium-support": "^2.8.0",
-    "asyncbox": "^2.0.4",
-    "bluebird": "^3.4.7",
-    "child_process": "^1.0.2",
-    "got": "^11.8.2",
-    "lodash": "^4.17.9",
-    "portfinder": "^1.0.28",
-    "samsung-tv-control": "^1.12.3",
-    "source-map-support": "^0.5.9",
-    "teen_process": "^1.9.0",
-    "yargs": "^16.2.0"
+    "@babel/runtime": "7.0.0",
+    "appium-chromedriver": "4.27.1",
+    "asyncbox": "2.0.4",
+    "bluebird": "3.4.7",
+    "got": "11.8.2",
+    "lodash": "4.17.9",
+    "portfinder": "1.0.28",
+    "samsung-tv-control": "1.12.3",
+    "source-map-support": "0.5.9",
+    "teen_process": "1.9.0",
+    "yargs": "16.2.0"
   },
   "scripts": {
     "clean": "npx rimraf build",
@@ -58,13 +55,8 @@
     "watch": "gulp watch",
     "build": "gulp transpile",
     "mocha": "mocha",
-    "precommit-msg": "echo 'Pre-commit checks...' && exit 0",
-    "precommit-test": "REPORTER=dot gulp once",
     "lint": "gulp eslint"
   },
-  "pre-commit": [
-    "precommit-msg"
-  ],
   "homepage": "https://github.com/headspinio/appium-tizen-tv-driver#readme",
   "appium": {
     "driverName": "tizentv",
