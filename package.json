@@ -30,7 +30,7 @@
     "test": "npm run --workspaces test"
   },
   "lint-staged": {
-    "*.md": [
+    "*.{md,yml}": [
       "prettier --write"
     ],
     "*.js": [
