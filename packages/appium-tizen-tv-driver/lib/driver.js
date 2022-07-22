@@ -1,4 +1,4 @@
-import {BaseDriver, DeviceSettings} from 'appium-base-driver';
+import {BaseDriver, DeviceSettings} from 'appium/driver';
 import B from 'bluebird';
 import { retryInterval } from 'asyncbox';
 import desiredConstraints from './desired-caps';
