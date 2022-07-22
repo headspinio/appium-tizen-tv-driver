@@ -1,4 +1,3 @@
-import path from 'path';
 import {BaseDriver, DeviceSettings} from 'appium-base-driver';
 import B from 'bluebird';
 import { retryInterval } from 'asyncbox';
@@ -13,9 +12,7 @@ import { getPortPromise } from 'portfinder';
 import log from './logger';
 import { Samsung as RemoteControl } from 'samsung-tv-control';
 import got from 'got';
-import _fs from 'fs';
 
-const {appendFile} = _fs.promises;
 const BROWSER_APP_ID = 'org.tizen.browser';
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
 const DEFAULT_CAPS = {
