@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+  "useNx": true,
+  "useWorkspaces": true,
+  "version": "independent",
+  "ignoreChanges": ["**/test/**", "**/*.md"],
+  "command": {
+    "run": {
+      "prefix": false,
+      "concurrency": 1,
+      "stream": true
+    },
+    "version": {
+      "conventionalCommits": true,
+      "createRelease": "github"
+    },
+    "add": {
+      "exact": true
+    }
+  }
+}
