@@ -42,19 +42,23 @@
     "appium-tizen-tv-driver": "file:./packages/appium-tizen-tv-driver"
   },
   "devDependencies": {
+    "@appium/eslint-config-appium": "6.0.2",
+    "@appium/gulp-plugins": "7.0.2",
     "appium": "^2.0.0-beta.40",
-    "appium-gulp-plugins": "^3.1.0",
-    "babel-eslint": "^10.0.0",
     "eslint": "^7.24.0",
-    "eslint-config-appium": "^4.7.0",
     "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-mocha": "^6.3.0",
-    "eslint-plugin-promise": "^4.0.0",
+    "eslint-plugin-mocha": "9.0.0",
+    "eslint-plugin-promise": "6.0.0",
     "gulp": "^4.0.0",
     "husky": "^8.0.1",
     "lerna": "^5.2.0",
     "lint-staged": "^13.0.3",
     "prettier": "^2.7.1"
+  },
+  "prettier": {
+    "bracketSpacing": false,
+    "printWidth": 100,
+    "singleQuote": true
   },
   "engines": {
     "node": ">=8",

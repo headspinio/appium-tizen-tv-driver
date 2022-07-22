@@ -2,11 +2,11 @@ let commonCapConstraints = {
   platformName: {
     isString: true,
     inclusionCaseInsensitive: ['TizenTV'],
-    presence: true
+    presence: true,
   },
   deviceName: {
     isString: true,
-    presence: true
+    presence: true,
   },
   deviceAddress: {
     isString: true,
@@ -17,14 +17,14 @@ let commonCapConstraints = {
     presence: true,
   },
   app: {
-    isString: true
+    isString: true,
   },
   appPackage: {
     isString: true,
   },
   udid: {
     isString: true,
-    presence: true
+    presence: true,
   },
   chromedriverExecutable: {
     isString: true,
@@ -45,7 +45,7 @@ let commonCapConstraints = {
   },
   sendKeysStrategy: {
     isString: true,
-  }
+  },
 };
 
 let desiredCapConstraints = {};
