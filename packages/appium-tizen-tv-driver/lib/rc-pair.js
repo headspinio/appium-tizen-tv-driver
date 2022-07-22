@@ -1,5 +1,4 @@
 import yargs from 'yargs/yargs';
-import B from 'bluebird';
 import { Samsung as RemoteControl, KEYS } from 'samsung-tv-control';
 import { RC_OPTS } from './driver';
 
