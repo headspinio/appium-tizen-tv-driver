@@ -1,5 +1,5 @@
-import { exec } from 'teen_process';
-import { fs } from 'appium/support';
+import {exec} from 'teen_process';
+import {fs} from 'appium/support';
 import path from 'path';
 import log from '../logger';
 
@@ -12,7 +12,7 @@ const BIN_PATHS = {
 };
 const bins = {};
 
-async function runCmd (bin, args) {
+async function runCmd(bin, args) {
   if (!bins[bin]) {
     await setBin(bin);
   }
@@ -27,7 +27,7 @@ async function runCmd (bin, args) {
   }
 }
 
-async function setBin (name) {
+async function setBin(name) {
   if (!Object.keys(BIN_PATHS).includes(name)) {
     throw new Error(`We don't know how to find the '${name}' binary`);
   }
@@ -37,11 +37,13 @@ async function setBin (name) {
   }
   // TODO check name of binary on windows and update based on platform if necessary
   const bin = path.resolve(process.env.TIZEN_HOME, ...BIN_PATHS[name]);
-  if (!await fs.exists(bin)) {
-    throw new Error(`Tried to find binary at ${bin} but it did not exist or was not ` +
-                    `accessible. Please double-check permissions and TIZEN_HOME value`);
+  if (!(await fs.exists(bin))) {
+    throw new Error(
+      `Tried to find binary at ${bin} but it did not exist or was not ` +
+        `accessible. Please double-check permissions and TIZEN_HOME value`
+    );
   }
   bins[name] = bin;
   log.info(`Binary was found at ${bin}`);
 }
-export { runCmd, setBin, TIZEN_BIN_NAME, SDB_BIN_NAME };
+export {runCmd, setBin, TIZEN_BIN_NAME, SDB_BIN_NAME};

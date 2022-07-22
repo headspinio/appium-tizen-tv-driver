@@ -1,16 +1,21 @@
 import {BaseDriver, DeviceSettings} from 'appium/driver';
 import B from 'bluebird';
-import { retryInterval } from 'asyncbox';
+import {retryInterval} from 'asyncbox';
 import desiredConstraints from './desired-caps';
 import commands from './commands';
 import _ from 'lodash';
-import { tizenInstall, tizenUninstall, tizenRun } from './cli/tizen';
-import { debugApp, forwardPort, removeForwardedPort, connectDevice,
-         disconnectDevice } from './cli/sdb';
+import {tizenInstall, tizenUninstall, tizenRun} from './cli/tizen';
+import {
+  debugApp,
+  forwardPort,
+  removeForwardedPort,
+  connectDevice,
+  disconnectDevice,
+} from './cli/sdb';
 import Chromedriver from 'appium-chromedriver';
-import { getPortPromise } from 'portfinder';
+import {getPortPromise} from 'portfinder';
 import log from './logger';
-import { Samsung as RemoteControl } from 'samsung-tv-control';
+import {Samsung as RemoteControl} from 'samsung-tv-control';
 import got from 'got';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
@@ -36,7 +41,7 @@ export const RC_OPTS = {
 };
 
 class TizenTVDriver extends BaseDriver {
-  constructor (opts = {}, shouldValidateCaps = true) {
+  constructor(opts = {}, shouldValidateCaps = true) {
     super(opts, shouldValidateCaps);
 
     this.locatorStrategies = [
@@ -51,7 +56,7 @@ class TizenTVDriver extends BaseDriver {
     this.forwardedPorts = [];
   }
 
-  async createSession (...args) {
+  async createSession(...args) {
     let [sessionId, caps] = await super.createSession(...args);
     caps = {...DEFAULT_CAPS, ...caps};
     const shouldPowerCycle = caps.powerCyclePostUrl && caps.fullReset;
@@ -115,16 +120,20 @@ class TizenTVDriver extends BaseDriver {
     }
   }
 
-  async setupDebugger (caps) {
-    const remoteDebugPort = caps.useOpenDebugPort || await debugApp(caps);
+  async setupDebugger(caps) {
+    const remoteDebugPort = caps.useOpenDebugPort || (await debugApp(caps));
     const localDebugPort = await getPortPromise();
     log.info(`Chose local port ${localDebugPort} for remote debug communication`);
-    await forwardPort({udid: caps.udid, remotePort: remoteDebugPort, localPort: localDebugPort});
+    await forwardPort({
+      udid: caps.udid,
+      remotePort: remoteDebugPort,
+      localPort: localDebugPort,
+    });
     this.forwardedPorts.push(localDebugPort);
     return localDebugPort;
   }
 
-  setupRCApi ({deviceAddress, deviceMac, rcToken}) {
+  setupRCApi({deviceAddress, deviceMac, rcToken}) {
     this.rc = new RemoteControl({
       ...RC_OPTS,
       debug: true,
@@ -134,30 +143,32 @@ class TizenTVDriver extends BaseDriver {
     });
   }
 
-  async startChromedriver ({debuggerPort, executable}) {
+  async startChromedriver({debuggerPort, executable}) {
     this.chromedriver = new Chromedriver({
       port: await getPortPromise(),
-      executable
+      executable,
     });
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
-    await this.chromedriver.start({'goog:chromeOptions': {
-      debuggerAddress
-    }});
+    await this.chromedriver.start({
+      'goog:chromeOptions': {
+        debuggerAddress,
+      },
+    });
     this.proxyReqRes = this.chromedriver.proxyReq.bind(this.chromedriver);
     this.proxyCommand = this.chromedriver.jwproxy.proxyCommand.bind(this.chromedriver);
     this.jwpProxyActive = true;
   }
 
-  async executeScript (script) {
+  async executeScript(script) {
     return await this.chromedriver.sendCommand('/execute/sync', 'POST', {
       script,
       args: [],
     });
   }
 
-  async deleteSession () {
+  async deleteSession() {
     if (this.chromedriver) {
       log.debug('Terminating app under test');
       try {
@@ -181,22 +192,22 @@ class TizenTVDriver extends BaseDriver {
     return await super.deleteSession();
   }
 
-  async cleanUpPorts () {
+  async cleanUpPorts() {
     log.info(`Cleaning up any ports which have been forwarded`);
     for (const localPort of this.forwardedPorts) {
       await removeForwardedPort({udid: this.opts.udid, localPort});
     }
   }
 
-  proxyActive () {
+  proxyActive() {
     return this.jwpProxyActive;
   }
 
-  getProxyAvoidList () {
+  getProxyAvoidList() {
     return this.jwpProxyAvoid;
   }
 
-  canProxy () {
+  canProxy() {
     return true;
   }
 }

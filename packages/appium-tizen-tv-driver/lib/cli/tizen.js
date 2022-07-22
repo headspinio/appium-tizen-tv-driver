@@ -1,41 +1,23 @@
 import log from '../logger';
-import { runCmd, TIZEN_BIN_NAME } from './helpers';
+import {runCmd, TIZEN_BIN_NAME} from './helpers';
 
-async function runTizenCmd (args) {
+async function runTizenCmd(args) {
   return await runCmd(TIZEN_BIN_NAME, args);
 }
 
-async function tizenInstall ({app, udid}) {
+async function tizenInstall({app, udid}) {
   log.info(`Installing tizen app '${app}' on device '${udid}'`);
-  return await runTizenCmd([
-    'install',
-    '-n',
-    app,
-    '-s',
-    udid,
-  ]);
+  return await runTizenCmd(['install', '-n', app, '-s', udid]);
 }
 
-async function tizenUninstall ({appPackage, udid}) {
+async function tizenUninstall({appPackage, udid}) {
   log.info(`Uninstalling tizen app '${appPackage}' on device '${udid}'`);
-  return await runTizenCmd([
-    'uninstall',
-    '-p',
-    appPackage,
-    '-s',
-    udid,
-  ]);
+  return await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid]);
 }
 
-async function tizenRun ({appPackage, udid}) {
+async function tizenRun({appPackage, udid}) {
   log.info(`Running tizen app '${appPackage}' on device '${udid}'`);
-  return await runTizenCmd([
-    'run',
-    '-p',
-    appPackage,
-    '-s',
-    udid,
-  ]);
+  return await runTizenCmd(['run', '-p', appPackage, '-s', udid]);
 }
 
-export { runTizenCmd, tizenInstall, tizenUninstall, tizenRun };
+export {runTizenCmd, tizenInstall, tizenUninstall, tizenRun};
