@@ -40,7 +40,7 @@
     "appium-chromedriver": "4.27.1",
     "asyncbox": "2.0.4",
     "bluebird": "3.4.7",
-    "got": "11.8.2",
+    "got": "12.2.0",
     "lodash": "4.17.9",
     "portfinder": "1.0.28",
     "samsung-tv-control": "1.12.3",
