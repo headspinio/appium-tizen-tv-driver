@@ -1,0 +1,18 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./lib/index.js"],
+  "excludePrivate": true,
+  "name": "tizen-remote",
+  "includeVersion": true,
+  "tsconfig": "./tsconfig.json",
+  "out": "doc",
+  "plugin": ["typedoc-plugin-markdown"],
+  "excludeExternals": true,
+  "cleanOutputDir": true,
+  "readme": "none",
+  "disableSources": true,
+  
+  "hideBreadcrumbs": true,
+  "hideInPageTOC": true,
+  "entryDocument": "index.md"
+}

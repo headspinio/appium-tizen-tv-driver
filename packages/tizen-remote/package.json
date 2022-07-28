@@ -1,0 +1,58 @@
+{
+  "name": "@headspinio/tizen-remote",
+  "version": "0.1.0",
+  "description": "Remote control automation for Tizen devices",
+  "keywords": [
+    "tizen",
+    "samsung",
+    "remote",
+    "rc",
+    "appium",
+    "automate",
+    "automation",
+    "control",
+    "tv",
+    "television"
+  ],
+  "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
+  "bugs": {
+    "url": "https://github.com/headspinio/appium-tizen-tv-driver/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/headspinio/appium-tizen-tv-driver.git",
+    "directory": "packages/tizen-remote"
+  },
+  "license": "Apache-2.0",
+  "author": "Christopher Hiller <boneskull@boneskull.com>",
+  "main": "index.js",
+  "types": "build/lib/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "files": [
+    "lib",
+    "build",
+    "index.js"
+  ],
+  "scripts": {
+    "build": "babel lib --root-mode=upward --out-dir=build/lib",
+    "dev": "npm run build --- -watch",
+    "docs": "typedoc",
+    "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
+    "prepare": "npm run build",
+    "test": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/**/*.spec.js\""
+  },
+  "dependencies": {
+    "@babel/runtime": "7.18.2",
+    "debug": "4.3.4",
+    "delay": "4.4.1",
+    "p-retry": "4.6.2",
+    "source-map-support": "0.5.21",
+    "ws": "8.8.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
