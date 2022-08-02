@@ -1,5 +1,6 @@
 /* eslint-disable promise/no-native */
 
+import {TextCommand, KeyCommand} from './command';
 import {EventEmitter} from 'events';
 import {promisify} from 'node:util';
 import WebSocket from 'ws';
@@ -55,9 +56,11 @@ export const constants = /** @type {const} */ ({
   DEFAULT_HANDSHAKE_TIMEOUT: 1000,
   DEFAULT_HANDSHAKE_RETRIES: 2,
   DEFAULT_AUTO_RECONNECT: true,
+  DEFAULT_TOKEN_TIMEOUT: 35000,
   DEFAULT_PORT: 8001,
   DEFAULT_SSL: false,
   COMMAND_METHOD: 'ms.remote.control',
+  TOKEN_EVENT: 'ms.channel.connect',
   COMMAND_PARAMS_OPTION: 'false',
   COMMAND_PARAMS_TYPE_OF_REMOTE: 'SendRemoteKey',
 });
@@ -74,6 +77,7 @@ export const Event = /** @type { Record<string,keyof TizenRemoteEventData> } */ 
   DISCONNECTING: 'disconnecting',
   ERROR: 'error',
   RETRY: 'retry',
+  TOKEN: 'token',
 });
 
 /**
@@ -96,6 +100,7 @@ export const WsEvent = /** @type {const} */ ({
   CLOSE: 'close',
   ERROR: 'error',
   OPEN: 'open',
+  MESSAGE: 'message',
 });
 
 /**
@@ -122,7 +127,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Super secret access token
-   * @type {string}
+   * @type {string|undefined}
    */
   #token;
 
@@ -131,12 +136,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @type {boolean}
    */
   #ssl;
-
-  /**
-   * Full URL to WS server
-   * @type {URL}
-   */
-  #url;
 
   /**
    * {@linkcode WebSocket} instance
@@ -169,11 +168,18 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #debug;
 
   /**
-   * When set, is actively listening to the {@linkcode WsEvent.CLOSE} event
-   * to track unexpected disconnections.
+   * How long to wait to receive a token from the Tizen device
+   * @type {number}
    */
-  /** @type {undefined | ((code: number, reason: Buffer) => Promise<void>)} */
-  #activeCloseListener;
+  #tokenTimeout;
+
+  /**
+   * Tracks listeners that we've added to the {@linkcode WebSocket} instance.
+   *
+   * We can remove them later to avoid leaking EE listeners.
+   * @type {Map<string,Set<(...args: any[]) => void>>}
+   */
+  #listeners = new Map();
 
   /**
    * @param {TizenRemoteOptions} opts
@@ -185,23 +191,25 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#name = opts.name ?? '@headspinio/tizen-remote';
     this.#debug = debug(`tizen-remote [${this.#name}]`);
     this.#token = opts.token;
-    this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : constants.DEFAULT_SSL;
-    this.#url = this.#computeUrl();
+    // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
+    this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
     this.#autoReconnect =
       opts.autoReconnect !== undefined
         ? Boolean(opts.autoReconnect)
         : constants.DEFAULT_AUTO_RECONNECT;
     this.#handshakeTimeout = opts.handshakeTimeout ?? constants.DEFAULT_HANDSHAKE_TIMEOUT;
     this.#handshakeRetries = opts.handshakeRetries ?? constants.DEFAULT_HANDSHAKE_RETRIES;
+    this.#tokenTimeout = opts.tokenTimeout ?? constants.DEFAULT_TOKEN_TIMEOUT;
   }
 
-  #computeUrl() {
+  get #url() {
     const url = new URL(
       `${this.#ssl ? 'wss' : 'ws'}://${this.#host}:${this.#port}${constants.API_PATH_V2}`
     );
     url.searchParams.set('name', this.#name);
-    url.searchParams.set('token', this.#token);
-    this.#debug('Computed URL: %s', url);
+    if (this.#token) {
+      url.searchParams.set('token', this.#token);
+    }
     return url;
   }
 
@@ -250,6 +258,131 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
+   * Send JSON-serializable data to the Tizen web socket server.
+   *
+   * This is low-level, and you probably want something else.
+   * @template T
+   * @param {string} channel
+   * @param {any} data
+   * @param {SendOptions} [opts]
+   * @returns {Promise<T>}
+   */
+  async sendRequest(channel, data, {noConnect = false} = {}) {
+    /** @type {string} */
+    let payload;
+    /** @type {WebSocket} */
+    let ws;
+    if (this.#ws) {
+      ws = this.#ws;
+    } else {
+      if (noConnect) {
+        throw new Error(`Disconnected; cannot send message: ${data}`);
+      }
+      this.#debug('Not connected; attempting connection...');
+      ws = await this.connect();
+    }
+
+    try {
+      payload = JSON.stringify(data);
+    } catch (err) {
+      throw new Error(`Unable to serialize data to JSON: ${/** @type {Error} */ (err).message}`);
+    }
+
+    const send = /** @type {(data: any) => Promise<void>} */ (promisify(ws.send).bind(this.#ws));
+
+    this.#debug('Sending request on channel %s: %O', channel, data);
+    await send(payload);
+
+    return await new Promise((resolve, reject) => {
+      const tokenTimer = setTimeout(() => {
+        reject(new Error(`Did not receive token in ${this.#tokenTimeout}ms`));
+      }, this.#tokenTimeout);
+
+      /** @param {import('ws').RawData} data */
+      const listener = (data) => {
+        try {
+          const resData = JSON.parse(data.toString());
+          if (resData.event === channel) {
+            resolve(resData);
+          }
+        } catch {
+          // if we can't parse the data, it's not something we're interested in
+        } finally {
+          clearTimeout(tokenTimer);
+          this.#offWs(WsEvent.MESSAGE, listener);
+        }
+      };
+      this.#onWs(WsEvent.MESSAGE, listener);
+    });
+  }
+
+  /**
+   * @template {(...args: any[]) => void} Listener
+   * @param {WsEvent} event
+   * @param {Listener} listener
+   * @param {{ context?: any }} [opts]
+   * @returns {Listener}
+   */
+  #onWs(event, listener, {context} = {}) {
+    if (this.#ws) {
+      const listeners = this.#listeners.get(event) ?? new Set();
+      this.#listeners.set(event, listeners);
+      if (context) {
+        const boundListener = /** @type {Listener} */(listener.bind(context));
+        listeners.add(boundListener);
+        this.#ws.on(event, boundListener);
+        return boundListener;
+      }
+      listeners.add(listener);
+      this.#ws.on(event, listener);
+      return listener;
+    }
+    throw new Error('Not connected');
+  }
+
+  /**
+   *
+   * @template {(...args: any[]) => void} Listener
+   * @param {WsEvent} event
+   * @param {Listener} listener
+   * @param {{ context?: any }} [opts]
+   * @returns {Listener}
+   */
+  #onceWs(event, listener, {context} = {}) {
+    if (this.#ws) {
+      const listeners = this.#listeners.get(event) ?? new Set();
+      this.#listeners.set(event, listeners);
+      if (context) {
+        const boundListener = /** @type {Listener} */(listener.bind(context));
+        listeners.add(boundListener);
+        this.#ws.once(event, boundListener);
+        return boundListener;
+      }
+      listeners.add(listener);
+      this.#ws.once(event, listener);
+      return listener;
+    }
+    throw new Error('Not connected');
+  }
+
+  /**
+   *
+   * @template {(...args: any[]) => void} Listener
+   * @param {WsEvent} event
+   * @param {Listener} listener
+   * @returns {void}
+   */
+  #offWs(event, listener) {
+    if (this.#ws) {
+      let foundListener = Boolean(this.#listeners.get(event)?.has(listener));
+      if (foundListener) {
+        this.#ws.removeListener(event, listener);
+        this.#listeners.get(event)?.delete(listener);
+      }
+    }
+  }
+
+  /**
    * Execute a "click" on the remote
    * @param {KeyCode} key
    */
@@ -284,7 +417,28 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
+   * Gets a new token from the Tizen device (if none exists).
    *
+   * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
+   * @returns {Promise<string>}
+   */
+  async getToken() {
+    if (this.#token) {
+      return this.#token;
+    }
+    const res = await this.sendRequest(
+      constants.TOKEN_EVENT,
+      new KeyCommand(KeyCmd.CLICK, Keys.HOME)
+    );
+    if (res?.data?.token) {
+      this.emit(Event.TOKEN, res.data.token);
+      return res.data.token;
+    }
+    throw new Error(`Could not get token; server responded with: ${res}`);
+  }
+
+  /**
+   * Send some text
    * @param {string} str
    */
   async text(str) {
@@ -310,7 +464,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
                 this.emit(Event.RETRY, attempt);
               }
 
-              const ws = new WebSocket(this.#url, {handshakeTimeout: this.#handshakeTimeout})
+              const ws = new WebSocket(this.#url, {
+                handshakeTimeout: this.#handshakeTimeout,
+                rejectUnauthorized: false,
+              })
                 .once(WsEvent.OPEN, () => {
                   this.#debug('Connected to %s', this.#url);
                   resolve(ws);
@@ -340,11 +497,16 @@ export class TizenRemote extends createdTypedEmitterClass() {
         }
       );
 
-      // I _think_ it's OK to just overwrite this if it exists,
-      // since the EE it's listening on should be GC'd
-      this.#activeCloseListener = this.#closeListener.bind(this);
+      this.#ws = ws;
 
-      this.#ws = ws.once(WsEvent.CLOSE, this.#activeCloseListener);
+      this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
+      this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
+
+      if (!this.#token) {
+        this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
+        this.#token = await this.getToken();
+        this.#debug('Received token');
+      }
 
       this.emit(Event.CONNECT, ws);
 
@@ -381,6 +543,22 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   get isConnecting() {
     return Boolean(this.#ws?.readyState === WebSocket.CONNECTING);
+  }
+
+  /**
+   *
+   * @param {import('ws').RawData} data
+   * @param {boolean} isBinary
+   */
+  #debugListener(data, isBinary) {
+    if (isBinary) {
+      this.#debug('Received binary message: %o', data);
+    } else {
+      try {
+        const resData = JSON.parse(data.toString());
+        this.#debug('Received message: %o', resData);
+      } catch {}
+    }
   }
 
   /**
@@ -450,63 +628,21 @@ export class TizenRemote extends createdTypedEmitterClass() {
             reject(err);
           });
 
-        // this ensures that we don't attempt to automatically reconnect,
-        // since we requested the disconnection ourselves.
-        if (this.#activeCloseListener) {
-          this.#ws.removeListener(WsEvent.CLOSE, this.#activeCloseListener);
+        // remove any listeners we may have created.
+        // this needs to happen before starting the disconnection
+        // due to auto-reconnect logic
+        for (const [event, listeners] of this.#listeners) {
+          for (const listener of listeners) {
+            this.#ws.removeListener(event, listener);
+          }
         }
+        this.#listeners.clear();
 
         this.#ws.close();
         return;
       }
       resolve();
     });
-  }
-}
-
-class KeyCommand {
-  method = constants.COMMAND_METHOD;
-
-  /** @type {TizenRemoteCommandParams<KeyCommandType, KeyCode>} */
-  params;
-
-  /**
-   * @param {KeyCommandType} cmd
-   * @param {KeyCode} data
-   */
-  constructor(cmd, data) {
-    this.params = {
-      Cmd: cmd,
-      DataOfCmd: data,
-      Option: constants.COMMAND_PARAMS_OPTION,
-      TypeOfRemote: 'SendRemoteKey',
-    };
-  }
-}
-
-class TextCommand {
-  method = constants.COMMAND_METHOD;
-
-  /** @type {TizenRemoteCommandParams<string, 'base64'>} */
-  params;
-
-  /**
-   * Original text
-   * @type {string}
-   */
-  text;
-
-  /**
-   * @param {string} text
-   */
-  constructor(text) {
-    this.text = text;
-    this.params = {
-      Cmd: Buffer.from(text).toString('base64'),
-      DataOfCmd: 'base64',
-      Option: constants.COMMAND_PARAMS_OPTION,
-      TypeOfRemote: 'SendRemoteKey',
-    };
   }
 }
 
@@ -520,12 +656,13 @@ class TextCommand {
  * @group Options
  * @typedef TizenRemoteOptions
  * @property {string} host - Hostname or IP address of the Tizen device
- * @property {string} token - Remote control token
+ * @property {string} [token] - Remote control token
  * @property {number} [port=8001] - Port of the Tizen device's WS server
  * @property {string} [name] - Name of this "virtual remote control"
  * @property {boolean} [ssl] - Whether to use SSL
- * @property {number} [handshakeTimeout] - Timeout for the initial handshake
+ * @property {number} [handshakeTimeout] - Timeout for the initial handshake (ms)
  * @property {number} [handshakeRetries] - Number of retries for the initial handshake
+ * @property {number} [tokenTimeout] - Timeout for the token request (ms)
  * @property {boolean} [autoReconnect] - Whether to automatically reconnect on disconnection
  */
 
@@ -540,6 +677,7 @@ class TextCommand {
  * @property {void|{code:number, reason:Buffer}} disconnect - Emitted when disconnected from WS server; `void` if disconnected manually
  * @property {void} disconnecting - Emitted when disconnecting manually
  * @property {number} retry - Emitted if retrying a connection
+ * @property {string} token - Emitted when a new token is received
  * @event
  */
 

@@ -30,7 +30,7 @@
   "directories": {
     "lib": "lib",
     "test": "test"
-  },
+    },
   "files": [
     "lib",
     "build",
@@ -38,7 +38,7 @@
   ],
   "scripts": {
     "build": "babel lib --root-mode=upward --out-dir=build/lib",
-    "dev": "npm run build --- -watch",
+    "dev": "npm run build -- --watch",
     "docs": "typedoc",
     "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
     "prepare": "npm run build",

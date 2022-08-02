@@ -1,6 +1,8 @@
 import {promisify} from 'node:util';
 import {WebSocketServer} from 'ws';
+import {parse as parseUrl} from 'url';
 import d from 'debug';
+import delay from 'delay';
 
 const debug = d('tizen-remote:test:e2e:server');
 
@@ -20,11 +22,16 @@ export class TestWSServer extends WebSocketServer {
   /** @type {NodeJS.Timer|undefined} */
   #keepAliveInterval;
 
+  /** @type {Map<string,string>} */
+  tokens;
+
   /**
    * @param {import('ws').ServerOptions & {keepaliveTimeout?: number, keepalive?: boolean}} opts
    */
   constructor(opts) {
     super(opts);
+
+    this.tokens = new Map();
 
     if (opts.keepalive !== false) {
       this.on('connection', (ws, req) => {
@@ -51,6 +58,28 @@ export class TestWSServer extends WebSocketServer {
 
       this.on('connection', (ws, req) => {
         debug('Connection from %s:%d', req.socket.remoteAddress, req.socket.remotePort);
+
+        // unsure of a better way to extract the searchParams from the request URL
+        const clientName =
+          (req.url
+            ? new URLSearchParams(/** @type {string} */ (parseUrl(req.url).query)).get('name')
+            : undefined) ?? '(unknown)';
+
+        ws.once('message', async (data, isBinary) => {
+          /** @type {import('ws').RawData | import('type-fest').JsonValue} */
+          const payload = isBinary ? data : JSON.parse(data.toString());
+          debug('Message from %s:%d: %O', req.socket.remoteAddress, req.socket.remotePort, payload);
+          this.tokens.set(clientName, `token-${clientName}`);
+          await delay(100);
+          const response = {
+            data: {
+              token: this.tokens.get(clientName),
+            },
+            event: 'ms.channel.connect',
+          };
+          debug('Sending response %O', response);
+          ws.send(JSON.stringify(response));
+        });
       });
     });
   }
