@@ -45,18 +45,6 @@ describe('websocket behavior', function () {
       name: 'test',
       token: 'hoboken',
     };
-    server.once('listening', () => {
-      server.on('connection', (ws, req) => {
-        ws.on('message', (data) => {
-          debug(
-            'Message received from %s:%d: %s',
-            req.socket.remoteAddress,
-            req.socket.remotePort,
-            data
-          );
-        });
-      });
-    });
   });
 
   afterEach(async function () {
@@ -78,6 +66,48 @@ describe('websocket behavior', function () {
   });
 
   describe('connection behavior', function () {
+    describe('token negotiation', function () {
+      describe('when the remote has no token', function () {
+        beforeEach(function () {
+          remoteOpts.token = undefined;
+          remote = new TizenRemote(remoteOpts);
+        });
+        it('should request a token from the server', async function () {
+          return await expect(
+            remote.connect(),
+            'to emit from',
+            remote,
+            Event.TOKEN,
+            `token-${remoteOpts.name}`
+          );
+        });
+
+        describe('when the request time exceeds "tokenTimeout"', function() {
+          beforeEach(function () {
+            remoteOpts.token = undefined;
+            remoteOpts.tokenTimeout = 1;
+            remote = new TizenRemote(remoteOpts);
+          });
+          it('should reject', async function() {
+            return await expect(
+              remote.connect(),
+              'to be rejected with error satisfying',
+              /did not receive token in 1ms/i
+            );
+          });
+        });
+      });
+
+      describe('when the remote has a token', function () {
+        beforeEach(function () {
+          remote = new TizenRemote(remoteOpts);
+        });
+        it('should not request a token from the server', async function () {
+          return await expect(remote.connect(), 'not to emit from', remote, Event.TOKEN);
+        });
+      });
+    });
+
     describe('when connection fails', function () {
       beforeEach(async function () {
         // stop the currently-listening server entirely
@@ -222,8 +252,8 @@ describe('websocket behavior', function () {
         // I can simplify this. I just didn't.
         return await expect(
           new Promise((resolve, reject) => {
-            server.on('connection', (sock) => {
-              sock.on('message', (data) => {
+            server.on('connection', (ws) => {
+              ws.on('message', (data) => {
                 try {
                   resolve(String(data));
                 } catch (err) {
