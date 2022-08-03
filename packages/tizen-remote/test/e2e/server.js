@@ -65,20 +65,34 @@ export class TestWSServer extends WebSocketServer {
             ? new URLSearchParams(/** @type {string} */ (parseUrl(req.url).query)).get('name')
             : undefined) ?? '(unknown)';
 
-        ws.once('message', async (data, isBinary) => {
-          /** @type {import('ws').RawData | import('type-fest').JsonValue} */
-          const payload = isBinary ? data : JSON.parse(data.toString());
+        ws.once('message', async (data) => {
+          /** @type {any} */
+          let payload;
+          try {
+            payload = JSON.parse(data.toString());
+          } catch {
+            payload = '(invalid JSON)';
+          }
           debug('Message from %s:%d: %O', req.socket.remoteAddress, req.socket.remotePort, payload);
           this.tokens.set(clientName, `token-${clientName}`);
-          await delay(100);
+          await delay(20);
           const response = {
             data: {
               token: this.tokens.get(clientName),
             },
             event: 'ms.channel.connect',
           };
-          debug('Sending response %O', response);
-          ws.send(JSON.stringify(response));
+          if (req.socket.writable) {
+            debug(
+              'Sending response to %s:%d: %O',
+              req.socket.remoteAddress,
+              req.socket.remotePort,
+              response
+            );
+            ws.send(JSON.stringify(response));
+          } else {
+            debug('Socket %s:%d hung up before we could send a response', req.socket.remoteAddress, req.socket.remotePort);
+          }
         });
       });
     });

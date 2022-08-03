@@ -8,6 +8,7 @@ import debug from 'debug';
 import delay from 'delay';
 import pRetry from 'p-retry';
 import {Keys} from './keys';
+import {Env} from '@humanwhocodes/env';
 
 export {Keys};
 
@@ -186,11 +187,15 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   constructor(opts) {
     super();
+
+    const env = new Env();
+
     this.#host = opts.host;
-    this.#port = opts.port ?? constants.DEFAULT_PORT;
+    this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#name = opts.name ?? '@headspinio/tizen-remote';
     this.#debug = debug(`tizen-remote [${this.#name}]`);
-    this.#token = opts.token;
+
+    this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
     // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
     this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
     this.#autoReconnect =
@@ -657,7 +662,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * @typedef TizenRemoteOptions
  * @property {string} host - Hostname or IP address of the Tizen device
  * @property {string} [token] - Remote control token
- * @property {number} [port=8001] - Port of the Tizen device's WS server
+ * @property {number|string} [port] - Port of the Tizen device's WS server
  * @property {string} [name] - Name of this "virtual remote control"
  * @property {boolean} [ssl] - Whether to use SSL
  * @property {number} [handshakeTimeout] - Timeout for the initial handshake (ms)
