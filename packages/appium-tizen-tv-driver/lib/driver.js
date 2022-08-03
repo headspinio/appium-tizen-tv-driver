@@ -2,8 +2,13 @@ import {BaseDriver, DeviceSettings} from 'appium/driver';
 import B from 'bluebird';
 import {retryInterval} from 'asyncbox';
 import desiredConstraints from './desired-caps';
-import commands from './commands';
-import _ from 'lodash';
+import {Keys, TizenRemote} from '@headspinio/tizen-remote';
+
+const RC_TEXT_STRAT = 'rc';
+const PROXY_TEXT_STRAT = 'proxy';
+const SEND_KEYS_STRATS = [RC_TEXT_STRAT, PROXY_TEXT_STRAT];
+
+ import _ from 'lodash';
 import {tizenInstall, tizenUninstall, tizenRun} from './cli/tizen';
 import {
   debugApp,
@@ -13,9 +18,8 @@ import {
   disconnectDevice,
 } from './cli/sdb';
 import Chromedriver from 'appium-chromedriver';
-import {getPortPromise} from 'portfinder';
+import getPort from 'get-port';
 import log from './logger';
-import {Samsung as RemoteControl} from 'samsung-tv-control';
 import got from 'got';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
@@ -33,11 +37,8 @@ const NO_PROXY = [
 export const RC_PORT = 8002;
 export const RC_NAME = 'Appium';
 export const RC_OPTS = {
-  debug: true,
-  delayCommands: true,
   port: RC_PORT,
-  nameApp: RC_NAME,
-  saveToken: false,
+  name: RC_NAME,
 };
 
 class TizenTVDriver extends BaseDriver {
@@ -122,7 +123,7 @@ class TizenTVDriver extends BaseDriver {
 
   async setupDebugger(caps) {
     const remoteDebugPort = caps.useOpenDebugPort || (await debugApp(caps));
-    const localDebugPort = await getPortPromise();
+    const localDebugPort = await getPort();
     log.info(`Chose local port ${localDebugPort} for remote debug communication`);
     await forwardPort({
       udid: caps.udid,
@@ -133,19 +134,17 @@ class TizenTVDriver extends BaseDriver {
     return localDebugPort;
   }
 
-  setupRCApi({deviceAddress, deviceMac, rcToken}) {
-    this.rc = new RemoteControl({
+  setupRCApi({deviceAddress, rcToken}) {
+    this.remote = new TizenRemote({
       ...RC_OPTS,
-      debug: true,
-      ip: deviceAddress,
-      mac: deviceMac,
+      host: deviceAddress,
       token: rcToken,
     });
   }
 
   async startChromedriver({debuggerPort, executable}) {
     this.chromedriver = new Chromedriver({
-      port: await getPortPromise(),
+      port: await getPort(),
       executable,
     });
 
@@ -187,7 +186,8 @@ class TizenTVDriver extends BaseDriver {
       this.chromedriver = null;
     }
 
-    this.rc = null;
+    await this.remote.disconnect();
+    this.remote = null;
     await this.cleanUpPorts();
     return await super.deleteSession();
   }
@@ -210,10 +210,37 @@ class TizenTVDriver extends BaseDriver {
   canProxy() {
     return true;
   }
-}
 
-for (const [cmd, fn] of _.toPairs(commands)) {
-  TizenTVDriver.prototype[cmd] = fn;
+  async pressKeyCode(keycode) {
+    if (!Keys[keycode]) {
+      throw new Error(`Keycode '${keycode}' was not recognized`);
+    }
+    await this.remote.click(keycode);
+  }
+
+  async setValue(text, elId) {
+    if (!SEND_KEYS_STRATS.includes(this.opts.sendKeysStrategy)) {
+      throw new Error(
+        `Attempted to send keys with invalid sendKeysStrategy ` +
+          `'${this.opts.sendKeysStrategy}'. It should be one of: ` +
+          JSON.stringify(SEND_KEYS_STRATS)
+      );
+    }
+
+    if (this.opts.sendKeysStrategy === RC_TEXT_STRAT) {
+      if (_.isArray(text)) {
+        text = text.join('');
+      }
+      await B.delay(800);
+      await this.remote.text(text);
+      await this.pressKeyCode(Keys.ENTER);
+      await B.delay(800);
+      return;
+    }
+
+    return await this.proxyCommand(`/element/${elId}/value`, 'POST', {text});
+  }
+
 }
 
 export {TizenTVDriver};

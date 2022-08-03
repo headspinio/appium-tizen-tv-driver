@@ -24,7 +24,7 @@
     "node": ">=14",
     "npm": ">=6"
   },
-  "main": "./build/index.js",
+  "main": "index.js",
   "bin": {},
   "directories": {
     "lib": "lib"
@@ -32,18 +32,17 @@
   "files": [
     "index.js",
     "lib",
-    "build/index.js",
     "build/lib"
   ],
   "dependencies": {
     "@babel/runtime": "7.0.0",
+    "@headspinio/tizen-remote": "file:../tizen-remote",
     "appium-chromedriver": "4.27.1",
     "asyncbox": "2.0.4",
     "bluebird": "3.4.7",
+    "get-port": "5.1.1",
     "got": "11.8.2",
     "lodash": "4.17.9",
-    "portfinder": "1.0.28",
-    "samsung-tv-control": "1.12.3",
     "source-map-support": "0.5.9",
     "teen_process": "1.9.0",
     "yargs": "16.2.0"
@@ -55,9 +54,10 @@
     "watch": "gulp watch",
     "build": "gulp transpile",
     "mocha": "mocha",
-    "lint": "gulp eslint"
+    "lint": "gulp eslint",
+    "dev": "gulp dev --no-notif"
   },
-  "homepage": "https://github.com/headspinio/appium-tizen-tv-driver#readme",
+  "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
   "appium": {
     "driverName": "tizentv",
     "automationName": "TizenTV",
@@ -73,6 +73,6 @@
     "packages/*"
   ],
   "peerDependencies": {
-    "appium": "^2.0.0-beta.40"
+    "appium": "^2.0.0-beta.41"
   }
 }
