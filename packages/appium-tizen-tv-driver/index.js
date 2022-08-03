@@ -1,3 +1,1 @@
-import TizenTVDriver from './lib/driver';
-
-export {TizenTVDriver};
+module.exports = require('./build/lib/driver.js');

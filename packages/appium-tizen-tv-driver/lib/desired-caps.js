@@ -12,10 +12,6 @@ let commonCapConstraints = {
     isString: true,
     presence: true,
   },
-  deviceMac: {
-    isString: true,
-    presence: true,
-  },
   app: {
     isString: true,
   },
