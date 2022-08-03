@@ -28,8 +28,10 @@
     "prepare": "husky install && npm run --workspaces prepare",
     "clean": "npm run --workspaces clean && npm ci",
     "test": "npm run --workspaces test",
-    "build": "npm run --workspaces build && npm run build:types",
-    "build:types": "tsc -b"
+    "dev": "run-p \"dev:*\"",
+    "dev:distfiles": "lerna run --parallel --prefix --concurrency=8 dev",
+    "dev:types": "tsc -b --watch",
+    "build": "npm run --workspaces build"
   },
   "lint-staged": {
     "*.{md,yml}": [
@@ -39,6 +41,11 @@
       "eslint --fix",
       "prettier --write"
     ]
+  },
+  "prettier": {
+    "bracketSpacing": false,
+    "printWidth": 100,
+    "singleQuote": true
   },
   "dependencies": {
     "appium-tizen-tv-driver": "file:./packages/appium-tizen-tv-driver"
@@ -51,13 +58,14 @@
     "@babel/plugin-transform-runtime": "7.18.2",
     "@babel/preset-env": "7.18.2",
     "@babel/register": "7.18.9",
+    "@humanwhocodes/env": "2.2.0",
     "@types/bluebird": "3.5.36",
     "@types/debug": "4.1.7",
     "@types/mocha": "9.1.1",
     "@types/node": "18.6.1",
     "@types/sinon": "10.0.13",
     "@types/ws": "8.5.3",
-    "appium": "^2.0.0-beta.40",
+    "appium": "^2.0.0-beta.41",
     "babel-plugin-source-map-support": "2.2.0",
     "cross-env": "7.0.3",
     "eslint": "^7.24.0",
@@ -79,12 +87,8 @@
     "typescript": "4.7.4",
     "unexpected": "13.0.0",
     "unexpected-eventemitter": "2.4.0",
-    "unexpected-sinon": "11.1.0"
-  },
-  "prettier": {
-    "bracketSpacing": false,
-    "printWidth": 100,
-    "singleQuote": true
+    "unexpected-sinon": "11.1.0",
+    "webdriverio": "7.20.9"
   },
   "engines": {
     "node": ">=8",
