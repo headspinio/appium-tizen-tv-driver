@@ -1,5 +1,18 @@
 /* eslint-disable promise/no-native */
 
+/**
+ * This test suite checks the interaction of the lib with a WebSocket server.
+ *
+ * If the following env variables are present, the test suite will use them:
+ *
+ * - `TEST_TIZEN_REMOTE_HOST`: The host of the WebSocket server.
+ * - `TEST_TIZEN_REMOTE_PORT`: The port of the WebSocket server.
+ *
+ * If these env variables are _not_ present, a mock server will be started on a random port.
+ *
+ * @module
+ */
+
 import {createSandbox} from 'sinon';
 import getPort from 'get-port';
 import {TestWSServer} from './server';
@@ -8,14 +21,18 @@ import {constants, Event, Keys, TizenRemote} from '../../lib/index';
 import d from 'debug';
 import unexpectedSinon from 'unexpected-sinon';
 import unexpectedEventEmitter from 'unexpected-eventemitter';
+import {Env} from '@humanwhocodes/env';
+
+const env = new Env();
+
+const HOST = /** @type {string} */(env.get('TEST_TIZEN_REMOTE_HOST', '127.0.0.1'));
+const PORT = env.get('TEST_TIZEN_REMOTE_PORT');
 
 const debug = d('tizen-remote:test:e2e:ws');
 
 const expect = unexpected.clone().use(unexpectedSinon).use(unexpectedEventEmitter);
 
 describe('websocket behavior', function () {
-  const HOST = '127.0.0.1';
-
   /** @type {TestWSServer} */
   let server;
 
@@ -33,12 +50,16 @@ describe('websocket behavior', function () {
 
   beforeEach(async function () {
     sandbox = createSandbox();
-    port = await getPort();
-    server = new TestWSServer({
-      host: HOST,
-      port,
-      path: constants.API_PATH_V2,
-    });
+    if (PORT) {
+      port = Number(PORT);
+    } else {
+      port = await getPort();
+      server = new TestWSServer({
+        host: HOST,
+        port,
+        path: constants.API_PATH_V2,
+      });
+    }
     remoteOpts = {
       host: HOST,
       port,
@@ -72,6 +93,7 @@ describe('websocket behavior', function () {
           remoteOpts.token = undefined;
           remote = new TizenRemote(remoteOpts);
         });
+
         it('should request a token from the server', async function () {
           return await expect(
             remote.connect(),
@@ -82,13 +104,13 @@ describe('websocket behavior', function () {
           );
         });
 
-        describe('when the request time exceeds "tokenTimeout"', function() {
+        describe('when the request time exceeds "tokenTimeout"', function () {
           beforeEach(function () {
             remoteOpts.token = undefined;
             remoteOpts.tokenTimeout = 1;
             remote = new TizenRemote(remoteOpts);
           });
-          it('should reject', async function() {
+          it('should reject', async function () {
             return await expect(
               remote.connect(),
               'to be rejected with error satisfying',

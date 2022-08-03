@@ -30,7 +30,7 @@
   "directories": {
     "lib": "lib",
     "test": "test"
-    },
+  },
   "files": [
     "lib",
     "build",
@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@babel/runtime": "7.18.2",
+    "@humanwhocodes/env": "2.2.0",
     "debug": "4.3.4",
     "delay": "4.4.1",
     "p-retry": "4.6.2",
