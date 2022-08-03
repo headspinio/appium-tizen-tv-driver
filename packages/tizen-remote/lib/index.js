@@ -408,7 +408,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @param {KeyCode} key
    */
   async release(key) {
-    await this.send(new KeyCommand(KeyCmd.PRESS, key));
+    await this.send(new KeyCommand(KeyCmd.RELEASE, key));
   }
 
   /**
