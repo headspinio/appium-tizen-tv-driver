@@ -8,7 +8,13 @@
  * - `TEST_TIZEN_REMOTE_HOST`: The host of the WebSocket server.
  * - `TEST_TIZEN_REMOTE_PORT`: The port of the WebSocket server.
  *
- * If these env variables are _not_ present, a mock server will be started on a random port.
+ * If the above env variables are _not_ present, a mock server will be started on a random port.
+ *
+ * This is optional:
+ *
+ * - `TEST_TIZEN_REMOTE_TOKEN`: The token to use for the WebSocket server
+ *
+ * Tokens are associated with "names", and the default name in this module is `Appium`.
  *
  * @module
  */
@@ -25,8 +31,9 @@ import {Env} from '@humanwhocodes/env';
 
 const env = new Env();
 
-const HOST = /** @type {string} */(env.get('TEST_TIZEN_REMOTE_HOST', '127.0.0.1'));
+const HOST = /** @type {string} */ (env.get('TEST_TIZEN_REMOTE_HOST', '127.0.0.1'));
 const PORT = env.get('TEST_TIZEN_REMOTE_PORT');
+const TOKEN = env.get('TEST_TIZEN_REMOTE_TOKEN');
 
 const debug = d('tizen-remote:test:e2e:ws');
 
@@ -48,12 +55,40 @@ describe('websocket behavior', function () {
   /** @type {import('../../lib').TizenRemoteOptions} */
   let remoteOpts;
 
-  beforeEach(async function () {
-    sandbox = createSandbox();
+  /** @type {string} */
+  let token;
+
+  before(async function () {
     if (PORT) {
+      this.timeout('1m');
       port = Number(PORT);
+      if (TOKEN) {
+        token = TOKEN;
+      } else {
+        debug('[SETUP] Getting token from %s:%d; this may be slow...', HOST, port);
+        const remote = new TizenRemote({
+          host: HOST,
+          port
+        });
+        token = await new Promise((resolve, reject) => {
+          remote
+            .once(Event.TOKEN, (t) => {
+              resolve(t);
+            })
+            .on('error', reject);
+          remote.connect();
+        });
+        debug('[SETUP] Got token: %s', token);
+        await remote.disconnect();
+      }
     } else {
       port = await getPort();
+    }
+  });
+
+  beforeEach(function () {
+    sandbox = createSandbox();
+    if (!PORT) {
       server = new TestWSServer({
         host: HOST,
         port,
@@ -63,27 +98,31 @@ describe('websocket behavior', function () {
     remoteOpts = {
       host: HOST,
       port,
-      name: 'test',
-      token: 'hoboken',
+      token
     };
   });
 
   afterEach(async function () {
     sandbox.restore();
-    if (remote) {
+    if (remote?.isConnected) {
       try {
         debug('[CLEANUP] Disconnecting from remote attached to %s:%d', HOST, port);
         await remote.disconnect();
       } catch {}
     }
-    debug('[CLEANUP] Stopping server listening on %s:%d', HOST, port);
-    try {
-      await server.stop();
-    } catch {}
+    if (server) {
+      debug('[CLEANUP] Stopping server listening on %s:%d', HOST, port);
+      try {
+        await server.stop();
+      } catch {}
+    }
   });
 
   it('should connect', async function () {
     remote = new TizenRemote(remoteOpts);
+    remote.once(Event.TOKEN, (t) => {
+      token = t;
+    });
     await remote.connect();
     expect(remote.isConnected, 'to be true');
   });
@@ -92,6 +131,9 @@ describe('websocket behavior', function () {
     describe('token negotiation', function () {
       describe('when the remote has no token', function () {
         beforeEach(function () {
+          if (!server) {
+            return this.skip();
+          }
           remoteOpts.token = undefined;
           remote = new TizenRemote(remoteOpts);
         });
@@ -101,8 +143,7 @@ describe('websocket behavior', function () {
             remote.connect(),
             'to emit from',
             remote,
-            Event.TOKEN,
-            `token-${remoteOpts.name}`
+            Event.TOKEN
           );
         });
 
@@ -134,6 +175,10 @@ describe('websocket behavior', function () {
 
     describe('when connection fails', function () {
       beforeEach(async function () {
+        if (!server) {
+          // TODO: figure out how to test this when we do not have a mock server
+          return this.skip();
+        }
         // stop the currently-listening server entirely
         await server.stop();
       });
@@ -188,6 +233,13 @@ describe('websocket behavior', function () {
     });
 
     describe('when unexpectedly disconnected', function () {
+      beforeEach(function () {
+        if (!server) {
+          // TODO: figure out how to test this when we do not have a mock server
+          return this.skip();
+        }
+      });
+
       describe('when auto-reconnect is enabled', function () {
         it('should auto-reconnect', async function () {
           this.timeout('5s');
@@ -270,27 +322,16 @@ describe('websocket behavior', function () {
     });
 
     describe('when connected', function () {
-      it('should send the data as JSON', async function () {
-        this.timeout('5s');
+      beforeEach(async function () {
+        await remote.connect();
+      });
 
-        // I can simplify this. I just didn't.
-        return await expect(
-          new Promise((resolve, reject) => {
-            server.on('connection', (ws) => {
-              ws.on('message', (data) => {
-                try {
-                  resolve(String(data));
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            });
-            remote
-              .connect()
-              .then(() => remote.send({foo: 'bar'}))
-              .catch(reject);
-          }),
-          'to be fulfilled with',
+      it('should send the data as JSON', async function () {
+        await expect(
+          remote.send({foo: 'bar'}),
+          'to emit from',
+          remote,
+          Event.SENT,
           '{"foo":"bar"}'
         );
       });
@@ -306,39 +347,17 @@ describe('websocket behavior', function () {
           );
         });
       });
-    });
 
-    describe('keypress behavior', function () {
-      it('should send a click command', async function () {
-        this.timeout('5s');
-
-        return await expect(
-          new Promise((resolve, reject) => {
-            server.on('connection', (sock) => {
-              sock.on('message', (data) => {
-                try {
-                  resolve(JSON.parse(String(data)));
-                } catch (err) {
-                  reject(err);
-                }
-              });
-            });
-            remote
-              .connect()
-              .then(() => remote.click(Keys.ENTER))
-              .catch(reject);
-          }),
-          'to be fulfilled with',
-          {
-            method: 'ms.remote.control',
-            params: {
-              Cmd: 'Click',
-              DataOfCmd: 'KEY_ENTER',
-              Option: 'false',
-              TypeOfRemote: 'SendRemoteKey',
-            },
-          }
-        );
+      describe('keypress behavior', function () {
+        it('should send a click command', async function () {
+          await expect(
+            remote.click(Keys.ENTER),
+            'to emit from',
+            remote,
+            Event.SENT,
+            '{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":"KEY_ENTER","Option":"false","TypeOfRemote":"SendRemoteKey"}}'
+          );
+        });
       });
     });
   });
