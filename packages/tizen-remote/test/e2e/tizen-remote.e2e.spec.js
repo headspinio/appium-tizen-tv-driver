@@ -77,7 +77,9 @@ describe('websocket behavior', function () {
       } catch {}
     }
     debug('[CLEANUP] Stopping server listening on %s:%d', HOST, port);
-    await server.stop();
+    try {
+      await server.stop();
+    } catch {}
   });
 
   it('should connect', async function () {

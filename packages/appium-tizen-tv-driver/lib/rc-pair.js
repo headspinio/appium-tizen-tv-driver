@@ -38,7 +38,7 @@ async function main() {
       alias: 't',
       describe: 'Token retrieved from previous call (to test if pairing is successful)',
     })
-    .demandOption(['host'], 'Please provide both host and mac arguments')
+    .demandOption(['host'], 'Please provide "host" argument')
     .help().argv;
 
   if (token) {
