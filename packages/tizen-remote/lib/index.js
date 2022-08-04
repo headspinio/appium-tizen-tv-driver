@@ -60,6 +60,7 @@ export const constants = /** @type {const} */ ({
   DEFAULT_TOKEN_TIMEOUT: 35000,
   DEFAULT_PORT: 8001,
   DEFAULT_SSL: false,
+  DEFAULT_NAME: 'Appium',
   COMMAND_METHOD: 'ms.remote.control',
   TOKEN_EVENT: 'ms.channel.connect',
   COMMAND_PARAMS_OPTION: 'false',
@@ -192,7 +193,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#host = opts.host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
-    this.#name = opts.name ?? '@headspinio/tizen-remote';
+    this.#name = opts.name ?? constants.DEFAULT_NAME;
     this.#debug = debug(`tizen-remote [${this.#name}]`);
 
     this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
