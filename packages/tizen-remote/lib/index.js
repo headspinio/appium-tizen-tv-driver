@@ -68,10 +68,9 @@ export const constants = /** @type {const} */ ({
 
 /**
  * Events emitted by {@linkcode TizenRemote}.
- * @enum {keyof TizenRemoteEventData}
  * @event
  */
-export const Event = /** @type { Record<string,keyof TizenRemoteEventData> } */ ({
+export const Event = /** @type {const} */({
   CONNECT: 'connect',
   CONNECTING: 'connecting',
   DISCONNECT: 'disconnect',
@@ -79,6 +78,7 @@ export const Event = /** @type { Record<string,keyof TizenRemoteEventData> } */ 
   ERROR: 'error',
   RETRY: 'retry',
   TOKEN: 'token',
+  SENT: 'sent',
 });
 
 /**
@@ -262,6 +262,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       promisify(/** @type {WebSocket} */ (ws).send).bind(ws)
     );
     await send(payload);
+    this.emit(Event.SENT, payload);
   }
 
   /**
@@ -702,6 +703,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * @property {void} disconnecting - Emitted when disconnecting manually
  * @property {number} retry - Emitted if retrying a connection
  * @property {string} token - Emitted when a new token is received
+ * @property {string} sent - Emitted when a message has successfully been sent
  * @event
  */
 
