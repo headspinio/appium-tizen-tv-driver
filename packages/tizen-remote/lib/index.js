@@ -247,6 +247,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
         throw new Error(`Disconnected; cannot send message: ${payload}`);
       }
       this.#debug('Disconnected when attempting to send; attempting connection...');
+      // connect() assigns this.#ws if it was successful, so we
+      // don't need to do so here.
       ws = await this.connect();
     }
     try {
@@ -257,7 +259,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       throw new TypeError(`Cannot serialize data to JSON: ${error.message}`);
     }
     const send = /** @type {(data: any) => Promise<void>} */ (
-      promisify(/** @type {WebSocket} */ (ws).send).bind(this.#ws)
+      promisify(/** @type {WebSocket} */ (ws).send).bind(ws)
     );
     await send(payload);
   }
@@ -322,6 +324,52 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
+   * Listen for an event on the WebSocket instance one or more times.
+   *
+   * Defaults to "more times"
+   * @template {(...args: any[]) => void} Listener
+   * @param {WsEvent} event
+   * @param {Listener} listener
+   * @param {{ context?: any, once?: boolean }} [opts]
+   * @returns {Listener}
+   */
+
+  #listenWs(event, listener, {context, once = false} = {}) {
+    if (!this.#ws) {
+      throw new Error('Not connected');
+    }
+
+    const method = once ? this.#ws.once : this.#ws.on;
+    const listeners = this.#listeners.get(event) ?? new Set();
+    this.#listeners.set(event, listeners);
+    if (context) {
+      /** @type {Listener} */
+      let boundListener;
+      if (once) {
+        boundListener = /** @type {Listener} */ (
+          (...args) => {
+            try {
+              listener.apply(context, args);
+            } finally {
+              // remove the listener if it's a one-time listener
+              listeners.delete(boundListener);
+            }
+          }
+        );
+      } else {
+        boundListener = /** @type {Listener} */ (listener.bind(context));
+      }
+      listeners.add(boundListener);
+      method.call(this.#ws, event, boundListener);
+      return boundListener;
+    }
+    listeners.add(listener);
+    method.call(this.#ws, event, listener);
+    return listener;
+  }
+
+  /**
+   * Listen for WebSocket event multiple times
    * @template {(...args: any[]) => void} Listener
    * @param {WsEvent} event
    * @param {Listener} listener
@@ -329,24 +377,11 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @returns {Listener}
    */
   #onWs(event, listener, {context} = {}) {
-    if (this.#ws) {
-      const listeners = this.#listeners.get(event) ?? new Set();
-      this.#listeners.set(event, listeners);
-      if (context) {
-        const boundListener = /** @type {Listener} */(listener.bind(context));
-        listeners.add(boundListener);
-        this.#ws.on(event, boundListener);
-        return boundListener;
-      }
-      listeners.add(listener);
-      this.#ws.on(event, listener);
-      return listener;
-    }
-    throw new Error('Not connected');
+    return this.#listenWs(event, listener, {context});
   }
 
   /**
-   *
+   * Listen for WebSocket event once.
    * @template {(...args: any[]) => void} Listener
    * @param {WsEvent} event
    * @param {Listener} listener
@@ -354,20 +389,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @returns {Listener}
    */
   #onceWs(event, listener, {context} = {}) {
-    if (this.#ws) {
-      const listeners = this.#listeners.get(event) ?? new Set();
-      this.#listeners.set(event, listeners);
-      if (context) {
-        const boundListener = /** @type {Listener} */(listener.bind(context));
-        listeners.add(boundListener);
-        this.#ws.once(event, boundListener);
-        return boundListener;
-      }
-      listeners.add(listener);
-      this.#ws.once(event, listener);
-      return listener;
-    }
-    throw new Error('Not connected');
+    return this.#listenWs(event, listener, {context, once: true});
   }
 
   /**
@@ -605,48 +627,45 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   async disconnect() {
     return await new Promise((resolve, reject) => {
-      if (this.#ws) {
-        if (this.isDisconnected) {
-          resolve();
-          return;
-        }
-
-        // disconnecting already in progress; easiest to just
-        // wait for our own event.
-        if (this.isDisconnecting) {
-          this.once(Event.DISCONNECT, () => {
-            resolve();
-          });
-          return;
-        }
-
-        this.emit(Event.DISCONNECTING);
-
-        this.#ws
-          .once(WsEvent.CLOSE, () => {
-            this.#debug('Closed connection to server %s', this.#url);
-            this.emit(Event.DISCONNECT);
-            resolve();
-          })
-          .once(WsEvent.ERROR, (err) => {
-            // XXX: rejection here might not be appropriate
-            reject(err);
-          });
-
-        // remove any listeners we may have created.
-        // this needs to happen before starting the disconnection
-        // due to auto-reconnect logic
-        for (const [event, listeners] of this.#listeners) {
-          for (const listener of listeners) {
-            this.#ws.removeListener(event, listener);
-          }
-        }
-        this.#listeners.clear();
-
-        this.#ws.close();
+      // nothing to do!
+      if (!this.#ws || this.isDisconnected) {
+        resolve();
         return;
       }
-      resolve();
+
+      // disconnecting already in progress; easiest to just
+      // wait for our own event.
+      if (this.isDisconnecting) {
+        this.once(Event.DISCONNECT, () => {
+          resolve();
+        });
+        return;
+      }
+
+      this.emit(Event.DISCONNECTING);
+
+      this.#ws
+        .once(WsEvent.CLOSE, () => {
+          this.#debug('Closed connection to server %s', this.#url);
+          this.emit(Event.DISCONNECT);
+          resolve();
+        })
+        .once(WsEvent.ERROR, (err) => {
+          // XXX: rejection here might not be appropriate
+          reject(err);
+        });
+
+      // remove any listeners we may have created.
+      // this needs to happen before starting the disconnection
+      // due to auto-reconnect logic
+      for (const [event, listeners] of this.#listeners) {
+        for (const listener of listeners) {
+          this.#ws.removeListener(event, listener);
+        }
+      }
+      this.#listeners.clear();
+
+      this.#ws.close();
     });
   }
 }
