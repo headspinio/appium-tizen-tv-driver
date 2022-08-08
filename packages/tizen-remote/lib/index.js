@@ -26,6 +26,7 @@ function createdTypedEmitterClass() {
  * Codes received when a connection to a WSS fails.
  * @see https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.1
  * @enum {string}
+ * @group Constants
  */
 export const BadCode = /** @type {const} */ ({
   1002: 'Protocol Error',
@@ -41,29 +42,68 @@ export const BadCode = /** @type {const} */ ({
 });
 
 /**
- * @internal
- * @param {any} code
- * @returns {code is BadCode}
- */
-function isKnownBadCode(code) {
-  return code in BadCode;
-}
-
-/**
  * Constant values, defaults, etc.
+ * @group Constants
  */
 export const constants = /** @type {const} */ ({
+  /**
+   * Path on the Tizen device to the WS server
+   */
   API_PATH_V2: '/api/v2/channels/samsung.remote.control',
+
+  /**
+   * Timeout for initial handshake to the Tizen device (in ms)
+   */
   DEFAULT_HANDSHAKE_TIMEOUT: 1000,
+
+  /**
+   * Number of times to retry a failed connection
+   */
   DEFAULT_HANDSHAKE_RETRIES: 2,
+
+  /**
+   * If `true`, automatically attempt to reconnect when connection fails
+   */
   DEFAULT_AUTO_RECONNECT: true,
-  DEFAULT_TOKEN_TIMEOUT: 35000,
-  DEFAULT_PORT: 8001,
-  DEFAULT_SSL: false,
+
+  /**
+   * Wait this long to get a new token (in ms).
+   */
+  DEFAULT_TOKEN_TIMEOUT: 40000,
+
+  /**
+   * Default port on the Tizen device to connect to
+   */
+  DEFAULT_PORT: 8002,
+
+  /**
+   * Use SSL when connecting to the Tizen device
+   */
+  DEFAULT_SSL: true,
+
+  /**
+   * Default client name (before encoding to base64)
+   */
   DEFAULT_NAME: 'Appium',
+
+  /**
+   * The `Method` property in msg payload when sending commands to the Tizen device
+   */
   COMMAND_METHOD: 'ms.remote.control',
+
+  /**
+   * The `Event` property in msg payload when requesting a token
+   */
   TOKEN_EVENT: 'ms.channel.connect',
+
+  /**
+   * I don't know, but it goes in the command payload and it's always `'false'`.
+   */
   COMMAND_PARAMS_OPTION: 'false',
+
+  /**
+   * Value of the `TypeOfRemote` property in the command payload
+   */
   COMMAND_PARAMS_TYPE_OF_REMOTE: 'SendRemoteKey',
 });
 
@@ -83,10 +123,11 @@ export const Event = /** @type {const} */({
 });
 
 /**
+ * Valid types of keypresses which can be sent in the msg command payload
  * @enum {KeyCommandType}
  * @group Constants
  */
-export const KeyCmd = /** @type {Record<string,KeyCommandType>} */ ({
+export const KeyCmd = /** @type {const} */ ({
   PRESS: 'Press',
   CLICK: 'Click',
   RELEASE: 'Release',
@@ -106,6 +147,16 @@ export const WsEvent = /** @type {const} */ ({
 });
 
 /**
+ * Type guard for {@link BadCode}.
+ * @internal
+ * @param {any} code
+ * @returns {code is BadCode}
+ */
+ function isKnownBadCode(code) {
+  return code in BadCode;
+}
+
+/**
  * Represents a connection to a Tizen web socket server.
  */
 export class TizenRemote extends createdTypedEmitterClass() {
@@ -118,24 +169,33 @@ export class TizenRemote extends createdTypedEmitterClass() {
   /**
    * Websocket port on Tizen device
    * @type {number}
+   * @defaultValue See {@linkcode constants.DEFAULT_PORT}
    */
   #port;
 
   /**
-   * Application ID
+   * Client identifier.
+   *
+   * This will be associated with a token, so don't change it if you want to reuse a token!
    * @type {string}
    */
   #name;
 
   /**
-   * Super secret access token
+   * Super secret access token.
+   *
+   * Typically this is a `string` of eight (8) integers.  If `undefined`, we will either retrieve it from the
+   * environment or request one from the Tizen device.
    * @type {string|undefined}
    */
   #token;
 
   /**
    * Use SSL?
+   *
+   * If the port is `8002`, this will be automatically set to `true`.
    * @type {boolean}
+   * @defaultValue See {@linkcode constants.DEFAULT_SSL}
    */
   #ssl;
 
@@ -148,18 +208,21 @@ export class TizenRemote extends createdTypedEmitterClass() {
   /**
    * Number of times to retry connection/handshake
    * @type {number}
+   * @defaultValue See {@linkcode constants.DEFAULT_HANDSHAKE_RETRIES}
    */
   #handshakeRetries;
 
   /**
    * Whether or not to automatically reconnect when disconnected unexpectedly
    * @type {boolean}
+   * @defaultValue See {@linkcode constants.DEFAULT_AUTO_RECONNECT}
    */
   #autoReconnect;
 
   /**
    * How long to wait for a handshake to complete
    * @type {number}
+   * @defaultValue See {@linkcode constants.DEFAULT_HANDSHAKE_TIMEOUT}
    */
   #handshakeTimeout;
 
@@ -172,6 +235,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
   /**
    * How long to wait to receive a token from the Tizen device
    * @type {number}
+   * @defaultValue See {@linkcode constants.DEFAULT_TOKEN_TIMEOUT}
    */
   #tokenTimeout;
 
@@ -193,7 +257,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#host = opts.host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
-    this.#name = opts.name ?? constants.DEFAULT_NAME;
+    this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
     this.#debug = debug(`tizen-remote [${this.#name}]`);
 
     this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
@@ -231,11 +295,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
    *
    * This is low-level, and you probably want something else.
    * @param {any} data
-   * @param {SendOptions} [opts]
+   * @param {NoConnectOption & NoTokenOption} [opts]
    * @returns {Promise<void>}
    */
-  async send(data, {noConnect = false} = {}) {
-    let ws = this.#ws;
+  async send(data, {noConnect = false, noToken = false} = {}) {
     /** @type {string} */
     let payload;
     if (!this.#ws) {
@@ -250,7 +313,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       this.#debug('Disconnected when attempting to send; attempting connection...');
       // connect() assigns this.#ws if it was successful, so we
       // don't need to do so here.
-      ws = await this.connect();
+      await this.connect({noToken});
     }
     try {
       payload = JSON.stringify(data);
@@ -260,7 +323,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       throw new TypeError(`Cannot serialize data to JSON: ${error.message}`);
     }
     const send = /** @type {(data: any) => Promise<void>} */ (
-      promisify(/** @type {WebSocket} */ (ws).send).bind(ws)
+      promisify(/** @type {WebSocket} */ (this.#ws).send).bind(this.#ws)
     );
     await send(payload);
     this.emit(Event.SENT, payload);
@@ -273,10 +336,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template T
    * @param {string} channel
    * @param {any} data
-   * @param {SendOptions} [opts]
+   * @param {NoConnectOption & NoTokenOption} [opts]
    * @returns {Promise<T>}
    */
-  async sendRequest(channel, data, {noConnect = false} = {}) {
+  async sendRequest(channel, data, {noConnect = false, noToken = false} = {}) {
     /** @type {string} */
     let payload;
     /** @type {WebSocket} */
@@ -288,7 +351,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
         throw new Error(`Disconnected; cannot send message: ${data}`);
       }
       this.#debug('Not connected; attempting connection...');
-      ws = await this.connect();
+      ws = await this.connect({noToken});
     }
 
     try {
@@ -335,7 +398,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @param {{ context?: any, once?: boolean }} [opts]
    * @returns {Listener}
    */
-
   #listenWs(event, listener, {context, once = false} = {}) {
     if (!this.#ws) {
       throw new Error('Not connected');
@@ -449,15 +511,17 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Gets a new token from the Tizen device (if none exists).
    *
    * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
+   * @param {NoConnectOption} [opts]
    * @returns {Promise<string>}
    */
-  async getToken() {
+  async getToken({noConnect = false} = {}) {
     if (this.#token) {
       return this.#token;
     }
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
-      new KeyCommand(KeyCmd.CLICK, Keys.HOME)
+      new KeyCommand(KeyCmd.CLICK, Keys.HOME),
+      {noConnect, noToken: true}
     );
     if (res?.data?.token) {
       this.emit(Event.TOKEN, res.data.token);
@@ -476,9 +540,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Connect to the Tizen web socket server.
+   * @param {NoTokenOption} [opts]
    * @returns {Promise<WebSocket>}
    */
-  async connect() {
+  async connect({noToken = false} = {}) {
     // the default behavior of pRetry is to use an exponential backoff, so
     // that's what we are using
     try {
@@ -531,7 +596,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
       this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
 
-      if (!this.#token) {
+      if (!this.#token && !noToken) {
         this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
         this.#token = await this.getToken();
         this.#debug('Received token');
@@ -675,6 +740,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 /**
  * A key of {@linkcode Keys}.
  * @typedef {keyof typeof Keys} Key
+ * @group Utility
  */
 
 /**
@@ -710,7 +776,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
 /**
  * @typedef {import('strict-event-emitter-types').StrictEventEmitter<EventEmitter, TizenRemoteEventData>} TizenRemoteInstance
- * @internal
+ * @group Utility
  */
 
 /**
@@ -726,10 +792,14 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
+ * Potential value for {@linkcode TizenRemoteCommandParams.Cmd}.
+ * @group Message Data
  * @typedef {import('type-fest').LiteralUnion<KeyCommandType, string>} TizenRemoteCommandParamsCmd
  */
 
 /**
+ * The potential values for {@linkcode TizenRemoteCommandParams.TypeOfRemote}.
+ * @group Message Data
  * @typedef {'SendRemoteKey'|'SendRemoteText'} TizenRemoteCommandType
  */
 
@@ -745,20 +815,34 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * @group Message Data
  */
 
-// /**
-//  * This is the shape of a message object sent to the Tizen remote WS server.
-//  * @template {TizenRemoteCommandParamsCmd} Cmd
-//  * @template {TizenRemoteCommandParamsDataOfCmd<K>} Data
-//  * @template {Key | 'base64'} K
-//  * @typedef TizenRemoteCommand
-//  * @property {'ms.remote.control'} method
-//  * @property {TizenRemoteCommandParams<Cmd, Data, K>} params
-//  * @group Message Data
-//  */
+/**
+ * An object having a `noConnect` property. Used by various options
+ * @typedef NoConnectOption
+ * @property {boolean} [noConnect] - If `true`, do not automatically attempt to connect if disconnected
+ * @group Utility
+ */
 
 /**
- * Options for {@linkcode TizenRemote#send} and its ilk
+ * An object having a `noToken` property. Used by various options
+ * @typedef NoTokenOption
+ * @property {boolean} [noToken] - If `true`, do not automatically attempt to get a token if one is unset.
+ * @group Utility
+ */
+
+/**
+ * Options for {@linkcode TizenRemote#connect}.
  * @group Options
- * @typedef SendOptions
- * @property {boolean} [noConnect] - If `true`, do not attempt to connect if disconnected.
+ * @typedef {NoTokenOption} ConnectOptions
+ */
+
+/**
+ * Options for {@linkcode TizenRemote#send} and {@linkcode TizenRemote#sendRequest}.
+ * @group Options
+ * @typedef {NoTokenOption & NoConnectOption} SendOptions
+ */
+
+/**
+ * Options for {@linkcode TizenRemote#getToken}.
+ * @group Options
+ * @typedef {NoConnectOption} GetTokenOptions
  */

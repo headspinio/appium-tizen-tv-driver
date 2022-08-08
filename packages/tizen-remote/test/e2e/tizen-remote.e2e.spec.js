@@ -58,7 +58,25 @@ describe('websocket behavior', function () {
   /** @type {string} */
   let token;
 
+  /**
+   * Connects, gets a token, disconnects.
+   * @param {number} port
+   * @returns {Promise<string>}
+   */
+  async function getInitialToken(port) {
+    const remote = new TizenRemote({
+      host: HOST,
+      port,
+    });
+    try {
+      return await remote.getToken();
+    } finally {
+      await remote.disconnect();
+    }
+  }
+
   before(async function () {
+    // if PORT is set, we have some server running already.
     if (PORT) {
       this.timeout('1m');
       port = Number(PORT);
@@ -66,23 +84,29 @@ describe('websocket behavior', function () {
         token = TOKEN;
       } else {
         debug('[SETUP] Getting token from %s:%d; this may be slow...', HOST, port);
-        const remote = new TizenRemote({
-          host: HOST,
-          port
-        });
-        token = await new Promise((resolve, reject) => {
-          remote
-            .once(Event.TOKEN, (t) => {
-              resolve(t);
-            })
-            .on('error', reject);
-          remote.connect();
-        });
+        token = await getInitialToken(port);
         debug('[SETUP] Got token: %s', token);
-        await remote.disconnect();
       }
     } else {
+      this.timeout('10s');
       port = await getPort();
+      if (TOKEN) {
+
+        token = TOKEN;
+      } else {
+        server = new TestWSServer({
+          host: HOST,
+          port,
+          path: constants.API_PATH_V2,
+        });
+        try {
+          debug('[SETUP] Getting token from %s:%d...', HOST, port);
+          token = await getInitialToken(port);
+          debug('[SETUP] Got token: %s', token);
+        } finally {
+          await server.stop();
+        }
+      }
     }
   });
 
@@ -98,7 +122,7 @@ describe('websocket behavior', function () {
     remoteOpts = {
       host: HOST,
       port,
-      token
+      token,
     };
   });
 
@@ -120,9 +144,6 @@ describe('websocket behavior', function () {
 
   it('should connect', async function () {
     remote = new TizenRemote(remoteOpts);
-    remote.once(Event.TOKEN, (t) => {
-      token = t;
-    });
     await remote.connect();
     expect(remote.isConnected, 'to be true');
   });
@@ -139,12 +160,7 @@ describe('websocket behavior', function () {
         });
 
         it('should request a token from the server', async function () {
-          return await expect(
-            remote.connect(),
-            'to emit from',
-            remote,
-            Event.TOKEN
-          );
+          return await expect(remote.connect(), 'to emit from', remote, Event.TOKEN);
         });
 
         describe('when the request time exceeds "tokenTimeout"', function () {
