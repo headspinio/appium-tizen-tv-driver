@@ -11,7 +11,7 @@ const debug = d('tizen-remote:test:e2e:server');
  */
 const heartbeats = new WeakMap();
 
-const KEEP_ALIVE_TIMEOUT = 1000;
+const KEEP_ALIVE_TIMEOUT = 5000;
 
 /**
  * Websocket server for E2E API testing
