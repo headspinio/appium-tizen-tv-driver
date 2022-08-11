@@ -2,7 +2,7 @@
 
 import {TextCommand, KeyCommand} from './command';
 import {EventEmitter} from 'events';
-import {promisify} from 'node:util';
+import {promisify, format} from 'node:util';
 import WebSocket from 'ws';
 import debug from 'debug';
 import delay from 'delay';
@@ -111,7 +111,7 @@ export const constants = /** @type {const} */ ({
  * Events emitted by {@linkcode TizenRemote}.
  * @event
  */
-export const Event = /** @type {const} */({
+export const Event = /** @type {const} */ ({
   CONNECT: 'connect',
   CONNECTING: 'connecting',
   DISCONNECT: 'disconnect',
@@ -152,7 +152,7 @@ export const WsEvent = /** @type {const} */ ({
  * @param {any} code
  * @returns {code is BadCode}
  */
- function isKnownBadCode(code) {
+function isKnownBadCode(code) {
   return code in BadCode;
 }
 
@@ -243,19 +243,24 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Tracks listeners that we've added to the {@linkcode WebSocket} instance.
    *
    * We can remove them later to avoid leaking EE listeners.
-   * @type {Map<string,Set<(...args: any[]) => void>>}
+   * @type {Map<WsEvent,Set<(...args: any[]) => void>>}
    */
   #listeners = new Map();
 
   /**
-   * @param {TizenRemoteOptions} opts
+   * @param {string} host - IP or hostname of the Tizen device
+   * @param {TizenRemoteOptions} [opts]
    */
-  constructor(opts) {
+  constructor(host, opts = {}) {
     super();
+
+    if (!host) {
+      throw new TypeError('"host" parameter is required');
+    }
 
     const env = new Env();
 
-    this.#host = opts.host;
+    this.#host = host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
     this.#debug = debug(`tizen-remote [${this.#name}]`);
@@ -527,7 +532,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       this.emit(Event.TOKEN, res.data.token);
       return res.data.token;
     }
-    throw new Error(`Could not get token; server responded with: ${res}`);
+    throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
   }
 
   /**
@@ -540,75 +545,92 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Connect to the Tizen web socket server.
-   * @param {NoTokenOption} [opts]
+   * @param {ConnectOptions} [opts] - Options
    * @returns {Promise<WebSocket>}
    */
   async connect({noToken = false} = {}) {
     // the default behavior of pRetry is to use an exponential backoff, so
     // that's what we are using
-    try {
-      const ws = await pRetry(
-        (attempt) => {
-          this.#debug('Connecting to %s (attempt %d)...', this.#url, attempt);
-          return /** @type {Promise<WebSocket>} */ (
-            new Promise((resolve, reject) => {
-              this.emit(Event.CONNECTING);
+    const ws = await pRetry(
+      (attempt) => {
+        this.#debug('Connecting to %s (attempt %d)...', this.#url, attempt);
+        return /** @type {Promise<WebSocket>} */ (
+          new Promise((resolve, reject) => {
+            this.emit(Event.CONNECTING);
 
-              if (attempt > 1) {
-                this.emit(Event.RETRY, attempt);
-              }
-
-              const ws = new WebSocket(this.#url, {
-                handshakeTimeout: this.#handshakeTimeout,
-                rejectUnauthorized: false,
-              })
-                .once(WsEvent.OPEN, () => {
-                  this.#debug('Connected to %s', this.#url);
-                  resolve(ws);
-                })
-                .once(WsEvent.ERROR, (err) => {
-                  reject(err);
-                });
-            })
-          );
-        },
-        {
-          // note that if this function throws, no more retries will be attempted.
-          onFailedAttempt: (err) => {
-            this.#debug(
-              'Connection attempt %d (%d remain) failed: %s',
-              err.attemptNumber,
-              err.retriesLeft,
-              err.message
-            );
-            if (!err.retriesLeft) {
-              throw new Error(
-                `Cannot connect to ${this.#url} in ${err.attemptNumber} attempt(s); giving up`
-              );
+            if (attempt > 1) {
+              this.emit(Event.RETRY, attempt);
             }
-          },
-          retries: this.#handshakeRetries,
-        }
-      );
 
-      this.#ws = ws;
+            // The following two listeners would normally be handled by
+            // `#onceWs`, but since we don't yet _have_ a `#ws` property,
+            // we don't want to use them due to the complexity involved in
+            // trying to fake it.
 
-      this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
-      this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
+            /**
+             * Called if handshake fails.
+             *
+             * Must remove `WsEvent.ERROR` listener to avoid leaks.
+             * @param {Error} err
+             */
+            const errListener = (err) => {
+              ws.removeListener(WsEvent.OPEN, openListener);
+              reject(err);
+            };
 
-      if (!this.#token && !noToken) {
-        this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
-        this.#token = await this.getToken();
-        this.#debug('Received token');
+            /**
+             * Called if handshake succeeds
+             *
+             * **Must** remove `WsEvent.ERROR` listener to avoid leaks.
+             */
+            const openListener = () => {
+              this.#debug('Connected to %s', this.#url);
+              ws.removeListener(WsEvent.ERROR, errListener);
+              resolve(ws);
+            };
+
+            const ws = new WebSocket(this.#url, {
+              handshakeTimeout: this.#handshakeTimeout,
+              rejectUnauthorized: false,
+            })
+              .once(WsEvent.OPEN, openListener)
+              .once(WsEvent.ERROR, errListener);
+          })
+        );
+      },
+      {
+        // note that if this function throws, no more retries will be attempted.
+        onFailedAttempt: (err) => {
+          this.#debug(
+            'Connection attempt %d (%d remain) failed: %s',
+            err.attemptNumber,
+            err.retriesLeft,
+            err.message
+          );
+          if (!err.retriesLeft) {
+            return Promise.reject(new Error(
+              `Cannot connect to ${this.#url} in ${err.attemptNumber} attempt(s); giving up`
+            ));
+          }
+        },
+        retries: this.#handshakeRetries,
       }
+    );
 
-      this.emit(Event.CONNECT, ws);
+    this.#ws = ws;
 
-      return ws;
-    } catch (err) {
-      this.emit(Event.ERROR, /** @type {Error} */ (err));
-      throw err;
+    this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
+    this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
+
+    if (!this.#token && !noToken) {
+      this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
+      this.#token = await this.getToken();
+      this.#debug('Received token');
     }
+
+    this.emit(Event.CONNECT, ws);
+
+    return ws;
   }
 
   /**
@@ -693,47 +715,54 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @returns {Promise<void>}
    */
   async disconnect() {
-    return await new Promise((resolve, reject) => {
-      // nothing to do!
-      if (!this.#ws || this.isDisconnected) {
-        resolve();
-        return;
-      }
-
-      // disconnecting already in progress; easiest to just
-      // wait for our own event.
-      if (this.isDisconnecting) {
-        this.once(Event.DISCONNECT, () => {
+    try {
+      return await new Promise((resolve, reject) => {
+        // nothing to do!
+        if (!this.#ws || this.isDisconnected) {
           resolve();
-        });
-        return;
-      }
+          return;
+        }
 
-      this.emit(Event.DISCONNECTING);
+        // disconnecting already in progress; easiest to just
+        // wait for our own event.
+        if (this.isDisconnecting) {
+          this.once(Event.DISCONNECT, () => {
+            resolve();
+          });
+          return;
+        }
 
-      this.#ws
-        .once(WsEvent.CLOSE, () => {
+        this.emit(Event.DISCONNECTING);
+
+        // we may have a "close" listener for auto-reconnect, so
+        // we need to remove it before attempting disconnection.
+        const closeListeners = this.#listeners.get(WsEvent.CLOSE);
+        if (closeListeners) {
+          for (const listener of closeListeners) {
+            this.#ws.removeListener(WsEvent.CLOSE, listener);
+          }
+          closeListeners.clear();
+        }
+
+        this.#onceWs(WsEvent.CLOSE, () => {
           this.#debug('Closed connection to server %s', this.#url);
           this.emit(Event.DISCONNECT);
           resolve();
-        })
-        .once(WsEvent.ERROR, (err) => {
-          // XXX: rejection here might not be appropriate
+        });
+        this.#onceWs(WsEvent.ERROR, (err) => {
           reject(err);
         });
-
+        this.#ws.close();
+      });
+    } finally {
       // remove any listeners we may have created.
-      // this needs to happen before starting the disconnection
-      // due to auto-reconnect logic
       for (const [event, listeners] of this.#listeners) {
         for (const listener of listeners) {
-          this.#ws.removeListener(event, listener);
+          this.#ws?.removeListener(event, listener);
         }
       }
       this.#listeners.clear();
-
-      this.#ws.close();
-    });
+    }
   }
 }
 
@@ -747,7 +776,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * Options for {@linkcode TizenRemote#constructor}.
  * @group Options
  * @typedef TizenRemoteOptions
- * @property {string} host - Hostname or IP address of the Tizen device
  * @property {string} [token] - Remote control token
  * @property {number|string} [port] - Port of the Tizen device's WS server
  * @property {string} [name] - Name of this "virtual remote control"
