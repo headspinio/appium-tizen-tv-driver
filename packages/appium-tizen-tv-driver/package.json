@@ -35,7 +35,7 @@
     "build/lib"
   ],
   "dependencies": {
-    "@babel/runtime": "7.0.0",
+    "@babel/runtime": "7.18.2",
     "@headspinio/tizen-remote": "file:../tizen-remote",
     "appium-chromedriver": "4.27.1",
     "asyncbox": "2.0.4",
@@ -49,13 +49,12 @@
   },
   "scripts": {
     "clean": "npx rimraf build",
-    "prepare": "gulp prepublish",
-    "test": "gulp once",
-    "watch": "gulp watch",
-    "build": "gulp transpile",
-    "mocha": "mocha",
-    "lint": "gulp eslint",
-    "dev": "gulp dev --no-notif"
+    "build": "babel lib --root-mode=upward --out-dir=build/lib",
+    "prepare": "npm run build",
+    "dev": "npm run build -- --watch",
+    "test": "mocha \"test/unit/**/*.spec.js\"",
+    "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 5s",
+    "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore"
   },
   "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
   "appium": {
@@ -69,10 +68,7 @@
       "pair-remote": "./build/lib/rc-pair.js"
     }
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "peerDependencies": {
-    "appium": "^2.0.0-beta.41"
+    "appium": "^2.0.0-beta.43"
   }
 }

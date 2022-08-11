@@ -48,11 +48,11 @@
     "singleQuote": true
   },
   "dependencies": {
-    "appium-tizen-tv-driver": "file:./packages/appium-tizen-tv-driver"
+    "appium-tizen-tv-driver": "file:./packages/appium-tizen-tv-driver",
+    "tizen-remote": "file:./packages/tizen-remote"
   },
   "devDependencies": {
     "@appium/eslint-config-appium": "6.0.2",
-    "@appium/gulp-plugins": "7.0.2",
     "@babel/cli": "7.18.9",
     "@babel/core": "7.18.2",
     "@babel/plugin-transform-runtime": "7.18.2",
@@ -65,7 +65,7 @@
     "@types/node": "18.6.1",
     "@types/sinon": "10.0.13",
     "@types/ws": "8.5.3",
-    "appium": "^2.0.0-beta.41",
+    "appium": "^2.0.0-beta.43",
     "babel-plugin-source-map-support": "2.2.0",
     "cross-env": "7.0.3",
     "eslint": "^7.24.0",
@@ -73,7 +73,6 @@
     "eslint-plugin-mocha": "9.0.0",
     "eslint-plugin-promise": "6.0.0",
     "get-port": "5.1.1",
-    "gulp": "^4.0.0",
     "husky": "^8.0.1",
     "lerna": "^5.2.0",
     "lint-staged": "^13.0.3",
@@ -91,18 +90,7 @@
     "webdriverio": "7.20.9"
   },
   "engines": {
-    "node": ">=8",
-    "npm": ">=6"
-  },
-  "appium": {
-    "driverName": "tizentv",
-    "automationName": "TizenTV",
-    "platformNames": [
-      "TizenTV"
-    ],
-    "mainClass": "TizenTVDriver",
-    "scripts": {
-      "pair-remote": "./build/lib/rc-pair.js"
-    }
+    "node": ">=14",
+    "npm": ">=8"
   }
 }
