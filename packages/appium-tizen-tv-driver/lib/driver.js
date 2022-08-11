@@ -135,9 +135,8 @@ class TizenTVDriver extends BaseDriver {
   }
 
   setupRCApi({deviceAddress, rcToken}) {
-    this.remote = new TizenRemote({
+    this.remote = new TizenRemote(deviceAddress, {
       ...RC_OPTS,
-      host: deviceAddress,
       token: rcToken,
     });
   }
