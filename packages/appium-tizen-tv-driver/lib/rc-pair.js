@@ -18,9 +18,8 @@ export async function pairRemote({host}) {
 }
 
 export async function testRemote({host, token}) {
-  const rc = new TizenRemote({
+  const rc = new TizenRemote(host, {
     ...RC_OPTS,
-    host,
     token,
   });
 
