@@ -64,8 +64,7 @@ describe('websocket behavior', function () {
    * @returns {Promise<string>}
    */
   async function getInitialToken(port) {
-    const remote = new TizenRemote({
-      host: HOST,
+    const remote = new TizenRemote(HOST, {
       port,
     });
     try {
@@ -120,7 +119,6 @@ describe('websocket behavior', function () {
       });
     }
     remoteOpts = {
-      host: HOST,
       port,
       token,
     };
@@ -143,7 +141,7 @@ describe('websocket behavior', function () {
   });
 
   it('should connect', async function () {
-    remote = new TizenRemote(remoteOpts);
+    remote = new TizenRemote(HOST, remoteOpts);
     await remote.connect();
     expect(remote.isConnected, 'to be true');
   });
@@ -156,7 +154,7 @@ describe('websocket behavior', function () {
             return this.skip();
           }
           remoteOpts.token = undefined;
-          remote = new TizenRemote(remoteOpts);
+          remote = new TizenRemote(HOST, remoteOpts);
         });
 
         it('should request a token from the server', async function () {
@@ -167,7 +165,7 @@ describe('websocket behavior', function () {
           beforeEach(function () {
             remoteOpts.token = undefined;
             remoteOpts.tokenTimeout = 1;
-            remote = new TizenRemote(remoteOpts);
+            remote = new TizenRemote(HOST, remoteOpts);
           });
           it('should reject', async function () {
             return await expect(
@@ -181,7 +179,7 @@ describe('websocket behavior', function () {
 
       describe('when the remote has a token', function () {
         beforeEach(function () {
-          remote = new TizenRemote(remoteOpts);
+          remote = new TizenRemote(HOST, remoteOpts);
         });
         it('should not request a token from the server', async function () {
           return await expect(remote.connect(), 'not to emit from', remote, Event.TOKEN);
@@ -202,7 +200,7 @@ describe('websocket behavior', function () {
       describe('when given an explicit number of retries', function () {
         it('should retry an explicit number of times', async function () {
           this.timeout('5s');
-          remote = new TizenRemote(remoteOpts);
+          remote = new TizenRemote(HOST, remoteOpts);
 
           // use sinon here, as unexpected-eventemitter cannot currently assert
           // an event was emitted more than once
@@ -217,7 +215,7 @@ describe('websocket behavior', function () {
 
   describe('disconnection behavior', function () {
     beforeEach(function () {
-      remote = new TizenRemote(remoteOpts);
+      remote = new TizenRemote(HOST, remoteOpts);
     });
 
     describe('when connected', function () {
@@ -276,7 +274,7 @@ describe('websocket behavior', function () {
           it('should auto-reconnect with retries', async function () {
             this.timeout('10s');
             remote.on(Event.RETRY, (attempt) => {
-              debug('[RETRY] %d', attempt);
+              debug('[RETRY] Attempt %d', attempt);
             });
             await remote.connect();
             return new Promise((resolve) => {
@@ -293,7 +291,7 @@ describe('websocket behavior', function () {
 
       describe('when auto-reconnect is disabled', function () {
         beforeEach(function () {
-          remote = new TizenRemote({...remoteOpts, autoReconnect: false});
+          remote = new TizenRemote(HOST, {...remoteOpts, autoReconnect: false});
         });
 
         it('should not attempt reconnect', async function () {
@@ -318,7 +316,7 @@ describe('websocket behavior', function () {
 
   describe('messaging behavior', function () {
     beforeEach(function () {
-      remote = new TizenRemote(remoteOpts);
+      remote = new TizenRemote(HOST, remoteOpts);
     });
 
     describe('when disconnected', function () {

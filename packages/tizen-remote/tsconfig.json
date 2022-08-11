@@ -14,11 +14,8 @@
     "emitDeclarationOnly": true,
     "moduleResolution": "node",
     "types": ["node", "sinon", "mocha"],
-    "paths": {
-      "tizen-remote": ["./lib/index"]
-    },
     "resolveJsonModule": true,
     "composite": true,
   },
-  "include": ["lib/**/*.js", "test"]
+  "include": ["lib/**/*.js", "test/**/*"]
 }

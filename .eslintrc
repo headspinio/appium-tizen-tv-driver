@@ -1,3 +1,12 @@
 {
-  "extends": "@appium/eslint-config-appium"
+  "extends": "@appium/eslint-config-appium",
+  "overrides":[
+    {
+      "files": "packages/tizen-remote/**/*.js",
+      "rules": {
+        "promise/no-native": 0,
+        "no-restricted-syntax": 0
+      }
+    }
+  ]
 }
