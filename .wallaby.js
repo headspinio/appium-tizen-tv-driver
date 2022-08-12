@@ -10,10 +10,10 @@ module.exports = (wallaby) => {
       type: 'node',
     },
     files: [
-      './packages/**/*.js',
-      './packages/**/*.json',
-      '!./packages/**/build/**',
-      '!./packages/**/test/**/*.spec.js',
+      './packages/*/*.js',
+      './packages/*/lib/**/*.js',
+      './packages/*/*.json',
+      '!./packages/*/build/**',
       '!./packages/*/node_modules/**',
       '!./packages/*/gulpfile.js',
       '!./packages/*/scripts/**',
@@ -23,8 +23,7 @@ module.exports = (wallaby) => {
     testFramework: 'mocha',
     tests: [
       './packages/*/test/unit/**/*.spec.js',
-      './packages/tizen-remote/test/**/*.spec.js',
-      '!./packages/*/test/e2e/**/*',
+      './packages/tizen-remote/test/e2e/tizen-remote.e2e.spec.js'
     ],
     runMode: 'onsave',
     workers: {recycle: true},

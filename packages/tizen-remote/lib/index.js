@@ -1,5 +1,4 @@
-/* eslint-disable promise/no-native */
-
+import fs from 'node:fs/promises';
 import {TextCommand, KeyCommand} from './command';
 import {EventEmitter} from 'events';
 import {promisify, format} from 'node:util';
@@ -9,8 +8,15 @@ import delay from 'delay';
 import pRetry from 'p-retry';
 import {Keys} from './keys';
 import {Env} from '@humanwhocodes/env';
+import lockFile from 'lockfile';
+import Conf from 'conf';
+import path from 'path';
+import envPaths from 'env-paths';
 
 export {Keys};
+
+const lock = promisify(lockFile.lock);
+const unlock = promisify(lockFile.unlock);
 
 /**
  * This tricks TS into typing the events and associated data in {@linkcode TizenRemote}.
@@ -105,6 +111,21 @@ export const constants = /** @type {const} */ ({
    * Value of the `TypeOfRemote` property in the command payload
    */
   COMMAND_PARAMS_TYPE_OF_REMOTE: 'SendRemoteKey',
+
+  /**
+   * Basename of the token cache file
+   */
+  TOKEN_CACHE_BASENAME: 'token-cache',
+
+  /**
+   * Lockfile filename
+   */
+  TOKEN_CACHE_LOCKFILE_NAME: 'token-cache.lock',
+
+  /**
+   * Default value of `persistToken` option
+   */
+  DEFAULT_PERSIST_TOKEN: true
 });
 
 /**
@@ -248,6 +269,38 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #listeners = new Map();
 
   /**
+   * Token cache object.
+   *
+   * Will remain `undefined` if token persistence is disabled
+   * @type {Conf<Record<string,string>>|undefined}
+   */
+  #tokenCache;
+
+  /**
+   * Whether or not to persist tokens to the cache
+   * @type {boolean}
+   */
+  #persistToken;
+
+  /**
+   * Path to lockfile for token cache
+   * @type {string}
+   */
+  #lockfilePath;
+
+  /**
+   * Path to the (OS-dependent) cache dir containing both the token cache and the lockfile.
+   *
+   * This is determined via module `env-paths` both here and in the `conf` module.  We need
+   * this path before the cache is created due to the blocking writes in the `Conf` constructor,
+   * so we can create a lockfile here.  The path to the cache (and thus, this directory) is
+   * accessible via the `path` property of the `Conf` instance (`#tokenCache.path`) but by the
+   * time it's readable, it's too late.
+   * @type {string}
+   */
+  #cacheDir;
+
+  /**
    * @param {string} host - IP or hostname of the Tizen device
    * @param {TizenRemoteOptions} [opts]
    */
@@ -262,10 +315,17 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#host = host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
+      this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
     this.#debug = debug(`tizen-remote [${this.#name}]`);
 
+    // note: if this is unset, we will attempt to get a token from the fs cache,
+    // and if _that_ fails, we'll go ahead and ask the device for one.
     this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
+    this.#cacheDir = envPaths('tizen-remote', {suffix: 'nodejs'}).config;
+    this.#lockfilePath = path.join(this.#cacheDir, constants.TOKEN_CACHE_LOCKFILE_NAME);
+    this.#debug('Using lockfile %s', this.#lockfilePath);
+
     // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
     this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
     this.#autoReconnect =
@@ -277,6 +337,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#tokenTimeout = opts.tokenTimeout ?? constants.DEFAULT_TOKEN_TIMEOUT;
   }
 
+  /**
+   * Computed URL of the Tizen device's websocket endpoint
+   */
   get #url() {
     const url = new URL(
       `${this.#ssl ? 'wss' : 'ws'}://${this.#host}:${this.#port}${constants.API_PATH_V2}`
@@ -289,10 +352,103 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
-   * Computed URL of the Tizen web socket server.
+   * Just returns the client name (which is a base64-encoded string).
+   */
+  get base64Name() {
+    return this.#name;
+  }
+
+  /**
+   * Computed URL of the Tizen device's websocket endpoint (as a string)
    */
   get url() {
     return this.#url.toString();
+  }
+
+  /**
+   * The key to use for this client in the token cache
+   */
+  get #tokenCacheKey() {
+    return `${this.#name}.token`;
+  }
+
+  /**
+   * Unsets token.
+   *
+   * If token cache persistence is enabled, this will remove it from the cache as well.
+   */
+  async unsetToken() {
+    if (this.#persistToken) {
+      const cache = await this.#getTokenCache();
+      await this.#lock();
+      cache.delete(this.#tokenCacheKey);
+      await this.#unlock();
+    }
+    this.#token = undefined;
+    this.#debug('Reset token for client %s', this.#name);
+  }
+
+  /**
+   * Locks the lockfile
+   *
+   * Creates the cache dir if it does not exist.
+   */
+  async #lock() {
+    await fs.mkdir(this.#cacheDir, {recursive: true});
+    await lock(this.#lockfilePath);
+  }
+
+  /**
+   * Unlocks the lockfile
+   */
+  async #unlock() {
+    await fs.mkdir(this.#cacheDir, {recursive: true});
+    await unlock(this.#lockfilePath);
+  }
+
+  /**
+   * Initializes the token cache; otherwise returns the existing cache.
+   *
+   * Because the `Conf` constructor performs a blocking write to the fs, we need to
+   * wrap the instantiation in a lock.
+   *
+   * Aditionally, any future writes to the cache must be wrapped in the lock.
+   * @returns {Promise<Conf<Record<string,string>>>}
+   */
+  async #getTokenCache() {
+    /** @type {Conf<Record<string,string>>} */
+    let cache;
+    if (this.#tokenCache) {
+      cache = this.#tokenCache;
+    } else {
+      await this.#lock();
+      cache = this.#tokenCache = new Conf({
+        configName: constants.TOKEN_CACHE_BASENAME
+      });
+      await this.#unlock();
+    }
+    return cache;
+  }
+
+  /**
+   * Reads token (if available) from the token cache in the filesystem
+   * @returns {Promise<string|undefined>}
+   */
+  async readToken() {
+    const cache = await this.#getTokenCache();
+    return /** @type {string|undefined} */(cache.get(this.#tokenCacheKey));
+  }
+
+  /**
+   * Writes token to the token cache in the filesystem.
+   * @param {string} token
+   * @returns {Promise<void>}
+   */
+  async writeToken(token) {
+    const cache = await this.#getTokenCache();
+    await this.#lock();
+    cache.set(this.#tokenCacheKey, token);
+    await this.#unlock();
   }
 
   /**
@@ -523,12 +679,22 @@ export class TizenRemote extends createdTypedEmitterClass() {
     if (this.#token) {
       return this.#token;
     }
+    if (this.#persistToken) {
+      const token = await this.readToken();
+      if (token) {
+        this.#debug('Read token from cache: %s', token);
+        return token;
+      }
+    }
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
       new KeyCommand(KeyCmd.CLICK, Keys.HOME),
       {noConnect, noToken: true}
     );
     if (res?.data?.token) {
+      if (this.#persistToken) {
+        await this.writeToken(res.data.token);
+      }
       this.emit(Event.TOKEN, res.data.token);
       return res.data.token;
     }
@@ -626,6 +792,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
       this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
       this.#token = await this.getToken();
       this.#debug('Received token');
+    } else if (this.#token) {
+      await this.writeToken(this.#token);
     }
 
     this.emit(Event.CONNECT, ws);
@@ -784,6 +952,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * @property {number} [handshakeRetries] - Number of retries for the initial handshake
  * @property {number} [tokenTimeout] - Timeout for the token request (ms)
  * @property {boolean} [autoReconnect] - Whether to automatically reconnect on disconnection
+ * @property {boolean} [persistToken] - Whether to persist the token to disk _and_ whether to read it from disk when needed
  */
 
 /**
