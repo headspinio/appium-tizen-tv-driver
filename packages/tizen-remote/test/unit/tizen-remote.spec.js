@@ -22,6 +22,7 @@ describe('TizenRemote', function () {
   /** @type {typeof import('../../lib/index').Event} */
   let Event;
 
+  /** @type { {ws: MockWebSocket, '@humanwhocodes/env': {Env: sinon.SinonStub}, conf: typeof MockConf, lockfile: typeof MockLockfile, fs: typeof MockFs}} */
   let mocks;
 
   /** @type {typeof import('../../lib/index').constants} */
@@ -32,6 +33,18 @@ describe('TizenRemote', function () {
 
   /** @type {InstanceType<MockWebSocket>} */
   let mockWs;
+
+  /** @type { sinon.SinonStub<any,typeof mockConf>} */
+  let MockConf;
+
+  /** @type { {lock: sinon.SinonStub, unlock: sinon.SinonStub}} */
+  let MockLockfile;
+
+  /** @type {{get: sinon.SinonStub<[string],string|undefined>, set: sinon.SinonStub<[string], void>, delete: sinon.SinonStub}} */
+  let mockConf;
+
+  /** @type {{unlink: sinon.SinonStub<[string],Promise<void>>, mkdir: sinon.SinonStub<[string, import('fs').MakeDirectoryOptions],Promise<void>>}} */
+  let MockFs;
 
   /** @type {new (url: string, opts?: import('ws').ClientOptions) => EventEmitter & {close: () => void, send: (msg: string, done: ((err?: Error) => void)) => void}} */
   let MockWebSocket;
@@ -67,7 +80,7 @@ describe('TizenRemote', function () {
             setTimeout(() => {
               this.emit(
                 WsEvent.MESSAGE,
-                JSON.stringify({event: constants.TOKEN_EVENT, data: {token: 'token'}})
+                JSON.stringify({event: constants.TOKEN_EVENT, data: {token: 'server-token'}})
               );
             });
           });
@@ -92,11 +105,25 @@ describe('TizenRemote', function () {
       static CLOSED = 3;
     };
 
+    MockLockfile = {lock: sandbox.stub().callsArgAsync(1), unlock: sandbox.stub().callsArgAsync(1)};
+    mockConf = {
+      get: /** @type {typeof mockConf.get} */ (sandbox.stub().returns('cached-token')),
+      set: /** @type {typeof mockConf.set} */ sandbox.stub(),
+      delete: sandbox.stub()
+    };
+    MockConf = sandbox.stub().returns(mockConf);
+    MockFs = {
+      unlink: /** @type {typeof MockFs['unlink']} */(sandbox.stub().resolves()),
+      mkdir: /** @type {typeof MockFs['mkdir']} */(sandbox.stub().resolves()),
+    };
     mocks = {
       '@humanwhocodes/env': {
         Env: sandbox.stub().returns(mockEnv),
       },
       ws: MockWebSocket,
+      conf: MockConf,
+      lockfile: MockLockfile,
+      fs: MockFs
     };
     ({TizenRemote, WsEvent, Event, constants} = rewiremock.proxy(
       () => require('../../lib/index'),
@@ -169,15 +196,59 @@ describe('TizenRemote', function () {
         it('should emit CONNECT event', async function () {
           await expect(() => remote.connect(), 'to emit from', remote, Event.CONNECT);
         });
+
         describe('when a token is needed', function () {
-          it('should emit TOKEN event', async function () {
-            await expect(() => remote.connect(), 'to emit from', remote, Event.TOKEN);
+          describe('when token persistence is enabled', function () {
+            it('should initialize the token cache', async function () {
+              await remote.connect();
+              expect(mocks.conf, 'was called once');
+            });
+
+            describe('when token cache get is a hit', function () {
+              it('should retrieve a token from the cache', async function () {
+                await remote.connect();
+                expect(mockConf.get, 'was called once');
+              });
+            });
+
+            describe('when token cache get is a miss', function () {
+              beforeEach(function () {
+                mockConf.get.returns(undefined);
+              });
+
+              it('should attempt to retrieve the token from the device', async function () {
+                await expect(
+                  () => remote.connect(),
+                  'to emit from',
+                  remote,
+                  Event.TOKEN,
+                  'server-token'
+                );
+              });
+
+              it('should write the resulting token to the cache', async function () {
+                await remote.connect();
+                expect(mockConf.set, 'to have a call satisfying', [
+                  `${remote.base64Name}.token`,
+                  'server-token',
+                ]);
+              });
+            });
+          });
+
+          describe('when token persistence is disabled', function () {
+            beforeEach(function () {
+              remote = new TizenRemote('host', {persistToken: false});
+            });
+            it('should attempt to retrieve the token from the device', async function () {
+              await expect(() => remote.connect(), 'to emit from', remote, Event.TOKEN);
+            });
           });
         });
 
         describe('when a token is not needed', function () {
           beforeEach(function () {
-            remote = new TizenRemote('host', {token: 'token'});
+            remote = new TizenRemote('host', {token: 'user-token'});
           });
           it('should not emit TOKEN event', async function () {
             await expect(() => remote.connect(), 'not to emit from', remote, Event.TOKEN);
@@ -262,6 +333,26 @@ describe('TizenRemote', function () {
               expect(mockWs.eventNames(), 'to equal', []);
             }
           });
+        });
+      });
+    });
+
+    describe('unsetToken()', function() {
+      describe('when token persistence is enabled', function() {
+        it('should remove the token from the cache', async function() {
+          await remote.unsetToken();
+          expect(mockConf.delete, 'to have a call satisfying', [`${remote.base64Name}.token`]);
+        });
+      });
+
+      describe('when token persistence is enabled', function() {
+        beforeEach(function() {
+          remote = new TizenRemote('host', {persistToken: false});
+        });
+
+        it('should not touch the cache', async function() {
+          await remote.unsetToken();
+          expect(mockConf.delete, 'was not called');
         });
       });
     });

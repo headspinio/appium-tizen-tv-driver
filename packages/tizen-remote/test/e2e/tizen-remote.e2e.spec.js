@@ -148,41 +148,45 @@ describe('websocket behavior', function () {
 
   describe('connection behavior', function () {
     describe('token negotiation', function () {
-      describe('when the remote has no token', function () {
-        beforeEach(function () {
-          if (!server) {
-            return this.skip();
-          }
-          remoteOpts.token = undefined;
-          remote = new TizenRemote(HOST, remoteOpts);
+      describe('when persistence is disabled', function() {
+        beforeEach(function() {
+          remoteOpts.persistToken = false;
         });
-
-        it('should request a token from the server', async function () {
-          return await expect(remote.connect(), 'to emit from', remote, Event.TOKEN);
-        });
-
-        describe('when the request time exceeds "tokenTimeout"', function () {
+        describe('when the remote has no token', function () {
           beforeEach(function () {
+            if (!server) {
+              return this.skip();
+            }
             remoteOpts.token = undefined;
-            remoteOpts.tokenTimeout = 1;
             remote = new TizenRemote(HOST, remoteOpts);
           });
-          it('should reject', async function () {
-            return await expect(
-              remote.connect(),
-              'to be rejected with error satisfying',
-              /did not receive token in 1ms/i
-            );
+
+          it('should request a token from the server', async function () {
+            return await expect(() => remote.connect(), 'to emit from', remote, Event.TOKEN);
+          });
+
+          describe('when the request time exceeds "tokenTimeout"', function () {
+            beforeEach(function () {
+              remoteOpts.token = undefined;
+              remoteOpts.tokenTimeout = 1;
+              remote = new TizenRemote(HOST, remoteOpts);
+            });
+            it('should reject', async function () {
+              return await expect(
+                () => remote.connect(),
+                'to be rejected with error satisfying',
+                /did not receive token in 1ms/i
+              );
+            });
           });
         });
-      });
-
-      describe('when the remote has a token', function () {
-        beforeEach(function () {
-          remote = new TizenRemote(HOST, remoteOpts);
-        });
-        it('should not request a token from the server', async function () {
-          return await expect(remote.connect(), 'not to emit from', remote, Event.TOKEN);
+        describe('when the remote has a token', function () {
+          beforeEach(function () {
+            remote = new TizenRemote(HOST, remoteOpts);
+          });
+          it('should not request a token from the server', async function () {
+            return await expect(remote.connect(), 'not to emit from', remote, Event.TOKEN);
+          });
         });
       });
     });
