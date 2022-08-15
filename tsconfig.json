@@ -1,4 +1,4 @@
 {
   "files": [],
-  "references": [{"path": "packages/tizen-remote"}]
+  "references": [{"path": "packages/tizen-remote"}, {"path": "packages/mock-tizen-ws-server"}]
 }

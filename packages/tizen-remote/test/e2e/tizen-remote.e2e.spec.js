@@ -21,7 +21,7 @@
 
 import {createSandbox} from 'sinon';
 import getPort from 'get-port';
-import {TestWSServer} from './server';
+import {MockTizenWSServer} from '@headspinio/mock-tizen-ws-server';
 import unexpected from 'unexpected';
 import {constants, Event, Keys, TizenRemote} from '../../lib/index';
 import d from 'debug';
@@ -40,7 +40,7 @@ const debug = d('tizen-remote:test:e2e:ws');
 const expect = unexpected.clone().use(unexpectedSinon).use(unexpectedEventEmitter);
 
 describe('websocket behavior', function () {
-  /** @type {TestWSServer} */
+  /** @type {MockTizenWSServer} */
   let server;
 
   /** @type {number} */
@@ -93,7 +93,7 @@ describe('websocket behavior', function () {
 
         token = TOKEN;
       } else {
-        server = new TestWSServer({
+        server = new MockTizenWSServer({
           host: HOST,
           port,
           path: constants.API_PATH_V2,
@@ -112,7 +112,7 @@ describe('websocket behavior', function () {
   beforeEach(function () {
     sandbox = createSandbox();
     if (!PORT) {
-      server = new TestWSServer({
+      server = new MockTizenWSServer({
         host: HOST,
         port,
         path: constants.API_PATH_V2,

@@ -1,10 +1,10 @@
 import {promisify} from 'node:util';
 import {WebSocketServer} from 'ws';
-import {parse as parseUrl} from 'url';
+import {parse as parseUrl} from 'node:url';
 import d from 'debug';
 import delay from 'delay';
 
-const debug = d('tizen-remote:test:e2e:server');
+const debug = d('mock-tizen-ws-server');
 
 /**
  * @type {WeakMap<import('ws').WebSocket,boolean>}
@@ -16,7 +16,7 @@ const KEEP_ALIVE_TIMEOUT = 5000;
 /**
  * Websocket server for E2E API testing
  */
-export class TestWSServer extends WebSocketServer {
+export class MockTizenWSServer extends WebSocketServer {
   #keepAliveTimeout = KEEP_ALIVE_TIMEOUT;
 
   /** @type {NodeJS.Timer|undefined} */

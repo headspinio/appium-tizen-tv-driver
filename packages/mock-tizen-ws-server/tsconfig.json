@@ -16,10 +16,6 @@
     "types": ["node", "sinon", "mocha"],
     "resolveJsonModule": true,
     "composite": true,
-    "paths": {
-      "@headspinio/mock-tizen-ws-server": ["../mock-tizen-ws-server"]
-    }
   },
-  "include": ["lib/**/*.js", "test/**/*"],
-  "references": [{"path": "../mock-tizen-ws-server"}]
+  "include": ["lib/**/*.js", "test/**/*"]
 }

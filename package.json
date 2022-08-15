@@ -49,7 +49,8 @@
   },
   "dependencies": {
     "appium-tizen-tv-driver": "file:./packages/appium-tizen-tv-driver",
-    "tizen-remote": "file:./packages/tizen-remote"
+    "@headspinio/tizen-remote": "file:./packages/tizen-remote",
+    "@headspinio/mock-tizen-ws-server": "file:./packages/mock-tizen-ws-server"
   },
   "devDependencies": {
     "@appium/eslint-config-appium": "6.0.2",
