@@ -125,7 +125,7 @@ export const constants = /** @type {const} */ ({
   /**
    * Default value of `persistToken` option
    */
-  DEFAULT_PERSIST_TOKEN: true
+  DEFAULT_PERSIST_TOKEN: true,
 });
 
 /**
@@ -315,7 +315,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#host = host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
-      this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
+    this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
     this.#debug = debug(`tizen-remote [${this.#name}]`);
 
@@ -416,39 +416,44 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @returns {Promise<Conf<Record<string,string>>>}
    */
   async #getTokenCache() {
-    /** @type {Conf<Record<string,string>>} */
-    let cache;
     if (this.#tokenCache) {
-      cache = this.#tokenCache;
-    } else {
-      await this.#lock();
-      cache = this.#tokenCache = new Conf({
-        configName: constants.TOKEN_CACHE_BASENAME
-      });
-      await this.#unlock();
+      return this.#tokenCache;
     }
-    return cache;
+    await this.#lock();
+    this.#tokenCache = new Conf({
+      configName: constants.TOKEN_CACHE_BASENAME,
+    });
+    await this.#unlock();
+    return this.#tokenCache;
   }
 
   /**
    * Reads token (if available) from the token cache in the filesystem
+   *
+   * If `#persistToken` is false, this will _always_ return `undefined`.
    * @returns {Promise<string|undefined>}
    */
   async readToken() {
-    const cache = await this.#getTokenCache();
-    return /** @type {string|undefined} */(cache.get(this.#tokenCacheKey));
+    if (this.#persistToken) {
+      const cache = await this.#getTokenCache();
+      return cache.get(this.#tokenCacheKey);
+    }
   }
 
   /**
    * Writes token to the token cache in the filesystem.
+   *
+   * If `#persistToken` is false, this will _never_ write to the cache.
    * @param {string} token
    * @returns {Promise<void>}
    */
   async writeToken(token) {
-    const cache = await this.#getTokenCache();
-    await this.#lock();
-    cache.set(this.#tokenCacheKey, token);
-    await this.#unlock();
+    if (this.#persistToken) {
+      const cache = await this.#getTokenCache();
+      await this.#lock();
+      cache.set(this.#tokenCacheKey, token);
+      await this.#unlock();
+    }
   }
 
   /**
@@ -679,12 +684,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
     if (this.#token) {
       return this.#token;
     }
-    if (this.#persistToken) {
-      const token = await this.readToken();
-      if (token) {
-        this.#debug('Read token from cache: %s', token);
-        return token;
-      }
+    const token = await this.readToken();
+    if (token) {
+      this.#debug('Read token from cache: %s', token);
+      return token;
     }
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
@@ -692,9 +695,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       {noConnect, noToken: true}
     );
     if (res?.data?.token) {
-      if (this.#persistToken) {
-        await this.writeToken(res.data.token);
-      }
+      await this.writeToken(res.data.token);
       this.emit(Event.TOKEN, res.data.token);
       return res.data.token;
     }
@@ -774,9 +775,11 @@ export class TizenRemote extends createdTypedEmitterClass() {
             err.message
           );
           if (!err.retriesLeft) {
-            return Promise.reject(new Error(
-              `Cannot connect to ${this.#url} in ${err.attemptNumber} attempt(s); giving up`
-            ));
+            return Promise.reject(
+              new Error(
+                `Cannot connect to ${this.#url} in ${err.attemptNumber} attempt(s); giving up`
+              )
+            );
           }
         },
         retries: this.#handshakeRetries,
