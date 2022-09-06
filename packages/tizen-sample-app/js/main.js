@@ -22,6 +22,7 @@ const init = function () {
         acc[key.code] = key.name;
         return acc;
       }, /** @type {Record<string,string>} */ ({}));
+      $('#supported-btn-raw').text(JSON.stringify(supportedKeys, null, 2));
     } catch (err) {
       $('#supported-btn-raw').text(err.message);
     }
