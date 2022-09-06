@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@babel/runtime": "7.18.2",
-    "@humanwhocodes/env": "2.2.0",
+    "@humanwhocodes/env": "2.2.2",
     "conf": "10.2.0",
     "debug": "4.3.4",
     "delay": "4.4.1",
