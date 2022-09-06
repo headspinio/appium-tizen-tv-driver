@@ -34,7 +34,7 @@ function createdTypedEmitterClass() {
  * @enum {string}
  * @group Constants
  */
-export const BadCode = /** @type {const} */ ({
+export const BadCode = Object.freeze({
   1002: 'Protocol Error',
   1003: 'Invalid Data Type',
   1005: 'No Status',
@@ -132,7 +132,7 @@ export const constants = /** @type {const} */ ({
  * Events emitted by {@linkcode TizenRemote}.
  * @event
  */
-export const Event = /** @type {const} */ ({
+export const Event = Object.freeze({
   CONNECT: 'connect',
   CONNECTING: 'connecting',
   DISCONNECT: 'disconnect',
@@ -148,7 +148,7 @@ export const Event = /** @type {const} */ ({
  * @enum {KeyCommandType}
  * @group Constants
  */
-export const KeyCmd = /** @type {const} */ ({
+export const KeyCmd = Object.freeze({
   PRESS: 'Press',
   CLICK: 'Click',
   RELEASE: 'Release',
@@ -159,7 +159,7 @@ export const KeyCmd = /** @type {const} */ ({
  * @enum {string}
  * @event
  */
-export const WsEvent = /** @type {const} */ ({
+export const WsEvent = Object.freeze({
   CONNECT: 'connect',
   CLOSE: 'close',
   ERROR: 'error',
@@ -251,7 +251,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * It's `debug`
    * @type {debug.Debugger}
    */
-  #debug;
+  #debugger;
 
   /**
    * How long to wait to receive a token from the Tizen device
@@ -317,7 +317,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
-    this.#debug = debug(`tizen-remote [${this.#name}]`);
+    this.#debugger = debug(`tizen-remote [${this.#name}]`);
 
     // note: if this is unset, we will attempt to get a token from the fs cache,
     // and if _that_ fails, we'll go ahead and ask the device for one.
@@ -335,6 +335,15 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#handshakeTimeout = opts.handshakeTimeout ?? constants.DEFAULT_HANDSHAKE_TIMEOUT;
     this.#handshakeRetries = opts.handshakeRetries ?? constants.DEFAULT_HANDSHAKE_RETRIES;
     this.#tokenTimeout = opts.tokenTimeout ?? constants.DEFAULT_TOKEN_TIMEOUT;
+  }
+
+  /**
+   * When run via devtools, `debug` seems to delegate to `console` (??), which does not
+   * share Node's `printf`-like API.  This forces the issue.
+   * @param {...any} args
+   */
+  #debug(...args) {
+    this.#debugger(format(...args));
   }
 
   /**
@@ -641,7 +650,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Execute a "click" on the remote
-   * @param {KeyCode} key
+   * @param {RcKeyCode} key
    */
   async click(key) {
     await this.send(new KeyCommand(KeyCmd.CLICK, key));
@@ -649,7 +658,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Execute a "press" ("keydown") on the remote
-   * @param {KeyCode} key
+   * @param {RcKeyCode} key
    */
   async press(key) {
     await this.send(new KeyCommand(KeyCmd.PRESS, key));
@@ -657,7 +666,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Execute a "release" ("keyup") on the remote
-   * @param {KeyCode} key
+   * @param {RcKeyCode} key
    */
   async release(key) {
     await this.send(new KeyCommand(KeyCmd.RELEASE, key));
@@ -665,7 +674,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Execute a "long" press on the remote
-   * @param {KeyCode} key
+   * @param {RcKeyCode} key
    */
   async longPress(key, ms = 1000) {
     await this.send(new KeyCommand(KeyCmd.PRESS, key));
@@ -677,17 +686,19 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Gets a new token from the Tizen device (if none exists).
    *
    * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
-   * @param {NoConnectOption} [opts]
+   * @param {NoConnectOption & {force?: boolean}} [opts]
    * @returns {Promise<string>}
    */
-  async getToken({noConnect = false} = {}) {
-    if (this.#token) {
-      return this.#token;
-    }
-    const token = await this.readToken();
-    if (token) {
-      this.#debug('Read token from cache: %s', token);
-      return token;
+  async getToken({noConnect = false, force = false} = {}) {
+    if (!force) {
+      if (this.#token) {
+        return this.#token;
+      }
+      const token = await this.readToken();
+      if (token) {
+        this.#debug('Read token from cache: %s', token);
+        return token;
+      }
     }
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
@@ -981,7 +992,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
 /**
  * A named key constant as recognized by the Tizen remote WS server looks like this.
- * @typedef {import('type-fest').ValueOf<Keys>} KeyCode
+ * @typedef {import('type-fest').ValueOf<Keys>} RcKeyCode
  * @group Message Data
  */
 
@@ -1006,7 +1017,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 /**
  * Internal object within {@linkcode TizenRemoteCommand}.
  * @template {TizenRemoteCommandParamsCmd} Cmd
- * @template {KeyCode | 'base64'} Data
+ * @template {RcKeyCode | 'base64'} Data
  * @typedef TizenRemoteCommandParams
  * @property {Cmd} Cmd
  * @property {Data} DataOfCmd
