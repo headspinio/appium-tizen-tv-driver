@@ -167,7 +167,6 @@ describe('websocket behavior', function () {
 
           describe('when the request time exceeds "tokenTimeout"', function () {
             beforeEach(function () {
-              remoteOpts.token = undefined;
               remoteOpts.tokenTimeout = 1;
               remote = new TizenRemote(HOST, remoteOpts);
             });

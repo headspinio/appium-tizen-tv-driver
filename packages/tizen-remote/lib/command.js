@@ -3,12 +3,12 @@ import {constants} from './index';
 export class KeyCommand {
   method = constants.COMMAND_METHOD;
 
-  /** @type {import('./index').TizenRemoteCommandParams<import('./index').KeyCommandType, import('./index').KeyCode>} */
+  /** @type {import('./index').TizenRemoteCommandParams<import('./index').KeyCommandType, import('./index').RcKeyCode>} */
   params;
 
   /**
    * @param {import('./index').KeyCommandType} cmd
-   * @param {import('./index').KeyCode} data
+   * @param {import('./index').RcKeyCode} data
    */
   constructor(cmd, data) {
     this.params = {
