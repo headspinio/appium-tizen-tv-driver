@@ -7,6 +7,19 @@
         "promise/no-native": 0,
         "no-restricted-syntax": 0
       }
+    },
+    {
+      "files": "packages/tizen-sample-app/js/**/*.js",
+      "env": {
+        "browser": true
+      },
+      "globals": {
+        "tizen": false,
+        "startTime": true
+      },
+      "rules": {
+        "no-console": 0
+      }
     }
   ]
 }
