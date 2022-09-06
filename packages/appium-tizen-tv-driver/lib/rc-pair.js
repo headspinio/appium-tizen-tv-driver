@@ -3,10 +3,7 @@ import {TizenRemote, Keys as KEYS} from '@headspinio/tizen-remote';
 import {RC_OPTS} from './driver';
 
 export async function pairRemote({host}) {
-  const rc = new TizenRemote({
-    ...RC_OPTS,
-    host,
-  });
+  const rc = new TizenRemote(host, RC_OPTS);
 
   const token = await rc.getToken();
   if (token) {
