@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "types": ["jquery"]
+  },
+  "include": ["js"]
+}
