@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "target": "esnext",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": true,
+    "declarationMap": false,
+    "declarationDir": "build",
+    "emitDeclarationOnly": true,
+    "moduleResolution": "node",
+    "types": ["node", "sinon", "mocha"],
+    "resolveJsonModule": true,
+    "composite": true,
+    "paths": {
+      "@headspinio/tizen-remote": ["../tizen-remote"]
+    }
+  },
+  "include": ["lib/**/*", "test/**/*"],
+  "references": [{"path": "../tizen-remote"}]
+}

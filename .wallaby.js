@@ -8,6 +8,9 @@ module.exports = (wallaby) => {
     debug: true,
     env: {
       type: 'node',
+      params: {
+        env: 'DEBUG=tizen-remote*'
+      }
     },
     files: [
       './packages/*/*.js',
@@ -18,6 +21,7 @@ module.exports = (wallaby) => {
       '!./packages/*/gulpfile.js',
       '!./packages/*/scripts/**',
       './packages/*/test/**/fixtures/**/*',
+      './packages/*/test/**/helpers.js',
       './babel.config.json',
     ],
     testFramework: 'mocha',

@@ -1,4 +1,8 @@
 {
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
   "files": [],
   "references": [{"path": "packages/tizen-remote"}]
 }

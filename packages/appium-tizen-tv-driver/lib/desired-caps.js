@@ -1,4 +1,4 @@
-let commonCapConstraints = {
+const commonCapConstraints = {
   platformName: {
     isString: true,
     inclusionCaseInsensitive: ['TizenTV'],
@@ -37,16 +37,16 @@ let commonCapConstraints = {
   },
   rcToken: {
     isString: true,
-    presence: true,
   },
   sendKeysStrategy: {
     isString: true,
   },
+  rcMode: {
+    isString: true,
+    inclusionCaseInsensitive: ['remote', 'js']
+  }
 };
 
-let desiredCapConstraints = {};
+const desiredCapConstraints = {...commonCapConstraints};
 
-Object.assign(desiredCapConstraints, commonCapConstraints);
-
-export default desiredCapConstraints;
-export {commonCapConstraints};
+export {desiredCapConstraints};

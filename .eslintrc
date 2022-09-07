@@ -9,6 +9,18 @@
       }
     },
     {
+      "files": "packages/appium-tizen-tv-driver/lib/scripts.js",
+      "env": {
+        "browser": true
+      },
+      "rules": {
+        "promise/no-native": 0
+      },
+      "globals": {
+        "tizen": false
+      }
+    },
+    {
       "files": "packages/tizen-sample-app/js/**/*.js",
       "env": {
         "browser": true
