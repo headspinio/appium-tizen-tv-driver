@@ -1,7 +1,12 @@
 /**
+ * This is a mapping of key "names" to Tizen remote "key codes" as understood by the websocket API.
+ *
+ * Usually (?), key codes are numbers, but not these!
+ *
+ * Use {@linkcode isRcKeyCode} to check if a string is a valid {@linkcode RcKeyCode}.
  * @group Constants
  */
-export const Keys = /** @type {const} */({
+export const Keys = Object.freeze({
   0: 'KEY_0',
   1: 'KEY_1',
   2: 'KEY_2',
@@ -246,3 +251,4 @@ export const Keys = /** @type {const} */({
   ZOOM1: 'KEY_ZOOM1',
   ZOOM2: 'KEY_ZOOM2',
 });
+
