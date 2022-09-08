@@ -247,7 +247,7 @@ class TizenTVDriver extends BaseDriver {
    * which it is and run it.
    *
    * @template [TArg=any]
-   * @template [TReturn=any]
+   * @template [TReturn=unknown]
    * @template {import('type-fest').LiteralUnion<ScriptId, string>} [S=string]
    * @param {S} script
    * @param {S extends ScriptId ? [Record<string,any>] : TArg[]} args
@@ -272,9 +272,22 @@ class TizenTVDriver extends BaseDriver {
    * @returns {Promise<{value: TReturn}>}
    */
   async executeChromedriverScript(script, args = []) {
+    return await this.#executeChromedriverScript('/execute/sync', script, args);
+  }
+
+  /**
+   * Execute some arbitrary JS via Chromedriver.
+   * @template [TReturn=unknown]
+   * @template [TArg=any]
+   * @param {string} endpointPath - Relative path of the endpoint URL
+   * @param {((...args: any[]) => TReturn)|string} script
+   * @param {TArg[]} [args]
+   * @returns {Promise<{value: TReturn}>}
+   */
+  async #executeChromedriverScript(endpointPath, script, args = []) {
     const wrappedScript =
       typeof script === 'string' ? script : `return (${script}).apply(null, arguments)`;
-    return await this.chromedriver.sendCommand('/execute/sync', 'POST', {
+    return await this.chromedriver.sendCommand(endpointPath, 'POST', {
       script: wrappedScript,
       args,
     });
@@ -282,19 +295,14 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    * Execute some arbitrary JS via Chromedriver.
-   * @template [TReturn=any]
+   * @template [TReturn=unknown]
    * @template [TArg=any]
    * @param {((...args: any[]) => TReturn)|string} script
    * @param {TArg[]} [args]
    * @returns {Promise<{value: TReturn}>}
    */
   async executeChromedriverAsyncScript(script, args = []) {
-    const wrappedScript =
-      typeof script === 'string' ? script : `return (${script}).apply(null, arguments)`;
-    return await this.chromedriver.sendCommand('/execute/async', 'POST', {
-      script: wrappedScript,
-      args,
-    });
+    return await this.#executeChromedriverScript('/execute/async', script, args);
   }
 
   async deleteSession() {
