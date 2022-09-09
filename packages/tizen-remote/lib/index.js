@@ -99,6 +99,8 @@ export const constants = /** @type {const} */ ({
 
   /**
    * The `Event` property in msg payload when requesting a token
+   *
+   * Likewise the `event` property in a message payload when receiving the new token
    */
   TOKEN_EVENT: 'ms.channel.connect',
 
@@ -394,7 +396,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
       await this.#unlock();
     }
     this.#token = undefined;
-    this.#debug('Reset token for client %s', this.#name);
+    this.#debug('Unset token for client %s', this.#name);
   }
 
   /**
@@ -511,10 +513,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template T
    * @param {string} channel
    * @param {any} data
-   * @param {NoConnectOption & NoTokenOption} [opts]
+   * @param {SendRequestOptions} [opts]
    * @returns {Promise<T>}
    */
-  async sendRequest(channel, data, {noConnect = false, noToken = false} = {}) {
+  async sendRequest(channel, data, {noConnect = false, noToken = false, timeout} = {}) {
     /** @type {string} */
     let payload;
     /** @type {WebSocket} */
@@ -541,22 +543,28 @@ export class TizenRemote extends createdTypedEmitterClass() {
     await send(payload);
 
     return await new Promise((resolve, reject) => {
-      const tokenTimer = setTimeout(() => {
-        reject(new Error(`Did not receive token in ${this.#tokenTimeout}ms`));
-      }, this.#tokenTimeout);
+      /** @type {NodeJS.Timeout|undefined} */
+      let timer;
+
+      if (timeout !== undefined) {
+        timer = setTimeout(() => {
+          this.#offWs(WsEvent.MESSAGE, listener);
+          reject(new Error(`Did not receive token in ${timeout}ms`));
+        }, timeout);
+      }
 
       /** @param {import('ws').RawData} data */
       const listener = (data) => {
         try {
           const resData = JSON.parse(data.toString());
           if (resData.event === channel) {
+            this.#offWs(WsEvent.MESSAGE, listener);
+            clearTimeout(timer);
             resolve(resData);
           }
         } catch {
+          this.#debug('Failed to parse JSON from raw response: %O', data);
           // if we can't parse the data, it's not something we're interested in
-        } finally {
-          clearTimeout(tokenTimer);
-          this.#offWs(WsEvent.MESSAGE, listener);
         }
       };
       this.#onWs(WsEvent.MESSAGE, listener);
@@ -703,9 +711,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
       new KeyCommand(KeyCmd.CLICK, Keys.HOME),
-      {noConnect, noToken: true}
+      {noConnect, noToken: true, timeout: this.#tokenTimeout}
     );
     if (res?.data?.token) {
+      this.#debug('Received message w/ token: %s', res?.data?.token);
       await this.writeToken(res.data.token);
       this.emit(Event.TOKEN, res.data.token);
       return res.data.token;
@@ -1056,4 +1065,17 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * Options for {@linkcode TizenRemote#getToken}.
  * @group Options
  * @typedef {NoConnectOption} GetTokenOptions
+ */
+
+/**
+ * An object having a `timeout` property; used by various options.
+ * @group Utility
+ * @typedef TimeoutOption
+ * @property {number} [timeout] - Timeout for the request (ms)
+ */
+
+/**
+ * Options for {@linkcode TizenRemote#sendRequest}.
+ * @group Options
+ * @typedef {NoTokenOption & NoConnectOption & TimeoutOption} SendRequestOptions
  */
