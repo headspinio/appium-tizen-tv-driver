@@ -418,6 +418,21 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
+   * Resolves `true` if a token is set or the cache contains a token
+   * @returns {Promise<boolean>}
+   */
+  async hasToken() {
+    if (this.#token) {
+      return true;
+    }
+    if (this.#persistToken) {
+      const cache = await this.#getTokenCache();
+      return cache.has(this.#tokenCacheKey);
+    }
+    return false;
+  }
+
+  /**
    * Initializes the token cache; otherwise returns the existing cache.
    *
    * Because the `Conf` constructor performs a blocking write to the fs, we need to
