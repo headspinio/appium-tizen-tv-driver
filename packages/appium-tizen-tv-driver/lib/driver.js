@@ -25,14 +25,37 @@ import {getKeyData, isRcKeyCode} from './keymap';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
+
 /** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode'>} */
 const DEFAULT_CAPS = {
   appLaunchCooldown: DEFAULT_APP_LAUNCH_COOLDOWN,
   rcMode: 'js',
 };
+
+/**
+ * Constant for "js" RC mode, which uses Chromedriver to mimic keypressed
+ */
 export const RC_MODE_JS = 'js';
+
+/**
+ * Constant for "remote" RC mode, which uses the Tizen Remote Control API
+ */
+
 export const RC_MODE_REMOTE = 'remote';
+/**
+ * Platform name of this Driver.  Defined in `package.json`
+ */
+
+export const PLATFORM_NAME = 'TizenTV';
+/**
+ * Default duration of a "regular" keypress in ms.
+ */
+
 export const DEFAULT_KEYPRESS_DELAY = 200;
+
+/**
+ * Default duration of a "long" keypress in ms.
+ */
 export const DEFAULT_LONG_KEYPRESS_DELAY = 1000;
 
 /**
@@ -45,7 +68,14 @@ const NO_PROXY = [
   ['POST', new RegExp('^/session/[^/]+/execute')],
 ];
 
+/**
+ * Port of websocket server on device; used in "remote" RC mode.
+ */
 export const RC_PORT = 8002;
+
+/**
+ * "Name"
+ */
 export const RC_NAME = 'Appium';
 export const RC_OPTS = {
   port: RC_PORT,
@@ -79,24 +109,21 @@ class TizenTVDriver extends BaseDriver {
   /** @type {import('@appium/types').Constraints} */
   #desiredCapConstraints;
 
-  get desiredCapConstraints() {
-    return this.#desiredCapConstraints;;
-  }
-
   /** @type {boolean} */
   #jwpProxyActive;
 
-  /**
-   * @type {import('@appium/types').RouteMatcher[]}
-   */
+  /** @type {import('@appium/types').RouteMatcher[]} */
   #jwpProxyAvoid;
+
+  /** @type {Chromedriver|undefined} */
+  #chromedriver;
 
   /**
    *
-   * @param {any} [opts]
+   * @param {ServerArgs} [opts]
    * @param {boolean} [shouldValidateCaps]
    */
-  constructor(opts = {}, shouldValidateCaps = true) {
+  constructor(opts = /** @type {ServerArgs} */({}), shouldValidateCaps = true) {
     super(opts, shouldValidateCaps);
 
     this.locatorStrategies = [
@@ -108,6 +135,10 @@ class TizenTVDriver extends BaseDriver {
     this.#jwpProxyAvoid = [...NO_PROXY];
 
     this.#forwardedPorts = [];
+  }
+
+  get desiredCapConstraints() {
+    return this.#desiredCapConstraints;
   }
 
   /**
@@ -135,15 +166,20 @@ class TizenTVDriver extends BaseDriver {
     ));
     const caps = {...DEFAULT_CAPS, ...capabilities};
 
-    if (caps.rcMode === 'remote' && !caps.rcToken) {
-      throw new TypeError('Capability "rcToken" required when "rcMode" is "remote"');
-    }
-
+    // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
       this.#remote = new TizenRemote(caps.deviceAddress, {
         ...RC_OPTS,
         token: caps.rcToken,
       });
+      // we need to establish a valid token BEFORE chromedriver connects,
+      // or we will be booted out of the app once the "approval" modal dialog closes.
+      // while the token may not be passed thru caps, it may be in the
+      // environment or in a cache.
+      if (caps.resetRcToken || !(await this.#remote.hasToken())) {
+        log.info('Requesting new token; please wait...');
+        await this.#remote.getToken({force: true});
+      }
     }
 
     if (!caps.useOpenDebugPort) {
@@ -225,20 +261,20 @@ class TizenTVDriver extends BaseDriver {
    * @param {StartChromedriverOptions} opts
    */
   async startChromedriver({debuggerPort, executable}) {
-    this.chromedriver = new Chromedriver({
+    this.#chromedriver = new Chromedriver({
       port: await getPort(),
       executable,
     });
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
-    await this.chromedriver.start({
+    await this.#chromedriver.start({
       'goog:chromeOptions': {
         debuggerAddress,
       },
     });
-    this.proxyReqRes = this.chromedriver.proxyReq.bind(this.chromedriver);
-    this.proxyCommand = this.chromedriver.jwproxy.proxyCommand.bind(this.chromedriver);
+    this.proxyReqRes = this.#chromedriver.proxyReq.bind(this.#chromedriver);
+    this.proxyCommand = this.#chromedriver.jwproxy.proxyCommand.bind(this.#chromedriver);
     this.#jwpProxyActive = true;
   }
 
@@ -287,7 +323,7 @@ class TizenTVDriver extends BaseDriver {
   async #executeChromedriverScript(endpointPath, script, args = []) {
     const wrappedScript =
       typeof script === 'string' ? script : `return (${script}).apply(null, arguments)`;
-    return await this.chromedriver.sendCommand(endpointPath, 'POST', {
+    return await this.#chromedriver.sendCommand(endpointPath, 'POST', {
       script: wrappedScript,
       args,
     });
@@ -306,7 +342,7 @@ class TizenTVDriver extends BaseDriver {
   }
 
   async deleteSession() {
-    if (this.chromedriver) {
+    if (this.#chromedriver) {
       log.debug('Terminating app under test');
       try {
         await this.executeChromedriverScript(SyncScripts.exit);
@@ -315,21 +351,35 @@ class TizenTVDriver extends BaseDriver {
       }
       log.debug(`Stopping chromedriver`);
       // stop listening for the stopped state event
-      this.chromedriver.removeAllListeners(Chromedriver.EVENT_CHANGED);
+      this.#chromedriver.removeAllListeners(Chromedriver.EVENT_CHANGED);
       try {
-        await this.chromedriver.stop();
+        await this.#chromedriver.stop();
       } catch (err) {
         log.warn(`Error stopping Chromedriver: ${/** @type {Error} */ (err).message}`);
       }
-      this.chromedriver = null;
+      this.#chromedriver = undefined;
     }
 
-    if (this.#remote) {
-      await this.#remote.disconnect();
-      this.#remote = undefined;
-    }
+    await this.#disconnectRemote();
     await this.cleanUpPorts();
     return await super.deleteSession();
+  }
+
+  /**
+   * If we're in "remote" RC mode, disconnect from the remote server.
+   *
+   * Eats errors; they are emitted to the logger
+   */
+  async #disconnectRemote() {
+    if (this.#isRemoteRcMode) {
+      try {
+
+        await /** @type {TizenRemote} */(this.#remote).disconnect();
+      } catch (err) {
+        log.warn(`Error disconnecting remote: ${/** @type {Error} */(err).message}`);
+      }
+      this.#remote = undefined;
+    }
   }
 
   async cleanUpPorts() {
@@ -352,32 +402,49 @@ class TizenTVDriver extends BaseDriver {
   }
 
   /**
+   * This will be `true` if we are in "remote" RC mode _and_ have instantiated a
+   * {@linkcode TizenRemote} instance.
    *
+   * This getter is not sufficient to determine whether `this.#remote` is defined
+   * and cannot be used as a type guard.
+   */
+  get #isRemoteRcMode() {
+    return Boolean(this.opts.rcMode === RC_MODE_REMOTE && this.#remote);
+  }
+
+  /**
+   * Press a key on the remote control.
+   *
+   * Referenced in {@linkcode TizenTVDriver.executeMethodMap}
    * @param {RcKeyCode} rcKeyCode
+   * @returns {Promise<void>}
    */
   async pressKey(rcKeyCode) {
     if (!isRcKeyCode(rcKeyCode)) {
       throw new TypeError(`Invalid key code: ${rcKeyCode}`);
     }
-    if (this.#remote) {
+    if (this.#isRemoteRcMode) {
       log.debug(`Clicking key ${rcKeyCode} via remote`);
-      return await this.#pressKeyRemote(this.#remote, rcKeyCode);
+      return await this.#pressKeyRemote(rcKeyCode);
     }
     log.debug(`Clicking key ${rcKeyCode} via Chromedriver`);
-    return await this.#pressKeyJs(rcKeyCode);
+    await this.#pressKeyJs(rcKeyCode);
   }
 
   /**
    * Mimics a keypress via {@linkcode document.dispatchEvent}.
+   *
+   * Also handles "long presses"
    * @param {RcKeyCode} rcKeyCode
    * @param {number} [duration]
+   * @returns {Promise<void>}
    */
   async #pressKeyJs(rcKeyCode, duration = DEFAULT_KEYPRESS_DELAY) {
     const {code, key} = getKeyData(rcKeyCode);
     if (!code && !key) {
-      throw new Error(`Invalid key code: ${rcKeyCode}`);
+      throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
     }
-    return await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [
+    await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [
       code,
       key,
       duration,
@@ -386,35 +453,45 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    * Mimics a keypress via Tizen Remote API.
-   * @param {TizenRemote} remote
    * @param {RcKeyCode} key
+   * @returns {Promise<void>}
    */
-  async #pressKeyRemote(remote, key) {
-    return await remote.click(key);
+  async #pressKeyRemote(key) {
+    if (!this.#isRemoteRcMode) {
+      throw new TypeError(`Must be in "remote" RC mode to use this method`);
+    }
+    await /** @type {TizenRemote} */(this.#remote).click(key);
   }
 
   /**
    * Mimics a long keypress via Tizen Remote API
-   * @param {TizenRemote} remote
    * @param {RcKeyCode} rcKeyCode
    * @param {number} [duration]
+   * @returns {Promise<void>}
    */
-  async #longPressKeyRemote(remote, rcKeyCode, duration = 1000) {
+  async #longPressKeyRemote(rcKeyCode, duration = 1000) {
+    if (!this.#isRemoteRcMode) {
+      throw new TypeError(`Must be in "remote" RC mode to use this method`);
+    }
+    const remote = /** @type {TizenRemote} */(this.#remote);
     await remote.press(rcKeyCode);
     await B.delay(duration);
     await remote.release(rcKeyCode);
   }
 
   /**
+   * "Long press" a key with an optional duration.
    *
+   * Default duration is {@linkcode DEFAULT_LONG_KEYPRESS_DELAY}.
    * @param {RcKeyCode} key
    * @param {number} [duration]
+   * @returns {Promise<void>}
    */
   async longPressKey(key, duration = DEFAULT_LONG_KEYPRESS_DELAY) {
-    if (this.#remote) {
-      return await this.#longPressKeyRemote(this.#remote, key, duration);
+    if (this.#isRemoteRcMode) {
+      return await this.#longPressKeyRemote(key, duration);
     }
-    return await this.#pressKeyJs(key, duration);
+    await this.#pressKeyJs(key, duration);
   }
 
   /**
@@ -487,6 +564,7 @@ export default TizenTVDriver;
  * @property {string} [sendKeysStrategy]
  * @property {RcMode} [rcMode]
  * @property {number} [appLaunchCooldown]
+ * @property {boolean} [resetRcToken]
  */
 
 /**
@@ -502,4 +580,5 @@ export default TizenTVDriver;
  * @typedef {import('@headspinio/tizen-remote').RcKeyCode} RcKeyCode
  * @typedef {import('@appium/types').DriverData} DriverData
  * @typedef {import('@appium/types').W3CCapabilities} W3CCapabilities
+ * @typedef {import('@appium/types').ServerArgs} ServerArgs
  */

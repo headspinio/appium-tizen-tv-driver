@@ -37,7 +37,7 @@
     "tunnel:sdb": "npm run tunnel:base --port=26101",
     "sdb:local:connect": "sdb connect $npm_config_device:$npm_config_port",
     "sdb:local:disconnect": "sdb disconnect",
-    "sdb:remote:disconnect": "ssh -F $npm_config_sshconfig $npm_config_user@$npm_config_host sdb disconnect",
+    "sdb:remote:disconnect": "ssh -F $npm_config_sshconfig $npm_config_user@$npm_config_host $npm_config_path/sdb disconnect",
     "tunnel": "run-p tunnel:wss tunnel:sdb"
   },
   "lint-staged": {

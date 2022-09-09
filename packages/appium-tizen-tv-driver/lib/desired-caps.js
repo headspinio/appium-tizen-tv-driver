@@ -38,6 +38,9 @@ const commonCapConstraints = {
   rcToken: {
     isString: true,
   },
+  resetRcToken: {
+    isBoolean: true,
+  },
   sendKeysStrategy: {
     isString: true,
   },

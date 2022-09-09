@@ -7,6 +7,7 @@ import {RcKeyCode} from '@headspinio/tizen-remote';
 
 export interface TizenBrowser extends Browser<'async'> {
   pressKey(key: RcKeyCode): Promise<unknown>;
+  longPressKey(key: RcKeyCode, duration?: number): Promise<unknown>;
 }
 
 export function tizenBrowser(opts: RemoteOptions): Promise<TizenBrowser>;
