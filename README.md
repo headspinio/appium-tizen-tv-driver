@@ -6,6 +6,7 @@
 
 - [`appium-tizen-tv-driver`](https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/appium-tizen-tv-driver)
 - [`tizen-remote`](https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote)
+- [`tizen-sample-app`](https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-sample-app)
 
 ## License
 
