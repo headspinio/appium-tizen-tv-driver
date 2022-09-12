@@ -274,7 +274,7 @@ class TizenTVDriver extends BaseDriver {
       },
     });
     this.proxyReqRes = this.#chromedriver.proxyReq.bind(this.#chromedriver);
-    this.proxyCommand = this.#chromedriver.jwproxy.proxyCommand.bind(this.#chromedriver);
+    this.proxyCommand = this.#chromedriver.jwproxy.proxyCommand.bind(this.#chromedriver.jwproxy);
     this.#jwpProxyActive = true;
   }
 
@@ -373,7 +373,6 @@ class TizenTVDriver extends BaseDriver {
   async #disconnectRemote() {
     if (this.#isRemoteRcMode) {
       try {
-
         await /** @type {TizenRemote} */(this.#remote).disconnect();
       } catch (err) {
         log.warn(`Error disconnecting remote: ${/** @type {Error} */(err).message}`);
@@ -509,16 +508,12 @@ class TizenTVDriver extends BaseDriver {
       );
     }
 
-    if (this.opts.sendKeysStrategy === RC_TEXT_STRAT) {
+    if (this.#isRemoteRcMode && this.opts.sendKeysStrategy === RC_TEXT_STRAT) {
       if (Array.isArray(text)) {
         text = text.join('');
       }
-      await B.delay(800);
-      if (this.#remote) {
-        await this.#remote.text(text);
-      }
+      await /** @type {TizenRemote} */(this.#remote).text(text);
       await this.pressKey(Keys.ENTER);
-      await B.delay(800);
       return;
     }
 

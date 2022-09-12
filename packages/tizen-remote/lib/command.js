@@ -41,7 +41,7 @@ export class TextCommand {
       Cmd: Buffer.from(text).toString('base64'),
       DataOfCmd: 'base64',
       Option: constants.COMMAND_PARAMS_OPTION,
-      TypeOfRemote: 'SendRemoteKey',
+      TypeOfRemote: 'SendInputString',
     };
   }
 }
