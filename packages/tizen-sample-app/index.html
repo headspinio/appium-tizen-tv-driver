@@ -18,36 +18,39 @@
       <section>
         <h2>Remote Control</h2>
         <p>
-          The buttons <code>ArrowUp</code>, <code>ArrowDown</code>, <code>ArrowLeft</code>,
-          <code>ArrowRight</code>, <code>Enter</code>, and <code>Back</code> will be registered by
-          default.
-      </p>
-      <section>
-          <h3>Last Button Pushed</h3>
-          <p>
-            When a registered remote control button is pressed, the name and code of the button will
-            appear in the following text inputs.
-          </p>
-          <input type="text" id="rc-button-name" placeholder="RC Button Name" />
-          <input type="text" id="rc-button-code" placeholder="RC Button Code" />
-          <pre id="event-data">(no event)</pre>
-          <code id="event-duration">(n/a)</code>ms
+          The keys <code>ArrowUp</code>, <code>ArrowDown</code>, <code>ArrowLeft</code>,
+          <code>ArrowRight</code>, <code>Enter</code>, and <code>Back</code> will be registered by default.
+        </p>
       </section>
-        <section>
-          <h3>Supported RC Buttons</h3>
-          <p>This table shows all RC buttons supported by the platform, excluding mandatory buttons mentioned above.</p>
-          <table id="supported-rc-button-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Code</th>
-              </tr>
-            </thead>
-            <tbody id="supported-rc-button-tbody"></tbody>
-          </table>
-          <p>Raw Output: <pre id="supported-btn-raw"></pre>
-          </p>
-        </section>
+      <section>
+        <h3>Last Key Pressed</h3>
+        <p>
+          When a registered remote control button is pressed, the name and code of the button will
+          appear in the following text inputs.
+        </p>
+        <input type="text" id="rc-button-name" placeholder="(no key pressed)" />
+        <input type="text" id="rc-button-code" placeholder="(no key pressed)" />
+        <pre id="event-data">(no event)</pre>
+        <code id="event-duration">(n/a)</code>ms
+      </section>
+      <section>
+        <h3>Text Input</h3>
+        <input type="text" id="text-input" placeholder="(no input)" />
+      </section>
+      <section>
+        <h3>Supported RC Buttons</h3>
+        <p>This table shows all RC buttons supported by the platform, excluding mandatory buttons mentioned above.</p>
+        <table id="supported-rc-button-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Code</th>
+            </tr>
+          </thead>
+          <tbody id="supported-rc-button-tbody"></tbody>
+        </table>
+        <p>Raw Output: <pre id="supported-btn-raw"></pre>
+        </p>
       </section>
     </main>
 

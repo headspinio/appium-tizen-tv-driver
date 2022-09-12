@@ -8,8 +8,16 @@ import {getChromedriverBinaryPath} from 'appium-chromedriver/build/lib/utils';
 import {RC_MODE_JS, PLATFORM_NAME, RC_MODE_REMOTE} from '../../lib/driver';
 const expect = unexpected.clone();
 
+/**
+ * This is the (static) ID of `tizen-sample-app`
+ */
 const SAMPLE_APP_ID = 'tNQ5t7rV07.sample';
+
+/**
+ * Tizen device host and sdb port
+ */
 const DEFAULT_DEVICE = `${TEST_HOST}:26101`;
+
 /**
  *
  * @param {import('./browser').TizenBrowser} driver
@@ -74,7 +82,7 @@ describe('TizenTVDriver', function () {
       'appium:appPackage': env.get('TEST_APPIUM_TIZEN_APPID', SAMPLE_APP_ID),
       'appium:automationName': 'TizenTV',
       'appium:appLaunchCooldown': 5000,
-      'appium:sendKeysStrategy': 'rc',
+
       'appium:deviceAddress': device.split(':')[0],
       'appium:chromedriverExecutable': env.get('TEST_APPIUM_TIZEN_CHROMEDRIVER'),
     };
@@ -84,9 +92,13 @@ describe('TizenTVDriver', function () {
     }
   });
 
-  describe('when run in "js" mode', function () {
+  describe('when run in "proxy"/"js" mode', function () {
     before(async function () {
-      capabilities = {...baseCaps, 'appium:rcMode': RC_MODE_JS};
+      capabilities = {
+        ...baseCaps,
+        'appium:rcMode': RC_MODE_JS,
+        'appium:sendKeysStrategy': 'proxy',
+      };
       appiumServerPort = await getPort();
       server = await startServer(appiumServerPort);
       driver = await tizenBrowser({
@@ -128,6 +140,12 @@ describe('TizenTVDriver', function () {
       expect(name, 'to equal', 'Enter');
       expect(Number(duration), 'to be greater than or equal to', 500);
     });
+
+    it('should allow text input', async function () {
+      const input = await driver.$('#text-input');
+      await input.setValue('Sylvester McMonkey McTester');
+      expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+    });
   });
 
   describe('when run in "remote" mode', function () {
@@ -139,6 +157,7 @@ describe('TizenTVDriver', function () {
         ...baseCaps,
         'appium:rcMode': RC_MODE_REMOTE,
         'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+        'appium:sendKeysStrategy': 'rc',
         'appium:resetRcToken': true,
       };
 
@@ -175,13 +194,19 @@ describe('TizenTVDriver', function () {
     });
 
     it('should "long press" a button on the remote control', async function () {
-          await driver.longPressKey(Keys.ENTER);
+      await driver.longPressKey(Keys.ENTER);
       const name = await driver.$('#rc-button-name').getValue();
       const code = await driver.$('#rc-button-code').getValue();
       const duration = await driver.$('#event-duration').getText();
       expect(code, 'to equal', 'Enter'); // !!!
       expect(name, 'to equal', 'Enter');
       expect(Number(duration), 'to be greater than or equal to', 500);
+    });
+
+    it('should allow text input', async function () {
+      const input = await driver.$('#text-input');
+      await input.setValue('Sylvester McMonkey McTester');
+      expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
     });
   });
 });

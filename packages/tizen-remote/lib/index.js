@@ -1035,7 +1035,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 /**
  * The potential values for {@linkcode TizenRemoteCommandParams.TypeOfRemote}.
  * @group Message Data
- * @typedef {'SendRemoteKey'|'SendRemoteText'} TizenRemoteCommandType
+ * @typedef {'SendRemoteKey'|'SendInputString'} TizenRemoteCommandType
  */
 
 /**
