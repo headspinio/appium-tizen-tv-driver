@@ -30,14 +30,19 @@ package in your `package.json`)
   export PATH=${PATH}:${TIZEN_HOME}/tools:${TIZEN_HOME}/tools/ide/bin
   ```
 
-- The TV needs to be put into [developer mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
-- The app you want to test needs to be a correctly-signed debug version of your app.
-- The TV needs to be on the same local network as the Appium server.
-- Before running your first session, you should run `appium driver run tizentv pair-remote` to
+- The TV needs to be put into [developer
+- mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
+- The app you want to test needs to be a correctly-signed debug version of your app. The TV needs
+- to be on the same local network as the Appium server. Before running your first session, you
+- should run `appium driver run tizentv pair-remote` to
   initiate a remote pairing session with the TV. When you accept the remote pairing, a pairing
   token will be printed to the command line. Use this token as the content of the `appium:rcToken`
-  capability to allow Appium remote control access. The `pair-remote` script takes two arguments:
-  `--host / -h` should refer to the IP of the TV, and `--mac / -m` should be the TV's mac address.
+  capability to allow Appium remote control access. The `pair-remote` script takes one required
+  argument: `--host`, which should refer to the IP of the TV. For example:
+
+  ```bash
+  appium driver run tizentv pair-remote --host 10.192.45.12
+  ```
 
 ## Capabilities
 
