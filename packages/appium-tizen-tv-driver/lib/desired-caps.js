@@ -10,7 +10,6 @@ const commonCapConstraints = {
   },
   deviceAddress: {
     isString: true,
-    presence: true,
   },
   app: {
     isString: true,
@@ -20,7 +19,6 @@ const commonCapConstraints = {
   },
   udid: {
     isString: true,
-    presence: true,
   },
   chromedriverExecutable: {
     isString: true,
