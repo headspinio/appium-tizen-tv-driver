@@ -106,9 +106,6 @@ class TizenTVDriver extends BaseDriver {
   /** @type {string[]} */
   locatorStrategies;
 
-  /** @type {import('@appium/types').Constraints} */
-  #desiredCapConstraints;
-
   /** @type {boolean} */
   #jwpProxyActive;
 
@@ -130,7 +127,7 @@ class TizenTVDriver extends BaseDriver {
       // TODO define tizen locator strategies
     ];
 
-    this.#desiredCapConstraints = desiredCapConstraints;
+    this.desiredCapConstraints = desiredCapConstraints;
     this.#jwpProxyActive = false;
     this.#jwpProxyAvoid = [...NO_PROXY];
 
