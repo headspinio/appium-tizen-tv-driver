@@ -166,6 +166,28 @@ class TizenTVDriver extends BaseDriver {
     ));
     const caps = {...DEFAULT_CAPS, ...capabilities};
 
+    // if we have what looks like server address information in the deviceName, spread it out
+    // through the udid and deviceAddress capabilities
+    if (caps.deviceName.match(/^.+:\d+/)) {
+      if (!caps.deviceAddress) {
+        caps.deviceName = caps.deviceAddress.split(':')[0];
+      }
+      if (!caps.udid) {
+        caps.udid = caps.deviceName;
+      }
+    }
+
+    // now we need to ensure that, one way or another, those capabilities were sent in
+    if (!caps.udid) {
+      throw new Error(`The 'appium:udid' capability is required, or 'appium:deviceName' must ` +
+                      `look like <host>:<port>`);
+    }
+
+    if (!caps.deviceAddress) {
+      throw new Error(`The 'appium:deviceAddress' capability is required, or 'appium:deviceName' ` +
+                      `must look like <host>:<port>`);
+    }
+
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
       this.#remote = new TizenRemote(caps.deviceAddress, {
