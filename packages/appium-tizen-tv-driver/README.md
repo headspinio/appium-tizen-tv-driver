@@ -32,9 +32,11 @@ package in your `package.json`)
 
 - The TV needs to be put into [developer
 - mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
-- The app you want to test needs to be a correctly-signed debug version of your app. The TV needs
-- to be on the same local network as the Appium server. Before running your first session, you
-- should run `appium driver run tizentv pair-remote` to
+- The TV must be connected to the Appium host via sdb (run `sdb connect <tv-ip>`). You can always
+  verify that the TV is connected before running a test by running `sdb devices`.
+- The app you want to test needs to be a correctly-signed debug version of your app.
+- The TV needs to be on the same local network as the Appium server.
+- Before running your first session, you should run `appium driver run tizentv pair-remote` to
   initiate a remote pairing session with the TV. When you accept the remote pairing, a pairing
   token will be printed to the command line. Use this token as the content of the `appium:rcToken`
   capability to allow Appium remote control access. The `pair-remote` script takes one required
