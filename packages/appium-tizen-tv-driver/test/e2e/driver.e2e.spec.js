@@ -5,7 +5,13 @@ import getPort from 'get-port';
 import unexpected from 'unexpected';
 import {tizenBrowser} from './browser';
 import {getChromedriverBinaryPath} from 'appium-chromedriver/build/lib/utils';
-import {RC_MODE_JS, PLATFORM_NAME, RC_MODE_REMOTE} from '../../lib/driver';
+import {
+  RC_MODE_JS,
+  PLATFORM_NAME,
+  RC_MODE_REMOTE,
+  TEXT_STRATEGY_PROXY,
+  TEXT_STRATEGY_REMOTE,
+} from '../../lib/driver';
 const expect = unexpected.clone();
 
 /**
@@ -20,15 +26,15 @@ const DEFAULT_DEVICE = `${TEST_HOST}:26101`;
 
 /**
  *
- * @param {import('./browser').TizenBrowser} driver
- * @param {import('@appium/types').AppiumServer} server
+ * @param {import('./browser').TizenBrowser} [driver]
+ * @param {import('@appium/types').AppiumServer} [server]
  */
 async function cleanup(driver, server) {
   try {
-    await driver.deleteSession();
+    await driver?.deleteSession();
   } catch {}
   try {
-    await server.close();
+    await server?.close();
   } catch {}
 }
 
@@ -67,23 +73,20 @@ describe('TizenTVDriver', function () {
   /** @type {string} */
   let device;
 
-  /** @type {import('../../lib/driver').TizenTVDriverW3CCaps} */
+  /** @type {import('../../lib/driver').NamespacedObject<import('../../lib/driver').TizenTVDriverUserCaps>} */
   let capabilities;
 
-  /** @type {import('../../lib/driver').TizenTVDriverW3CCaps} */
+  /** @type {import('../../lib/driver').NamespacedObject<import('../../lib/driver').TizenTVDriverUserCaps>} */
   let baseCaps;
 
   before(async function () {
     device = env.get('TEST_APPIUM_TIZEN_DEVICE', DEFAULT_DEVICE);
     baseCaps = {
-      'appium:udid': device,
       'appium:deviceName': device,
       platformName: PLATFORM_NAME,
       'appium:appPackage': env.get('TEST_APPIUM_TIZEN_APPID', SAMPLE_APP_ID),
-      'appium:automationName': 'TizenTV',
+      'appium:automationName': PLATFORM_NAME,
       'appium:appLaunchCooldown': 5000,
-
-      'appium:deviceAddress': device.split(':')[0],
       'appium:chromedriverExecutable': env.get('TEST_APPIUM_TIZEN_CHROMEDRIVER'),
     };
 
@@ -94,10 +97,11 @@ describe('TizenTVDriver', function () {
 
   describe('when run in "proxy"/"js" mode', function () {
     before(async function () {
+      this.timeout('20s');
       capabilities = {
         ...baseCaps,
         'appium:rcMode': RC_MODE_JS,
-        'appium:sendKeysStrategy': 'proxy',
+        'appium:sendKeysStrategy': TEXT_STRATEGY_PROXY,
       };
       appiumServerPort = await getPort();
       server = await startServer(appiumServerPort);
@@ -142,6 +146,8 @@ describe('TizenTVDriver', function () {
     });
 
     it('should allow text input', async function () {
+      // this actually seems slower than the remote mode
+      this.timeout('20s');
       const input = await driver.$('#text-input');
       await input.setValue('Sylvester McMonkey McTester');
       expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
@@ -151,13 +157,12 @@ describe('TizenTVDriver', function () {
   describe('when run in "remote" mode', function () {
     before(async function () {
       // this can take awhile as we may need to get a new token.
-
       this.timeout('60s');
       capabilities = {
         ...baseCaps,
         'appium:rcMode': RC_MODE_REMOTE,
         'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
-        'appium:sendKeysStrategy': 'rc',
+        'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
         'appium:resetRcToken': true,
       };
 
@@ -207,6 +212,36 @@ describe('TizenTVDriver', function () {
       const input = await driver.$('#text-input');
       await input.setValue('Sylvester McMonkey McTester');
       expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+    });
+  });
+
+  describe('when caps are missing both `udid` and `deviceAddress`', function () {
+    describe('when `deviceName` does not look like a `udid`', function () {
+      it('should fail', async function () {
+        capabilities = {
+          ...baseCaps,
+          'appium:rcMode': RC_MODE_JS,
+          'appium:sendKeysStrategy': TEXT_STRATEGY_PROXY,
+          'appium:deviceName': '127.0.0.1',
+        };
+        appiumServerPort = await getPort();
+        server = await startServer(appiumServerPort);
+        expect(
+          tizenBrowser({
+            hostname: TEST_HOST,
+            port: appiumServerPort,
+            connectionRetryCount: 0,
+            logLevel: 'debug',
+            capabilities,
+          }),
+          'to be rejected with',
+          /The 'appium:udid' capability is required/i
+        );
+      });
+
+      after(async function () {
+        await cleanup(undefined, server);
+      });
     });
   });
 });
