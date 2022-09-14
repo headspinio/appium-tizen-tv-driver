@@ -5,10 +5,6 @@ import {desiredCapConstraints} from './desired-caps';
 import {Keys, TizenRemote} from '@headspinio/tizen-remote';
 import {AsyncScripts, SyncScripts} from './scripts';
 
-const RC_TEXT_STRAT = 'rc';
-const PROXY_TEXT_STRAT = 'proxy';
-const SEND_KEYS_STRATS = [RC_TEXT_STRAT, PROXY_TEXT_STRAT];
-
 import {tizenInstall, tizenUninstall, tizenRun} from './cli/tizen';
 import {
   debugApp,
@@ -31,6 +27,21 @@ const DEFAULT_CAPS = {
   appLaunchCooldown: DEFAULT_APP_LAUNCH_COOLDOWN,
   rcMode: 'js',
 };
+
+/**
+ * RegEx to check if a `deviceAddress` cap contains a device name & port
+ */
+const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
+
+/**
+ * Constant for "rc" text input mode, which uses the Tizen Remote Control API
+ */
+export const TEXT_STRATEGY_REMOTE = 'rc';
+
+/**
+ * Constant for "proxy" text input mode, which uses Chromedriver
+ */
+export const TEXT_STRATEGY_PROXY = 'proxy';
 
 /**
  * Constant for "js" RC mode, which uses Chromedriver to mimic keypressed
@@ -120,7 +131,7 @@ class TizenTVDriver extends BaseDriver {
    * @param {ServerArgs} [opts]
    * @param {boolean} [shouldValidateCaps]
    */
-  constructor(opts = /** @type {ServerArgs} */({}), shouldValidateCaps = true) {
+  constructor(opts = /** @type {ServerArgs} */ ({}), shouldValidateCaps = true) {
     super(opts, shouldValidateCaps);
 
     this.locatorStrategies = [
@@ -132,10 +143,6 @@ class TizenTVDriver extends BaseDriver {
     this.#jwpProxyAvoid = [...NO_PROXY];
 
     this.#forwardedPorts = [];
-  }
-
-  get desiredCapConstraints() {
-    return this.#desiredCapConstraints;
   }
 
   /**
@@ -155,35 +162,41 @@ class TizenTVDriver extends BaseDriver {
    * @returns {Promise<[string, any]>}
    */
   async createSession(w3cCapabilities1, w3cCapabilities2, w3cCapabilities3, driverData) {
-    let [sessionId, capabilities] = /** @type {[string, TizenTVDriverCaps]} */(await super.createSession(
-      w3cCapabilities1,
-      w3cCapabilities2,
-      w3cCapabilities3,
-      driverData
-    ));
-    const caps = {...DEFAULT_CAPS, ...capabilities};
+    let [sessionId, capabilities] = /** @type {[string, TizenTVDriverUserCaps]} */ (
+      await super.createSession(w3cCapabilities1, w3cCapabilities2, w3cCapabilities3, driverData)
+    );
+
+    /** @type {TizenTVDriverUserCaps} */
+    const tempCaps = {...DEFAULT_CAPS, ...capabilities};
 
     // if we have what looks like server address information in the deviceName, spread it out
     // through the udid and deviceAddress capabilities
-    if (caps.deviceName.match(/^.+:\d+/)) {
-      if (!caps.deviceAddress) {
-        caps.deviceName = caps.deviceAddress.split(':')[0];
+    const matches = tempCaps.deviceName.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
+    if (matches?.length) {
+      if (!tempCaps.deviceAddress) {
+        tempCaps.deviceAddress = matches[1];
       }
-      if (!caps.udid) {
-        caps.udid = caps.deviceName;
+      if (!tempCaps.udid) {
+        tempCaps.udid = tempCaps.deviceName;
       }
     }
 
     // now we need to ensure that, one way or another, those capabilities were sent in
-    if (!caps.udid) {
-      throw new Error(`The 'appium:udid' capability is required, or 'appium:deviceName' must ` +
-                      `look like <host>:<port>`);
+    if (!tempCaps.udid) {
+      throw new Error(
+        `The 'appium:udid' capability is required, or 'appium:deviceName' must ` +
+          `look like <host>:<port>`
+      );
     }
 
-    if (!caps.deviceAddress) {
-      throw new Error(`The 'appium:deviceAddress' capability is required, or 'appium:deviceName' ` +
-                      `must look like <host>:<port>`);
+    if (!tempCaps.deviceAddress) {
+      throw new Error(
+        `The 'appium:deviceAddress' capability is required, or 'appium:deviceName' ` +
+          `must look like <host>:<port>`
+      );
     }
+
+    const caps = /** @type {TizenTVDriverCaps} */ (tempCaps);
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
@@ -239,16 +252,16 @@ class TizenTVDriver extends BaseDriver {
 
       await this.startChromedriver({
         debuggerPort: localDebugPort,
-        executable: /** @type {string} */(caps.chromedriverExecutable),
+        executable: /** @type {string} */ (caps.chromedriverExecutable),
       });
 
       if (!caps.noReset) {
         log.info('Waiting for app launch to take effect');
-        await B.delay(/** @type {number} */(caps.appLaunchCooldown));
+        await B.delay(/** @type {number} */ (caps.appLaunchCooldown));
         log.info('Clearing app local storage & reloading...');
         await this.executeChromedriverScript(SyncScripts.reset);
         log.info('Waiting for app launch to take effect again post-reload');
-        await B.delay(/** @type {number} */(caps.appLaunchCooldown));
+        await B.delay(/** @type {number} */ (caps.appLaunchCooldown));
       }
       return [sessionId, caps];
     } catch (e) {
@@ -311,10 +324,11 @@ class TizenTVDriver extends BaseDriver {
   async execute(script, args) {
     if (TizenTVDriver.isExecuteScript(script)) {
       log.debug(`Calling script "${script}" with arg ${JSON.stringify(args[0])}`);
-      return await this.executeMethod(script, [args[0]]);
+      const methodArgs = /** @type {[Record<string,any>]} */ (args);
+      return await this.executeMethod(script, [methodArgs[0]]);
     }
     return await /** @type {Promise<S extends ScriptId ? import('type-fest').AsyncReturnType<ExecuteMethod<S>> : {value: TReturn}>} */ (
-      this.executeChromedriverScript(script, args)
+      this.executeChromedriverScript(script, /** @type {TArg[]} */ (args))
     );
   }
 
@@ -392,9 +406,9 @@ class TizenTVDriver extends BaseDriver {
   async #disconnectRemote() {
     if (this.#isRemoteRcMode) {
       try {
-        await /** @type {TizenRemote} */(this.#remote).disconnect();
+        await /** @type {TizenRemote} */ (this.#remote).disconnect();
       } catch (err) {
-        log.warn(`Error disconnecting remote: ${/** @type {Error} */(err).message}`);
+        log.warn(`Error disconnecting remote: ${/** @type {Error} */ (err).message}`);
       }
       this.#remote = undefined;
     }
@@ -403,7 +417,7 @@ class TizenTVDriver extends BaseDriver {
   async cleanUpPorts() {
     log.info(`Cleaning up any ports which have been forwarded`);
     for (const localPort of this.#forwardedPorts) {
-      await removeForwardedPort({udid: /** @type {string} */(this.opts.udid), localPort});
+      await removeForwardedPort({udid: /** @type {string} */ (this.opts.udid), localPort});
     }
   }
 
@@ -462,11 +476,7 @@ class TizenTVDriver extends BaseDriver {
     if (!code && !key) {
       throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
     }
-    await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [
-      code,
-      key,
-      duration,
-    ]);
+    await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [code, key, duration]);
   }
 
   /**
@@ -478,7 +488,7 @@ class TizenTVDriver extends BaseDriver {
     if (!this.#isRemoteRcMode) {
       throw new TypeError(`Must be in "remote" RC mode to use this method`);
     }
-    await /** @type {TizenRemote} */(this.#remote).click(key);
+    await /** @type {TizenRemote} */ (this.#remote).click(key);
   }
 
   /**
@@ -491,7 +501,7 @@ class TizenTVDriver extends BaseDriver {
     if (!this.#isRemoteRcMode) {
       throw new TypeError(`Must be in "remote" RC mode to use this method`);
     }
-    const remote = /** @type {TizenRemote} */(this.#remote);
+    const remote = /** @type {TizenRemote} */ (this.#remote);
     await remote.press(rcKeyCode);
     await B.delay(duration);
     await remote.release(rcKeyCode);
@@ -519,19 +529,22 @@ class TizenTVDriver extends BaseDriver {
    * @returns
    */
   async setValue(text, elId) {
-    if (!SEND_KEYS_STRATS.includes(this.opts.sendKeysStrategy)) {
-      throw new Error(
+    if (
+      this.opts.sendKeysStrategy !== TEXT_STRATEGY_PROXY &&
+      this.opts.sendKeysStrategy !== TEXT_STRATEGY_REMOTE
+    ) {
+      throw new TypeError(
         `Attempted to send keys with invalid sendKeysStrategy ` +
           `'${this.opts.sendKeysStrategy}'. It should be one of: ` +
-          JSON.stringify(SEND_KEYS_STRATS)
+          `${TEXT_STRATEGY_PROXY} or ${TEXT_STRATEGY_REMOTE}`
       );
     }
 
-    if (this.#isRemoteRcMode && this.opts.sendKeysStrategy === RC_TEXT_STRAT) {
+    if (this.#isRemoteRcMode && this.opts.sendKeysStrategy === TEXT_STRATEGY_REMOTE) {
       if (Array.isArray(text)) {
         text = text.join('');
       }
-      await /** @type {TizenRemote} */(this.#remote).text(text);
+      await /** @type {TizenRemote} */ (this.#remote).text(text);
       await this.pressKey(Keys.ENTER);
       return;
     }
@@ -552,6 +565,12 @@ export default TizenTVDriver;
  */
 
 /**
+ * This is {@linkcode TizenTVDriverCaps} with optional {@linkcode BaseTizenTVDriverCaps.udid} and {@linkcode BaseTizenTVDriverCaps.deviceAddress}. These can be
+ * derived from `deviceName`.
+ * @typedef {import('type-fest').SetOptional<TizenTVDriverCaps, 'udid'|'deviceAddress'>} TizenTVDriverUserCaps
+ */
+
+/**
  * @typedef StartChromedriverOptions
  * @property {string} executable
  * @property {number} debuggerPort
@@ -567,9 +586,9 @@ export default TizenTVDriver;
  * {@linkcode TizenTVDriver}-specific caps
  * @typedef BaseTizenTVDriverCaps
  * @property {string} chromedriverExecutable
- * @property {string} udid
  * @property {string} appPackage
  * @property {string} deviceName
+ * @property {string} udid
  * @property {string} deviceAddress
  * @property {boolean} [isDeviceApiSsl]
  * @property {number} [useOpenDebugPort]
@@ -585,11 +604,10 @@ export default TizenTVDriver;
  * Given object `T` and namespace `NS`, return a new object with keys namespaced by `${NS}:`.
  * @template {Record<string,any>} T
  * @template {string} [NS='appium']
- * @typedef {{[K in keyof T as `${NS}:${K & string}`]: T[K]}} NamespacedObject
+ * @typedef {{[K in keyof T as (K extends 'platformName' ? `${K}` : `${NS}:${K & string}`)]: T[K]}} NamespacedObject
  */
 
-
- /**
+/**
  * @typedef {import('@appium/types').Capabilities} Capabilities
  * @typedef {import('@headspinio/tizen-remote').RcKeyCode} RcKeyCode
  * @typedef {import('@appium/types').DriverData} DriverData
