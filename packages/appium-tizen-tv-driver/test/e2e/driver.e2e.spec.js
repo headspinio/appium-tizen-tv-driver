@@ -234,8 +234,7 @@ describe('TizenTVDriver', function () {
             logLevel: 'debug',
             capabilities,
           }),
-          'to be rejected with',
-          /The 'appium:udid' capability is required/i
+          'to be rejected'
         );
       });
 

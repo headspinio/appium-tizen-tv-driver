@@ -171,13 +171,18 @@ class TizenTVDriver extends BaseDriver {
 
     // if we have what looks like server address information in the deviceName, spread it out
     // through the udid and deviceAddress capabilities
-    const matches = tempCaps.deviceName.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
-    if (matches?.length) {
-      if (!tempCaps.deviceAddress) {
-        tempCaps.deviceAddress = matches[1];
-      }
-      if (!tempCaps.udid) {
-        tempCaps.udid = tempCaps.deviceName;
+    if (!tempCaps.deviceAddress || !tempCaps.udid) {
+      log.info(`No udid and/or deviceAddress provided; attempting to derive from deviceName "${tempCaps.deviceName}"`);
+      const matches = tempCaps.deviceName.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
+      if (matches?.length) {
+        if (!tempCaps.deviceAddress) {
+          tempCaps.deviceAddress = matches[1];
+          log.debug(`Setting deviceAddress to "${tempCaps.deviceAddress}"`);
+        }
+        if (!tempCaps.udid) {
+          tempCaps.udid = tempCaps.deviceName;
+          log.debug(`Setting udid to "${tempCaps.udid}"`);
+        }
       }
     }
 
