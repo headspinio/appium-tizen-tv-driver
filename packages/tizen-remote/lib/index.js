@@ -422,14 +422,21 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @returns {Promise<boolean>}
    */
   async hasToken() {
+    let result = false;
     if (this.#token) {
-      return true;
-    }
-    if (this.#persistToken) {
+      this.#debug('Token is set (%s)', this.#token);
+      result = true;
+    } else if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      return cache.has(this.#tokenCacheKey);
+      result = cache.has(this.#tokenCacheKey);
+      if (result) {
+        this.#debug('Found token in cache (%s)', cache.get(this.#tokenCacheKey));
+      }
     }
-    return false;
+    if (!result) {
+      this.#debug('No token found in memory or cache');
+    }
+    return result;
   }
 
   /**
@@ -487,7 +494,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    *
    * This is low-level, and you probably want something else.
    * @param {any} data
-   * @param {NoConnectOption & NoTokenOption} [opts]
+   * @param {NoConnectOption & NoTokenOption} opts
    * @returns {Promise<void>}
    */
   async send(data, {noConnect = false, noToken = false} = {}) {
@@ -528,7 +535,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template T
    * @param {string} channel
    * @param {any} data
-   * @param {SendRequestOptions} [opts]
+   * @param {SendRequestOptions} opts
    * @returns {Promise<T>}
    */
   async sendRequest(channel, data, {noConnect = false, noToken = false, timeout} = {}) {
@@ -593,7 +600,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template {(...args: any[]) => void} Listener
    * @param {WsEvent} event
    * @param {Listener} listener
-   * @param {{ context?: any, once?: boolean }} [opts]
+   * @param {{ context?: any, once?: boolean }} opts
    * @returns {Listener}
    */
   #listenWs(event, listener, {context, once = false} = {}) {
@@ -635,7 +642,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template {(...args: any[]) => void} Listener
    * @param {WsEvent} event
    * @param {Listener} listener
-   * @param {{ context?: any }} [opts]
+   * @param {{ context?: any }} opts
    * @returns {Listener}
    */
   #onWs(event, listener, {context} = {}) {
@@ -647,7 +654,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @template {(...args: any[]) => void} Listener
    * @param {WsEvent} event
    * @param {Listener} listener
-   * @param {{ context?: any }} [opts]
+   * @param {{ context?: any }} opts
    * @returns {Listener}
    */
   #onceWs(event, listener, {context} = {}) {
@@ -709,7 +716,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Gets a new token from the Tizen device (if none exists).
    *
    * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
-   * @param {NoConnectOption & {force?: boolean}} [opts]
+   * @param {NoConnectOption & {force?: boolean}} opts
    * @returns {Promise<string>}
    */
   async getToken({noConnect = false, force = false} = {}) {
@@ -723,6 +730,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
         return token;
       }
     }
+    this.#debug('Requesting new token; please wait...');
     const res = await this.sendRequest(
       constants.TOKEN_EVENT,
       new KeyCommand(KeyCmd.CLICK, Keys.HOME),
@@ -747,10 +755,19 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
   /**
    * Connect to the Tizen web socket server.
-   * @param {ConnectOptions} [opts] - Options
+   * @param {ConnectOptions} opts - Options
    * @returns {Promise<WebSocket>}
    */
   async connect({noToken = false} = {}) {
+    if (!this.#token && !noToken) {
+      let token = await this.readToken();
+      if (token) {
+        this.#token = token;
+      }
+    } else if (this.#token) {
+      await this.writeToken(this.#token);
+    }
+
     // the default behavior of pRetry is to use an exponential backoff, so
     // that's what we are using
     const ws = await pRetry(
@@ -830,8 +847,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
       this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
       this.#token = await this.getToken();
       this.#debug('Received token');
-    } else if (this.#token) {
-      await this.writeToken(this.#token);
     }
 
     this.emit(Event.CONNECT, ws);
