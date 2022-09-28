@@ -319,6 +319,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
+    if (opts.debug) {
+      debug.enable('tizen-remote*');
+    }
     this.#debugger = debug(`tizen-remote [${this.#name}]`);
 
     // note: if this is unset, we will attempt to get a token from the fs cache,
@@ -1006,6 +1009,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * @property {number} [tokenTimeout] - Timeout for the token request (ms)
  * @property {boolean} [autoReconnect] - Whether to automatically reconnect on disconnection
  * @property {boolean} [persistToken] - Whether to persist the token to disk _and_ whether to read it from disk when needed
+ * @property {boolean} [debug] - Whether to enable debug logging
  */
 
 /**
