@@ -93,9 +93,6 @@ export const RC_OPTS = {
   name: RC_NAME,
 };
 
-/**
- * @extends {BaseDriver}
- */
 class TizenTVDriver extends BaseDriver {
   static executeMethodMap = Object.freeze({
     'tizen: pressKey': Object.freeze({
@@ -215,7 +212,7 @@ class TizenTVDriver extends BaseDriver {
       // environment or in a cache.
       if (caps.resetRcToken || !(await this.#remote.hasToken())) {
         log.info('Requesting new token; please wait...');
-        await this.#remote.getToken({force: true});
+        await this.#remote.getToken({force: Boolean(caps.resetRcToken)});
       }
     }
 
@@ -564,7 +561,7 @@ export default TizenTVDriver;
 /**
  * @typedef {keyof TizenTVDriverExecuteMethodMap} ScriptId
  * @typedef {BaseTizenTVDriverCaps & Capabilities} TizenTVDriverCaps
- * @typedef {import('@appium/types').AppiumW3CCapabilities & NamespacedObject<BaseTizenTVDriverCaps>} TizenTVDriverW3CCaps
+ * @typedef {import('@appium/types').W3CCapabilities<BaseTizenTVDriverCaps>} TizenTVDriverW3CCaps
  * @typedef {typeof RC_MODE_JS | typeof RC_MODE_REMOTE} RcMode
  * @typedef {typeof TizenTVDriver.executeMethodMap} TizenTVDriverExecuteMethodMap
  */

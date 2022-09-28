@@ -12,6 +12,7 @@ import {
   TEXT_STRATEGY_PROXY,
   TEXT_STRATEGY_REMOTE,
 } from '../../lib/driver';
+
 const expect = unexpected.clone();
 
 /**
@@ -155,63 +156,123 @@ describe('TizenTVDriver', function () {
   });
 
   describe('when run in "remote" mode', function () {
-    before(async function () {
-      // this can take awhile as we may need to get a new token.
-      this.timeout('60s');
-      capabilities = {
-        ...baseCaps,
-        'appium:rcMode': RC_MODE_REMOTE,
-        'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
-        'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
-        'appium:resetRcToken': true,
-      };
+    describe('without token persistence', function () {
+      before(async function () {
+        // this can take awhile as we may need to get a new token.
+        this.timeout('60s');
+        capabilities = {
+          ...baseCaps,
+          'appium:rcMode': RC_MODE_REMOTE,
+          'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
+          'appium:resetRcToken': true,
+        };
 
-      appiumServerPort = await getPort();
-      server = await startServer(appiumServerPort);
-      driver = await tizenBrowser({
-        hostname: TEST_HOST,
-        port: appiumServerPort,
-        connectionRetryCount: 0,
-        logLevel: 'debug',
-        capabilities,
+        appiumServerPort = await getPort();
+        server = await startServer(appiumServerPort);
+        driver = await tizenBrowser({
+          hostname: TEST_HOST,
+          port: appiumServerPort,
+          connectionRetryCount: 0,
+          logLevel: 'debug',
+          capabilities,
+        });
+        listenForInterrupts(driver, server);
       });
-      listenForInterrupts(driver, server);
+
+      after(async function () {
+        this.timeout('20s');
+        await cleanup(driver, server);
+      });
+
+      it('should run some javascript', async function () {
+        const header = await driver.$('#header');
+        expect(await header.getText(), 'to equal', 'Initialized');
+      });
+
+      it('should press a button on the remote control', async function () {
+        await driver.pressKey(Keys.ENTER);
+        const name = await driver.$('#rc-button-name').getValue();
+        const code = await driver.$('#rc-button-code').getValue();
+        const duration = await driver.$('#event-duration').getText();
+        expect(code, 'to equal', 'Enter'); // !!!
+        expect(name, 'to equal', 'Enter');
+        expect(Number(duration), 'to be less than', 500);
+      });
+
+      it('should "long press" a button on the remote control', async function () {
+        await driver.longPressKey(Keys.ENTER);
+        const name = await driver.$('#rc-button-name').getValue();
+        const code = await driver.$('#rc-button-code').getValue();
+        const duration = await driver.$('#event-duration').getText();
+        expect(code, 'to equal', 'Enter'); // !!!
+        expect(name, 'to equal', 'Enter');
+        expect(Number(duration), 'to be greater than or equal to', 500);
+      });
+
+      it('should allow text input', async function () {
+        const input = await driver.$('#text-input');
+        await input.setValue('Sylvester McMonkey McTester');
+        expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+      });
     });
 
-    after(async function () {
-      this.timeout('20s');
-      await cleanup(driver, server);
-    });
+    describe('with token persistence', function() {
+      after(async function () {
+        this.timeout('20s');
+        await cleanup(driver, server);
+      });
 
-    it('should run some javascript', async function () {
-      const header = await driver.$('#header');
-      expect(await header.getText(), 'to equal', 'Initialized');
-    });
+      it('should press a button on the remote control', async function () {
+        this.timeout('120s');
+        capabilities = {
+          ...baseCaps,
+          'appium:rcMode': RC_MODE_REMOTE,
+          'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
+          'appium:resetRcToken': true
+        };
 
-    it('should press a button on the remote control', async function () {
-      await driver.pressKey(Keys.ENTER);
-      const name = await driver.$('#rc-button-name').getValue();
-      const code = await driver.$('#rc-button-code').getValue();
-      const duration = await driver.$('#event-duration').getText();
-      expect(code, 'to equal', 'Enter'); // !!!
-      expect(name, 'to equal', 'Enter');
-      expect(Number(duration), 'to be less than', 500);
-    });
+        appiumServerPort = await getPort();
+        server = await startServer(appiumServerPort);
+        driver = await tizenBrowser({
+          hostname: TEST_HOST,
+          port: appiumServerPort,
+          connectionRetryCount: 0,
+          logLevel: 'debug',
+          capabilities,
+        });
+        listenForInterrupts(driver, server);
 
-    it('should "long press" a button on the remote control', async function () {
-      await driver.longPressKey(Keys.ENTER);
-      const name = await driver.$('#rc-button-name').getValue();
-      const code = await driver.$('#rc-button-code').getValue();
-      const duration = await driver.$('#event-duration').getText();
-      expect(code, 'to equal', 'Enter'); // !!!
-      expect(name, 'to equal', 'Enter');
-      expect(Number(duration), 'to be greater than or equal to', 500);
-    });
+        await cleanup(driver, server);
+        capabilities = {
+          ...baseCaps,
+          'appium:rcMode': RC_MODE_REMOTE,
+          'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE
+          // do not reset token!!
+        };
 
-    it('should allow text input', async function () {
-      const input = await driver.$('#text-input');
-      await input.setValue('Sylvester McMonkey McTester');
-      expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+        appiumServerPort = await getPort();
+        server = await startServer(appiumServerPort);
+        driver = await tizenBrowser({
+          hostname: TEST_HOST,
+          port: appiumServerPort,
+          connectionRetryCount: 0,
+          logLevel: 'debug',
+          capabilities,
+        });
+        listenForInterrupts(driver, server);
+
+        await driver.pressKey(Keys.ENTER);
+        const name = await driver.$('#rc-button-name').getValue();
+        const code = await driver.$('#rc-button-code').getValue();
+        const duration = await driver.$('#event-duration').getText();
+        expect(code, 'to equal', 'Enter'); // !!!
+        expect(name, 'to equal', 'Enter');
+        expect(Number(duration), 'to be less than', 500);
+
+      });
     });
   });
 
