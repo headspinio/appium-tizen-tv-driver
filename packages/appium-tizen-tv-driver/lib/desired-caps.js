@@ -45,6 +45,9 @@ const commonCapConstraints = {
   rcMode: {
     isString: true,
     inclusionCaseInsensitive: ['remote', 'js']
+  },
+  rcDebugLog: {
+    isBoolean: true
   }
 };
 

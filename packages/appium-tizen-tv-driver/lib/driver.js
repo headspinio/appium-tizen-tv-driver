@@ -205,6 +205,7 @@ class TizenTVDriver extends BaseDriver {
       this.#remote = new TizenRemote(caps.deviceAddress, {
         ...RC_OPTS,
         token: caps.rcToken,
+        debug: Boolean(caps.rcDebugLog),
       });
       // we need to establish a valid token BEFORE chromedriver connects,
       // or we will be booted out of the app once the "approval" modal dialog closes.
@@ -600,6 +601,7 @@ export default TizenTVDriver;
  * @property {RcMode} [rcMode]
  * @property {number} [appLaunchCooldown]
  * @property {boolean} [resetRcToken]
+ * @property {boolean} [rcDebugLog]
  */
 
 /**
