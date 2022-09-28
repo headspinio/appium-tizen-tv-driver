@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.5.0...appium-tizen-tv-driver@0.6.0) (2022-09-28)
+
+
+### Features
+
+* **appium-tizen-tv-driver,tizen-remote:** add rcDebugLog capability ([5169de5](https://github.com/headspinio/appium-tizen-tv-driver/commit/5169de5e683d14289c3b002c0beb0efada471039))
+
+
+
+
+
 # [0.5.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.4.1...appium-tizen-tv-driver@0.5.0) (2022-09-28)
 
 
