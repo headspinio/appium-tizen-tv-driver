@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.4.1...appium-tizen-tv-driver@0.5.0) (2022-09-28)
+
+
+### Bug Fixes
+
+* **appium-tizen-tv-driver,tizen-remote:** do not always force token ([7146d39](https://github.com/headspinio/appium-tizen-tv-driver/commit/7146d392e261947ef98dafb4ed3521ba44fe8d28))
+* **appium-tizen-tv-driver:** ensure desiredCapConstraints is defined via assignment ([0104542](https://github.com/headspinio/appium-tizen-tv-driver/commit/0104542e1c28379cd374ef13e3a8a8eb8f6abbc6))
+* **appium-tizen-tv-driver:** logic for udid/deviceAddress assignment was wonky ([72f2f91](https://github.com/headspinio/appium-tizen-tv-driver/commit/72f2f912f390668361b0f8d191453592b3419a0c))
+
+
+### Features
+
+* **appium-tizen-tv-driver:** make udid and deviceAddress caps optional ([217b141](https://github.com/headspinio/appium-tizen-tv-driver/commit/217b141e115dbe353219a7213759eb49118b23a6))
+
+
+
+
+
 ## [0.4.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.4.0...appium-tizen-tv-driver@0.4.1) (2022-09-13)
 
 

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.2.1...@headspinio/tizen-remote@0.2.2) (2022-09-28)
+
+
+### Bug Fixes
+
+* **appium-tizen-tv-driver,tizen-remote:** do not always force token ([7146d39](https://github.com/headspinio/appium-tizen-tv-driver/commit/7146d392e261947ef98dafb4ed3521ba44fe8d28))
+
+
+
+
+
 ## [0.2.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.2.0...@headspinio/tizen-remote@0.2.1) (2022-09-13)
 
 
