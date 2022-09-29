@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.6.0...appium-tizen-tv-driver@0.6.1) (2022-09-29)
+
+**Note:** Version bump only for package appium-tizen-tv-driver
+
+
+
+
+
 # [0.6.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.5.0...appium-tizen-tv-driver@0.6.0) (2022-09-28)
 
 
