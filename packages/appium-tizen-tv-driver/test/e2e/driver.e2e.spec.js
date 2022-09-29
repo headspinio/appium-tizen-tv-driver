@@ -287,7 +287,7 @@ describe('TizenTVDriver', function () {
         };
         appiumServerPort = await getPort();
         server = await startServer(appiumServerPort);
-        expect(
+        await expect(
           tizenBrowser({
             hostname: TEST_HOST,
             port: appiumServerPort,
