@@ -1,4 +1,4 @@
-const commonCapConstraints = {
+export const desiredCapConstraints = /** @type {const} */({
   platformName: {
     isString: true,
     inclusionCaseInsensitive: ['TizenTV'],
@@ -51,9 +51,12 @@ const commonCapConstraints = {
   },
   rcKeypressCooldown: {
     isNumber: true
+  },
+  appLaunchCooldown: {
+    isNumber: true
   }
-};
+});
 
-const desiredCapConstraints = {...commonCapConstraints};
-
-export {desiredCapConstraints};
+/**
+ * @typedef {typeof desiredCapConstraints} TizenTVDriverCapConstraints
+ */

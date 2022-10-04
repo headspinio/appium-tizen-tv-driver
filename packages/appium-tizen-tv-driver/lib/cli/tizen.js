@@ -9,7 +9,7 @@ async function runTizenCmd(args) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<TizenTVDriverCaps, 'app'|'udid'>, 'app'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'app' | 'udid'>, 'app'>} caps
  */
 async function tizenInstall({app, udid}) {
   log.info(`Installing tizen app '${app}' on device '${udid}'`);
@@ -17,7 +17,7 @@ async function tizenInstall({app, udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'appPackage'|'udid'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  */
 async function tizenUninstall({appPackage, udid}) {
   log.info(`Uninstalling tizen app '${appPackage}' on device '${udid}'`);
@@ -25,7 +25,7 @@ async function tizenUninstall({appPackage, udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'appPackage'|'udid'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  */
 async function tizenRun({appPackage, udid}) {
   log.info(`Running tizen app '${appPackage}' on device '${udid}'`);
@@ -35,5 +35,5 @@ async function tizenRun({appPackage, udid}) {
 export {runTizenCmd, tizenInstall, tizenUninstall, tizenRun};
 
 /**
- * @typedef {import('../driver').TizenTVDriverCaps} TizenTVDriverCaps
+ * @typedef {import('../driver').StrictTizenTVDriverCaps} StrictTizenTVDriverCaps
  */

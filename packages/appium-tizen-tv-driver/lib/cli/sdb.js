@@ -15,7 +15,7 @@ async function runSDBCmd(udid, args) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'appPackage' | 'udid'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  */
 async function debugApp({appPackage, udid}) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
@@ -37,7 +37,7 @@ async function debugApp({appPackage, udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
  */
 async function listApps({udid}) {
   log.info(`Listing apps installed on '${udid}'`);
@@ -58,7 +58,7 @@ async function listApps({udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'|'localPort'|'remotePort'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'> & {localPort: number, remotePort: number}} caps
  */
 async function forwardPort({udid, localPort, remotePort}) {
   log.info(`Forwarding local TCP port ${localPort} to port ${remotePort} on device ${udid}`);
@@ -66,15 +66,15 @@ async function forwardPort({udid, localPort, remotePort}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'|'localPort'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'> & {localPort: number}} caps
  */
 async function removeForwardedPort({udid, localPort}) {
   log.info(`Removing port forwarding for device ${udid} and local port ${localPort}`);
-  await runSDBCmd(udid, ['forward', '--remove', localPort]);
+  await runSDBCmd(udid, ['forward', '--remove', String(localPort)]);
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
  */
 async function removeForwardedPorts({udid}) {
   log.info(`Removing all port forwarding for device ${udid}`);
@@ -82,7 +82,7 @@ async function removeForwardedPorts({udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
  */
 async function connectDevice({udid}) {
   log.info(`Connecting device '${udid}' via sdb`);
@@ -90,7 +90,7 @@ async function connectDevice({udid}) {
 }
 
 /**
- * @param {Pick<TizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
  */
 async function disconnectDevice({udid}) {
   log.info(`Disconnecting device '${udid}' via sdb`);
@@ -109,5 +109,5 @@ export {
 };
 
 /**
- * @typedef {import('../driver').TizenTVDriverCaps} TizenTVDriverCaps
+ * @typedef {import('../driver').StrictTizenTVDriverCaps} StrictTizenTVDriverCaps
  */
