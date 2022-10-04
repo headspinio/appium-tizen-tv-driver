@@ -35,6 +35,7 @@
     "build/lib"
   ],
   "dependencies": {
+    "@appium/types": "0.4.1",
     "@babel/runtime": "7.18.2",
     "@headspinio/tizen-remote": "file:../tizen-remote",
     "appium-chromedriver": "5.2.4",
@@ -46,6 +47,7 @@
     "lodash": "4.17.21",
     "source-map-support": "0.5.21",
     "teen_process": "1.16.0",
+    "type-fest": "3.0.0",
     "yargs": "17.6.0"
   },
   "scripts": {

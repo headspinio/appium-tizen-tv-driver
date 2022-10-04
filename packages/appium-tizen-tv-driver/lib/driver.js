@@ -107,6 +107,9 @@ export const RC_OPTS = {
  */
 const isPositiveInteger = _.overEvery([_.isNumber, _.isSafeInteger, _.partialRight(_.gt, 0)]);
 
+/**
+ * @extends {BaseDriver<import('./desired-caps').TizenTVDriverCapConstraints>}
+ */
 class TizenTVDriver extends BaseDriver {
   static executeMethodMap = Object.freeze({
     'tizen: pressKey': Object.freeze({
@@ -137,8 +140,8 @@ class TizenTVDriver extends BaseDriver {
   /** @type {Chromedriver|undefined} */
   #chromedriver;
 
-  /** @type {number|undefined} */
-  #rcKeypressCooldown;
+  /** @type {number} */
+  #rcKeypressCooldown = DEFAULT_RC_KEYPRESS_COOLDOWN
 
   /**
    *
@@ -169,25 +172,25 @@ class TizenTVDriver extends BaseDriver {
   }
 
   /**
-   * @param {W3CCapabilities} w3cCapabilities1
-   * @param {W3CCapabilities} [w3cCapabilities2]
-   * @param {W3CCapabilities} [w3cCapabilities3]
+   * @param {W3CTizenTVDriverCaps} w3cCapabilities1
+   * @param {W3CTizenTVDriverCaps} [w3cCapabilities2]
+   * @param {W3CTizenTVDriverCaps} [w3cCapabilities3]
    * @param {DriverData[]} [driverData]
    * @returns {Promise<[string, any]>}
    */
   async createSession(w3cCapabilities1, w3cCapabilities2, w3cCapabilities3, driverData) {
-    let [sessionId, capabilities] = /** @type {[string, TizenTVDriverUserCaps]} */ (
+    let [sessionId, capabilities] = /** @type {[string, TizenTVDriverCaps]} */ (
       await super.createSession(w3cCapabilities1, w3cCapabilities2, w3cCapabilities3, driverData)
     );
 
-    /** @type {TizenTVDriverUserCaps} */
+    /** @type {TizenTVDriverCaps} */
     const tempCaps = {...DEFAULT_CAPS, ...capabilities};
 
     // if we have what looks like server address information in the deviceName, spread it out
     // through the udid and deviceAddress capabilities
     if (!tempCaps.deviceAddress || !tempCaps.udid) {
       log.info(`No udid and/or deviceAddress provided; attempting to derive from deviceName "${tempCaps.deviceName}"`);
-      const matches = tempCaps.deviceName.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
+      const matches = tempCaps.deviceName?.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
       if (matches?.length) {
         if (!tempCaps.deviceAddress) {
           tempCaps.deviceAddress = matches[1];
@@ -215,7 +218,7 @@ class TizenTVDriver extends BaseDriver {
       );
     }
 
-    const caps = /** @type {TizenTVDriverCaps} */ (tempCaps);
+    const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
@@ -259,7 +262,7 @@ class TizenTVDriver extends BaseDriver {
           throw new Error('For now, the appPackage capability is required');
         }
         if (!caps.noReset) {
-          await tizenUninstall(caps);
+          await tizenUninstall(/** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */(caps));
         }
         // XXX this is for typescript
         await tizenInstall({...caps, app: caps.app});
@@ -297,16 +300,18 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    *
-   * @param {TizenTVDriverCaps} caps
+   * @param {StrictTizenTVDriverCaps} caps
    * @returns {Promise<number>}
    */
   async setupDebugger(caps) {
-    const remoteDebugPort = caps.useOpenDebugPort || (await debugApp(caps));
+    const remoteDebugPort =
+      caps.useOpenDebugPort ||
+      (await debugApp(/** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)));
     const localDebugPort = await getPort();
     log.info(`Chose local port ${localDebugPort} for remote debug communication`);
     await forwardPort({
       udid: caps.udid,
-      remotePort: remoteDebugPort,
+      remotePort: Number(remoteDebugPort),
       localPort: localDebugPort,
     });
     this.#forwardedPorts.push(localDebugPort);
@@ -586,20 +591,30 @@ export {TizenTVDriver, Keys};
 export default TizenTVDriver;
 
 /**
+ * A known script identifier (e.g., `tizen: pressKey`)
  * @typedef {keyof TizenTVDriverExecuteMethodMap} ScriptId
- * @typedef {BaseTizenTVDriverCaps & Capabilities} TizenTVDriverCaps
- * @typedef {import('@appium/types').W3CCapabilities<BaseTizenTVDriverCaps>} TizenTVDriverW3CCaps
+ */
+
+/**
+ * Capabilities for {@linkcode TizenTVDriver}
+ * @typedef {import('@appium/types').DriverCaps<TizenTVDriverCapConstraints>} TizenTVDriverCaps
+ */
+
+/**
+ * W3C-style caps for {@linkcode TizenTVDriver}
+ * @typedef {import('@appium/types').W3CDriverCaps<TizenTVDriverCapConstraints>} W3CTizenTVDriverCaps
+ */
+
+/**
+ * Possible values of the `rcMode` cap
  * @typedef {typeof RC_MODE_JS | typeof RC_MODE_REMOTE} RcMode
+
+/**
  * @typedef {typeof TizenTVDriver.executeMethodMap} TizenTVDriverExecuteMethodMap
  */
 
 /**
- * This is {@linkcode TizenTVDriverCaps} with optional {@linkcode BaseTizenTVDriverCaps.udid} and {@linkcode BaseTizenTVDriverCaps.deviceAddress}. These can be
- * derived from `deviceName`.
- * @typedef {import('type-fest').SetOptional<TizenTVDriverCaps, 'udid'|'deviceAddress'>} TizenTVDriverUserCaps
- */
-
-/**
+ * Options for {@linkcode TizenTVDriver.startChromedriver}
  * @typedef StartChromedriverOptions
  * @property {string} executable
  * @property {number} debuggerPort
@@ -612,36 +627,13 @@ export default TizenTVDriver;
  */
 
 /**
- * {@linkcode TizenTVDriver}-specific caps
- * @typedef BaseTizenTVDriverCaps
- * @property {string} chromedriverExecutable
- * @property {string} appPackage
- * @property {string} deviceName
- * @property {string} udid
- * @property {string} deviceAddress
- * @property {boolean} [isDeviceApiSsl]
- * @property {number} [useOpenDebugPort]
- * @property {string} [powerCyclePostUrl]
- * @property {string} [rcToken]
- * @property {string} [sendKeysStrategy]
- * @property {RcMode} [rcMode]
- * @property {number} [appLaunchCooldown]
- * @property {boolean} [resetRcToken]
- * @property {boolean} [rcDebugLog]
- * @property {number} [rcKeypressCooldown]
+ * Like {@linkcode TizenTVDriverCaps} but the actually-required stuff is required.
+ * @typedef {import('type-fest').SetRequired<TizenTVDriverCaps, 'deviceAddress' | 'udid'>} StrictTizenTVDriverCaps
  */
 
 /**
- * Given object `T` and namespace `NS`, return a new object with keys namespaced by `${NS}:`.
- * @template {Record<string,any>} T
- * @template {string} [NS='appium']
- * @typedef {{[K in keyof T as (K extends 'platformName' ? `${K}` : `${NS}:${K & string}`)]: T[K]}} NamespacedObject
- */
-
-/**
- * @typedef {import('@appium/types').Capabilities} Capabilities
+ * @typedef {import('./desired-caps').TizenTVDriverCapConstraints} TizenTVDriverCapConstraints
  * @typedef {import('@headspinio/tizen-remote').RcKeyCode} RcKeyCode
  * @typedef {import('@appium/types').DriverData} DriverData
- * @typedef {import('@appium/types').W3CCapabilities} W3CCapabilities
  * @typedef {import('@appium/types').ServerArgs} ServerArgs
  */

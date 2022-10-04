@@ -75,10 +75,10 @@ describe('TizenTVDriver', function () {
   /** @type {string} */
   let device;
 
-  /** @type {import('../../lib/driver').NamespacedObject<import('../../lib/driver').TizenTVDriverUserCaps>} */
+  /** @type {import('@appium/types').NSDriverCaps<import('../../lib/driver').TizenTVDriverCapConstraints>} */
   let capabilities;
 
-  /** @type {import('../../lib/driver').NamespacedObject<import('../../lib/driver').TizenTVDriverUserCaps>} */
+  /** @type {import('@appium/types').NSDriverCaps<import('../../lib/driver').TizenTVDriverCapConstraints>} */
   let baseCaps;
 
   before(async function () {
