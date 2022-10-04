@@ -6,14 +6,10 @@ const init = function () {
   $('#header').text('Initializing...');
 
   try {
-    /** @type {{name: string, code: number}[]} */
-    try {
-      // @ts-ignore
-      const supportedKeys = tizen.tvinputdevice.getSupportedKeys();
-      $('#supported-btn-raw').text(JSON.stringify(supportedKeys, null, 2));
-    } catch (err) {
-      $('#supported-btn-raw').text(err.message);
-    }
+
+    // @ts-ignore
+    const supportedKeys = /** @type {{name: string, code: number}[]} */(tizen.tvinputdevice.getSupportedKeys());
+    $('#supported-btn-raw').text(JSON.stringify(supportedKeys, null, 2));
 
     const btnName = $('#rc-button-name');
     const btnCode = $('#rc-button-code');
@@ -26,6 +22,9 @@ const init = function () {
       .on('keydown', (e) => {
         lastKeyDownMs = Date.now();
         lastKeyDownCode = e.code;
+        if (typeof e.code !== 'number' && !e.code) {
+          $('#keydown-error-data').text('Keydown event code is undefined');
+        }
       })
       .on('keyup', (e) => {
         if (lastKeyDownMs !== undefined && lastKeyDownCode === e.code) {
@@ -33,18 +32,22 @@ const init = function () {
           $('#event-duration').text(duration);
           lastKeyDownMs = undefined;
           lastKeyDownCode = undefined;
+        } else if (typeof e.code !== 'number' && !e.code) {
+          $('keyup-error-data').text('Keyup event code is undefined');
+        } else {
+          $('#keyup-error-data').text(`Keyup event code (${e.code}) does not match keydown event code (${lastKeyDownCode})`);
         }
         try {
           $('#event-data').text(JSON.stringify(e, null, 2));
-          btnName.val(e.key);
-          btnCode.val(e.code);
+          btnName.text(e.key);
+          btnCode.text(e.code);
         } catch (err) {
           console.error(err);
-          $('#event-data').text(err.message);
+          $('#keyup-error-data').text(err.message);
         }
       });
   } catch (err) {
-    $('#header').text(err.message);
+    $('#general-error-data').text(err.message);
   }
 
   $('#header').text('Initialized');

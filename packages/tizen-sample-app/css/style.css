@@ -1,9 +1,9 @@
 * {
-  font-family: Lucida Sans, Arial, Helvetica, sans-serif;
+  font-family: 'Lucida Sans', Arial, Helvetica, sans-serif;
 }
 
 body {
-  margin: 50px auto;
+  margin: 50px 20px;
   background-color: #ffffff;
 }
 
@@ -72,4 +72,20 @@ footer p {
   font-size: 36px;
   color: #888;
   margin-top: 30px;
+}
+
+td, tr {
+  padding: 5px;
+}
+
+#event {
+  border: 1px solid #333;
+}
+
+#event th {
+  text-align: right;
+}
+
+#event td {
+  font-family: monospace;
 }
