@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.6.1...appium-tizen-tv-driver@0.7.0) (2022-10-04)
+
+
+### Bug Fixes
+
+* **appium-tizen-tv-driver,tizen-sample-app:** add delay post-click for RC clicks ([4ff71a4](https://github.com/headspinio/appium-tizen-tv-driver/commit/4ff71a41c96c3445f7fb8ffcf552ba05c3c19e92))
+
+
+### Features
+
+* **appium-tizen-tv-driver:** create cap rcKeypressCooldown ([ee675a1](https://github.com/headspinio/appium-tizen-tv-driver/commit/ee675a1f35a54fff66a4c3aaee907c5ea3111600))
+
+
+
+
+
 ## [0.6.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.6.0...appium-tizen-tv-driver@0.6.1) (2022-09-29)
 
 **Note:** Version bump only for package appium-tizen-tv-driver
