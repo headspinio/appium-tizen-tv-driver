@@ -28,10 +28,24 @@
           When a registered remote control button is pressed, the name and code of the button will
           appear in the following text inputs.
         </p>
-        <input type="text" id="rc-button-name" placeholder="(no key pressed)" />
-        <input type="text" id="rc-button-code" placeholder="(no key pressed)" />
+        <table id="event">
+          <tr>
+            <th>Key Name</th>
+            <td id="rc-button-name"></td>
+          </tr>
+          <tr>
+            <th>Key Code</th>
+            <td id="rc-button-code"></td>
+          </tr>
+          <tr>
+            <th>Evt Duration</th>
+            <td id="event-duration"></td>
+          </tr>
+        </table>
         <pre id="event-data">(no event)</pre>
-        <code id="event-duration">(n/a)</code>ms
+        <pre id="keydown-error-data">(no keydown error)</pre>
+        <pre id="keyup-error-data">(no keyup error)</pre>
+        <pre id="general-error-data">(no general error)</pre>
       </section>
       <section>
         <h3>Text Input</h3>
@@ -55,9 +69,9 @@
     </main>
 
     <footer>
-      <p>&copy; 2015 Company Name. All rights reserved.</p>
+      <p>&copy; 2022 HeadSpin. All rights reserved.</p>
     </footer>
-    <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+    <script src="js/vendor/jquery-3.6.1.min.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>

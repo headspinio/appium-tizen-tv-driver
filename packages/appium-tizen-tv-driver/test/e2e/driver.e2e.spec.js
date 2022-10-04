@@ -1,3 +1,4 @@
+import B from 'bluebird';
 import {Env} from '@humanwhocodes/env';
 import {Keys} from '@headspinio/tizen-remote';
 import {startServer, TEST_HOST} from '../helpers';
@@ -98,7 +99,7 @@ describe('TizenTVDriver', function () {
 
   describe('when run in "proxy"/"js" mode', function () {
     before(async function () {
-      this.timeout('20s');
+      this.timeout('40s');
       capabilities = {
         ...baseCaps,
         'appium:rcMode': RC_MODE_JS,
@@ -128,8 +129,8 @@ describe('TizenTVDriver', function () {
 
     it('should press a button on the remote control', async function () {
       await driver.pressKey(Keys.ENTER);
-      const name = await driver.$('#rc-button-name').getValue();
-      const code = await driver.$('#rc-button-code').getValue();
+      const name = await driver.$('#rc-button-name').getText();
+      const code = await driver.$('#rc-button-code').getText();
       const duration = await driver.$('#event-duration').getText();
       expect(code, 'to equal', '13');
       expect(name, 'to equal', 'Enter');
@@ -138,8 +139,8 @@ describe('TizenTVDriver', function () {
 
     it('should "long press" a button on the remote control', async function () {
       await driver.longPressKey(Keys.ENTER);
-      const name = await driver.$('#rc-button-name').getValue();
-      const code = await driver.$('#rc-button-code').getValue();
+      const name = await driver.$('#rc-button-name').getText();
+      const code = await driver.$('#rc-button-code').getText();
       const duration = await driver.$('#event-duration').getText();
       expect(code, 'to equal', '13');
       expect(name, 'to equal', 'Enter');
@@ -151,7 +152,7 @@ describe('TizenTVDriver', function () {
       this.timeout('20s');
       const input = await driver.$('#text-input');
       await input.setValue('Sylvester McMonkey McTester');
-      expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+      expect(await input.getText(), 'to equal', 'Sylvester McMonkey McTester');
     });
   });
 
@@ -192,8 +193,8 @@ describe('TizenTVDriver', function () {
 
       it('should press a button on the remote control', async function () {
         await driver.pressKey(Keys.ENTER);
-        const name = await driver.$('#rc-button-name').getValue();
-        const code = await driver.$('#rc-button-code').getValue();
+        const name = await driver.$('#rc-button-name').getText();
+        const code = await driver.$('#rc-button-code').getText();
         const duration = await driver.$('#event-duration').getText();
         expect(code, 'to equal', 'Enter'); // !!!
         expect(name, 'to equal', 'Enter');
@@ -202,8 +203,8 @@ describe('TizenTVDriver', function () {
 
       it('should "long press" a button on the remote control', async function () {
         await driver.longPressKey(Keys.ENTER);
-        const name = await driver.$('#rc-button-name').getValue();
-        const code = await driver.$('#rc-button-code').getValue();
+        const name = await driver.$('#rc-button-name').getText();
+        const code = await driver.$('#rc-button-code').getText();
         const duration = await driver.$('#event-duration').getText();
         expect(code, 'to equal', 'Enter'); // !!!
         expect(name, 'to equal', 'Enter');
@@ -213,7 +214,7 @@ describe('TizenTVDriver', function () {
       it('should allow text input', async function () {
         const input = await driver.$('#text-input');
         await input.setValue('Sylvester McMonkey McTester');
-        expect(await input.getValue(), 'to equal', 'Sylvester McMonkey McTester');
+        expect(await input.getText(), 'to equal', 'Sylvester McMonkey McTester');
       });
     });
 
@@ -225,26 +226,29 @@ describe('TizenTVDriver', function () {
 
       it('should press a button on the remote control', async function () {
         this.timeout('120s');
-        capabilities = {
-          ...baseCaps,
-          'appium:rcMode': RC_MODE_REMOTE,
-          'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
-          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
-          'appium:resetRcToken': true
-        };
+        // if this is set we will use a cached token instead of forcing a new one;
+        if (!env.get('TEST_APPIUM_TIZEN_FORCE_TOKEN_CACHE')) {
+          capabilities = {
+            ...baseCaps,
+            'appium:rcMode': RC_MODE_REMOTE,
+            'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+            'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
+            'appium:resetRcToken': true
+          };
 
-        appiumServerPort = await getPort();
-        server = await startServer(appiumServerPort);
-        driver = await tizenBrowser({
-          hostname: TEST_HOST,
-          port: appiumServerPort,
-          connectionRetryCount: 0,
-          logLevel: 'debug',
-          capabilities,
-        });
-        listenForInterrupts(driver, server);
+          appiumServerPort = await getPort();
+          server = await startServer(appiumServerPort);
+          driver = await tizenBrowser({
+            hostname: TEST_HOST,
+            port: appiumServerPort,
+            connectionRetryCount: 0,
+            logLevel: 'debug',
+            capabilities,
+          });
+          listenForInterrupts(driver, server);
 
-        await cleanup(driver, server);
+          await cleanup(driver, server);
+        }
         capabilities = {
           ...baseCaps,
           'appium:rcMode': RC_MODE_REMOTE,
@@ -265,13 +269,21 @@ describe('TizenTVDriver', function () {
         listenForInterrupts(driver, server);
 
         await driver.pressKey(Keys.ENTER);
-        const name = await driver.$('#rc-button-name').getValue();
-        const code = await driver.$('#rc-button-code').getValue();
-        const duration = await driver.$('#event-duration').getText();
-        expect(code, 'to equal', 'Enter'); // !!!
-        expect(name, 'to equal', 'Enter');
-        expect(Number(duration), 'to be less than', 500);
-
+        const [name, code, duration] = await B.all([
+          driver.$('#rc-button-name').getText(),
+          driver.$('#rc-button-code').getText(),
+          driver.$('#event-duration').getText()
+        ]);
+        const result = {
+          name,
+          code,
+          duration: Number(duration),
+        };
+        expect(result, 'to satisfy', {
+          name: 'Enter',
+          code: 'Enter',
+          duration: expect.it('to be less than', 500),
+        });
       });
     });
   });

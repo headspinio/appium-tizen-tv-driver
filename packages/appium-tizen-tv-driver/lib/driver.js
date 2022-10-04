@@ -70,6 +70,12 @@ export const DEFAULT_KEYPRESS_DELAY = 200;
 export const DEFAULT_LONG_KEYPRESS_DELAY = 1000;
 
 /**
+ * We wait this many ms for the `KeyboardEvent` to propagate from the websocket
+ * API to the AUT
+ */
+export const DEFAULT_RC_POST_CLICK_DELAY = 750;
+
+/**
  * @type {import('@appium/types').RouteMatcher[]}
  */
 const NO_PROXY = [
@@ -492,6 +498,8 @@ class TizenTVDriver extends BaseDriver {
       throw new TypeError(`Must be in "remote" RC mode to use this method`);
     }
     await /** @type {TizenRemote} */ (this.#remote).click(key);
+    log.debug(`Waiting ${DEFAULT_RC_POST_CLICK_DELAY}ms...`);
+    await B.delay(DEFAULT_RC_POST_CLICK_DELAY);
   }
 
   /**
@@ -508,6 +516,8 @@ class TizenTVDriver extends BaseDriver {
     await remote.press(rcKeyCode);
     await B.delay(duration);
     await remote.release(rcKeyCode);
+    log.debug(`Waiting ${DEFAULT_RC_POST_CLICK_DELAY}ms...`);
+    await B.delay(DEFAULT_RC_POST_CLICK_DELAY);
   }
 
   /**
