@@ -1,4 +1,5 @@
 import {BaseDriver} from 'appium/driver';
+import _ from 'lodash';
 import B from 'bluebird';
 import {retryInterval} from 'asyncbox';
 import {desiredCapConstraints} from './desired-caps';
@@ -73,7 +74,7 @@ export const DEFAULT_LONG_KEYPRESS_DELAY = 1000;
  * We wait this many ms for the `KeyboardEvent` to propagate from the websocket
  * API to the AUT
  */
-export const DEFAULT_RC_POST_CLICK_DELAY = 750;
+export const DEFAULT_RC_KEYPRESS_COOLDOWN = 750;
 
 /**
  * @type {import('@appium/types').RouteMatcher[]}
@@ -98,6 +99,13 @@ export const RC_OPTS = {
   port: RC_PORT,
   name: RC_NAME,
 };
+
+/**
+ * Returns `true` if `value` is a positive integer
+ * @param {any} value
+ * @returns {value is number}
+ */
+const isPositiveInteger = _.overEvery([_.isNumber, _.isSafeInteger, _.partialRight(_.gt, 0)]);
 
 class TizenTVDriver extends BaseDriver {
   static executeMethodMap = Object.freeze({
@@ -128,6 +136,9 @@ class TizenTVDriver extends BaseDriver {
 
   /** @type {Chromedriver|undefined} */
   #chromedriver;
+
+  /** @type {number|undefined} */
+  #rcKeypressCooldown;
 
   /**
    *
@@ -208,6 +219,11 @@ class TizenTVDriver extends BaseDriver {
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
+      log.debug(`Received rcKeypressCooldown of type ${typeof caps.rcKeypressCooldown}`);
+      if (caps.rcKeypressCooldown !== undefined && !isPositiveInteger(caps.rcKeypressCooldown)) {
+        throw new Error('appium:rcKeypressCooldown must be a positive integer');
+      }
+      this.#rcKeypressCooldown = caps.rcKeypressCooldown ?? DEFAULT_RC_KEYPRESS_COOLDOWN;
       this.#remote = new TizenRemote(caps.deviceAddress, {
         ...RC_OPTS,
         token: caps.rcToken,
@@ -498,8 +514,8 @@ class TizenTVDriver extends BaseDriver {
       throw new TypeError(`Must be in "remote" RC mode to use this method`);
     }
     await /** @type {TizenRemote} */ (this.#remote).click(key);
-    log.debug(`Waiting ${DEFAULT_RC_POST_CLICK_DELAY}ms...`);
-    await B.delay(DEFAULT_RC_POST_CLICK_DELAY);
+    log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+    await B.delay(this.#rcKeypressCooldown);
   }
 
   /**
@@ -516,8 +532,8 @@ class TizenTVDriver extends BaseDriver {
     await remote.press(rcKeyCode);
     await B.delay(duration);
     await remote.release(rcKeyCode);
-    log.debug(`Waiting ${DEFAULT_RC_POST_CLICK_DELAY}ms...`);
-    await B.delay(DEFAULT_RC_POST_CLICK_DELAY);
+    log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+    await B.delay(this.#rcKeypressCooldown);
   }
 
   /**
@@ -612,6 +628,7 @@ export default TizenTVDriver;
  * @property {number} [appLaunchCooldown]
  * @property {boolean} [resetRcToken]
  * @property {boolean} [rcDebugLog]
+ * @property {number} [rcKeypressCooldown]
  */
 
 /**

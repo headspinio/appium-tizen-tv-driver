@@ -48,6 +48,9 @@ const commonCapConstraints = {
   },
   rcDebugLog: {
     isBoolean: true
+  },
+  rcKeypressCooldown: {
+    isNumber: true
   }
 };
 

@@ -224,10 +224,10 @@ describe('TizenTVDriver', function () {
         await cleanup(driver, server);
       });
 
-      it('should press a button on the remote control', async function () {
-        this.timeout('120s');
+      before(async function() {
         // if this is set we will use a cached token instead of forcing a new one;
         if (!env.get('TEST_APPIUM_TIZEN_FORCE_TOKEN_CACHE')) {
+          this.timeout('60s');
           capabilities = {
             ...baseCaps,
             'appium:rcMode': RC_MODE_REMOTE,
@@ -249,11 +249,15 @@ describe('TizenTVDriver', function () {
 
           await cleanup(driver, server);
         }
+      });
+
+      it('should reconnect w/o issue & press a button on the remote control', async function () {
+        this.timeout('60s');
         capabilities = {
           ...baseCaps,
           'appium:rcMode': RC_MODE_REMOTE,
           'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
-          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE
+          'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
           // do not reset token!!
         };
 
@@ -279,10 +283,84 @@ describe('TizenTVDriver', function () {
           code,
           duration: Number(duration),
         };
-        expect(result, 'to satisfy', {
-          name: 'Enter',
-          code: 'Enter',
-          duration: expect.it('to be less than', 500),
+        try {
+          expect(result, 'to satisfy', {
+            name: 'Enter',
+            code: 'Enter',
+            duration: expect.it('to be less than', 500),
+          });
+        } finally {
+          await cleanup(driver, server);
+        }
+      });
+
+      describe('when rcKeypressCooldown is invalid', function() {
+        beforeEach(async function() {
+          capabilities = {
+            ...baseCaps,
+            'appium:rcMode': RC_MODE_REMOTE,
+            'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+            'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
+            // do not reset token!!
+          };
+
+          appiumServerPort = await getPort();
+          server = await startServer(appiumServerPort);
+        });
+
+        afterEach(async function () {
+          await cleanup(driver, server);
+        });
+
+        describe('when it is negative', function() {
+          it('should fail', async function () {
+            capabilities['appium:rcKeypressCooldown'] = -1;
+            await expect(
+              tizenBrowser({
+                hostname: TEST_HOST,
+                port: appiumServerPort,
+                connectionRetryCount: 0,
+                logLevel: 'debug',
+                capabilities,
+              }),
+              'to be rejected with',
+              /appium:rcKeypressCooldown must be a positive integer/i
+            );
+          });
+        });
+        describe('when it is not an integer', function() {
+          it('should fail', async function () {
+            capabilities['appium:rcKeypressCooldown'] = 100.5;
+            await expect(
+              tizenBrowser({
+                hostname: TEST_HOST,
+                port: appiumServerPort,
+                connectionRetryCount: 0,
+                logLevel: 'debug',
+                capabilities,
+              }),
+              'to be rejected with',
+              /appium:rcKeypressCooldown must be a positive integer/i
+            );
+          });
+        });
+
+        describe('when it is too big', function() {
+          it('should fail', async function () {
+            // @ts-expect-error
+            capabilities['appium:rcKeypressCooldown'] = '9007199254740992';
+            await expect(
+              tizenBrowser({
+                hostname: TEST_HOST,
+                port: appiumServerPort,
+                connectionRetryCount: 0,
+                logLevel: 'debug',
+                capabilities,
+              }),
+              'to be rejected with',
+              /appium:rcKeypressCooldown must be a positive integer/i
+            );
+          });
         });
       });
     });
@@ -316,4 +394,5 @@ describe('TizenTVDriver', function () {
       });
     });
   });
+
 });

@@ -64,6 +64,7 @@ package in your `package.json`)
 | `appium:useOpenDebugPort`       | If you have already launched an app on the TV in debug mode, and you know its remote debugging port, you can have Appium simply attach to it by sending in the port as a number as the value of this capability. This is mostly useful for driver development.                                                                                                                                                                                                                                                       |
 | `appium:isDeviceApiSsl`         | Set it to `true` if you want Appium to connect to the device over SSL.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `appium:rcDebugLog` | Set to `true` to enable debug logs from the interaction with the device's remote control API. |
+| `appium:rcKeypressCooldown` | Cooldown (in milliseconds) after each keypress via remote.  Only applies if `appium:rcMode` is `remote`.  Increase this number if keypress commands complete before the app under test reflects the keypress. Defaults to `750` ms. |
 
 ## Commands
 
