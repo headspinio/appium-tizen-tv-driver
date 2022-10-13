@@ -23,13 +23,13 @@ module.exports = (wallaby) => {
       './packages/*/test/**/fixtures/**/*',
       './packages/*/test/**/helpers.js',
       './babel.config.json',
+      './packages/tizen-remote/test/e2e/server.js',
     ],
     testFramework: 'mocha',
     tests: [
       './packages/*/test/unit/**/*.spec.js',
-      './packages/tizen-remote/test/e2e/tizen-remote.e2e.spec.js'
+      './packages/tizen-remote/test/e2e/**/*.e2e.spec.js'
     ],
     runMode: 'onsave',
-    workers: {recycle: true},
   };
 };
