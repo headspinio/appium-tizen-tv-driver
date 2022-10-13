@@ -22,7 +22,7 @@ describe('TizenRemote', function () {
   /** @type {typeof import('../../lib/tizen-remote').Event} */
   let Event;
 
-  /** @type { {ws: MockWebSocket, '@humanwhocodes/env': {Env: sinon.SinonStub}, conf: typeof MockConf, lockfile: typeof MockLockfile, fs: typeof MockFs}} */
+  /** @type { {ws: MockWebSocket, '@humanwhocodes/env': {Env: sinon.SinonStub}, conf: typeof MockConf, 'proper-lockfile': typeof MockLockfile, 'node:fs/promises': typeof MockFs, 'env-paths': typeof MockEnvPaths, fs: {}}} */
   let mocks;
 
   /** @type {typeof import('../../lib/tizen-remote').constants} */
@@ -40,7 +40,7 @@ describe('TizenRemote', function () {
   /** @type { {lock: sinon.SinonStub, unlock: sinon.SinonStub}} */
   let MockLockfile;
 
-  /** @type {{get: sinon.SinonStub<[string],string|undefined>, set: sinon.SinonStub<[string], void>, delete: sinon.SinonStub}} */
+  /** @type {{get: sinon.SinonStub<[string],string|undefined>, set: sinon.SinonStub<[string], void>, delete: sinon.SinonStub, path: string}} */
   let mockConf;
 
   /** @type {{unlink: sinon.SinonStub<[string],Promise<void>>, mkdir: sinon.SinonStub<[string, import('fs').MakeDirectoryOptions],Promise<void>>}} */
@@ -48,6 +48,9 @@ describe('TizenRemote', function () {
 
   /** @type {new (url: string, opts?: import('ws').ClientOptions) => EventEmitter & {close: () => void, send: (msg: string, done: ((err?: Error) => void)) => void}} */
   let MockWebSocket;
+
+  /** @type {(name: string, ...args: any[]) => {config: string}} */
+  let MockEnvPaths;
 
   beforeEach(function () {
     sandbox = createSandbox();
@@ -105,10 +108,12 @@ describe('TizenRemote', function () {
       static CLOSED = 3;
     };
 
-    MockLockfile = {lock: sandbox.stub().callsArgAsync(1), unlock: sandbox.stub().callsArgAsync(1)};
+    MockEnvPaths = sandbox.stub().returns({config: '/path/to/cache'});
+    MockLockfile = {lock: sandbox.stub().resolves(), unlock: sandbox.stub().resolves()};
     mockConf = {
       get: /** @type {typeof mockConf.get} */ (sandbox.stub().returns('cached-token')),
       set: /** @type {typeof mockConf.set} */ sandbox.stub(),
+      path: '/path/to/cache/token-cache.json',
       delete: sandbox.stub()
     };
     MockConf = sandbox.stub().returns(mockConf);
@@ -122,8 +127,10 @@ describe('TizenRemote', function () {
       },
       ws: MockWebSocket,
       conf: MockConf,
-      lockfile: MockLockfile,
-      fs: MockFs
+      'proper-lockfile': MockLockfile,
+      'node:fs/promises': MockFs,
+      fs: {},
+      'env-paths': MockEnvPaths,
     };
     ({TizenRemote, WsEvent, Event, constants} = rewiremock.proxy(
       () => require('../../lib/tizen-remote'),
