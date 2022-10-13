@@ -1,1 +1,1 @@
-module.exports = require('./build/lib');
+module.exports = require('./build/lib/tizen-remote');

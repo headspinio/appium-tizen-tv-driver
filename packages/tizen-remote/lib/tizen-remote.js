@@ -180,6 +180,16 @@ function isKnownBadCode(code) {
 }
 
 /**
+ * Type guard for incoming messages
+ * @internal
+ * @param {any} msg
+ * @returns {msg is NewTokenMessage}
+ */
+function isTokenMessage(msg) {
+  return Boolean(msg?.event === constants.TOKEN_EVENT && msg?.data?.token);
+}
+
+/**
  * Represents a connection to a Tizen web socket server.
  */
 export class TizenRemote extends createdTypedEmitterClass() {
@@ -734,18 +744,26 @@ export class TizenRemote extends createdTypedEmitterClass() {
       }
     }
     this.#debug('Requesting new token; please wait...');
-    const res = await this.sendRequest(
-      constants.TOKEN_EVENT,
-      new KeyCommand(KeyCmd.CLICK, Keys.HOME),
-      {noConnect, noToken: true, timeout: this.#tokenTimeout}
-    );
-    if (res?.data?.token) {
-      this.#debug('Received message w/ token: %s', res?.data?.token);
-      await this.writeToken(res.data.token);
-      this.emit(Event.TOKEN, res.data.token);
-      return res.data.token;
+    // temporarily disable the "new token" listener, which can happen at any time.
+    // if we don't do this, it'll fire twice.
+    this.#offWs(WsEvent.MESSAGE, this.#updateTokenListener);
+    try {
+      const res = await this.sendRequest(
+        constants.TOKEN_EVENT,
+        new KeyCommand(KeyCmd.CLICK, Keys.HOME),
+        {noConnect, noToken: true, timeout: this.#tokenTimeout}
+      );
+      if (isTokenMessage(res)) {
+        const {token} = res.data;
+        this.#debug('Received message w/ token: %s', token);
+        await this.writeToken(token);
+        this.emit(Event.TOKEN, token);
+        return token;
+      }
+      throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
+    } finally {
+      this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
     }
-    throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
   }
 
   /**
@@ -845,11 +863,12 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
     this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
+    this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
 
     if (!this.#token && !noToken) {
-      this.#debug(`Requesting new token; waiting ${this.#tokenTimeout / 1000}s...`);
+      this.#debug('Requesting new token; waiting %d...', this.#tokenTimeout / 1000);
       this.#token = await this.getToken();
-      this.#debug('Received token');
+      this.#debug('Received token: %s', this.#token);
     }
 
     this.emit(Event.CONNECT, ws);
@@ -886,7 +905,23 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
-   *
+   * Path to the token cache file, if any
+   * @type {string|undefined}
+   */
+   get tokenCachePath () {
+    return this.#tokenCache?.path;
+  }
+
+  /**
+   * Current token, if any
+   * @type {string|undefined}
+   */
+  get token () {
+    return this.#token;
+  }
+
+  /**
+   * A listener that emits received messages in the debug log
    * @param {import('ws').RawData} data
    * @param {boolean} isBinary
    */
@@ -898,6 +933,33 @@ export class TizenRemote extends createdTypedEmitterClass() {
         const resData = JSON.parse(data.toString());
         this.#debug('Received message: %o', resData);
       } catch {}
+    }
+  }
+
+  /**
+   * Listener for unprompted token update msgs from the server.
+   * @param {import('ws').RawData} data
+   * @param {boolean} isBinary
+   */
+  async #updateTokenListener(data, isBinary) {
+    if (isBinary) {
+      return;
+    }
+    try {
+      const msg = JSON.parse(data.toString());
+      if (isTokenMessage(msg)) {
+        const {token} = msg.data;
+        if (token !== this.#token) {
+          this.#debug('Received updated token: %s', token);
+          this.#token = token;
+          await this.writeToken(token);
+          this.emit(Event.TOKEN, token);
+        } else {
+          this.#debug('Warning: received token update, but token (%s) is unchanged', this.#token);
+        }
+      }
+    } catch (err) {
+      this.#debug('Warning: could not parse message: %s', err);
     }
   }
 
@@ -1112,4 +1174,15 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * Options for {@linkcode TizenRemote#sendRequest}.
  * @group Options
  * @typedef {NoTokenOption & NoConnectOption & TimeoutOption} SendRequestOptions
+ */
+
+/**
+ * @typedef NewTokenMessage
+ * @property {typeof constants.TOKEN_EVENT} event
+ * @property {{token: string}} data
+ */
+
+/**
+ * The shape of the on-disk token cache
+ * @typedef {Record<string,{token: string}>} TokenCache
  */

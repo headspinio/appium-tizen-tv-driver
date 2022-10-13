@@ -1,14 +1,14 @@
-import {constants} from './index';
+import {constants} from './tizen-remote';
 
 export class KeyCommand {
   method = constants.COMMAND_METHOD;
 
-  /** @type {import('./index').TizenRemoteCommandParams<import('./index').KeyCommandType, import('./index').RcKeyCode>} */
+  /** @type {import('./tizen-remote').TizenRemoteCommandParams<import('./tizen-remote').KeyCommandType, import('./tizen-remote').RcKeyCode>} */
   params;
 
   /**
-   * @param {import('./index').KeyCommandType} cmd
-   * @param {import('./index').RcKeyCode} data
+   * @param {import('./tizen-remote').KeyCommandType} cmd
+   * @param {import('./tizen-remote').RcKeyCode} data
    */
   constructor(cmd, data) {
     this.params = {
@@ -23,7 +23,7 @@ export class KeyCommand {
 export class TextCommand {
   method = constants.COMMAND_METHOD;
 
-  /** @type {import('./index').TizenRemoteCommandParams<string, 'base64'>} */
+  /** @type {import('./tizen-remote').TizenRemoteCommandParams<string, 'base64'>} */
   params;
 
   /**

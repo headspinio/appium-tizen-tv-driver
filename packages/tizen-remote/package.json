@@ -26,7 +26,7 @@
   "license": "Apache-2.0",
   "author": "Christopher Hiller <boneskull@boneskull.com>",
   "main": "index.js",
-  "types": "build/lib/index.d.ts",
+  "types": "build/lib/tizen-remote.d.ts",
   "directories": {
     "lib": "lib",
     "test": "test"
