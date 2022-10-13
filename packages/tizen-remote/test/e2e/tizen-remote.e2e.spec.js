@@ -23,11 +23,12 @@ import {createSandbox} from 'sinon';
 import getPort from 'get-port';
 import {TestWSServer} from './server';
 import unexpected from 'unexpected';
-import {constants, Event, Keys, TizenRemote} from '../../lib/index';
+import {constants, Event, KeyCmd, Keys, TizenRemote} from '../../lib/tizen-remote';
 import d from 'debug';
 import unexpectedSinon from 'unexpected-sinon';
 import unexpectedEventEmitter from 'unexpected-eventemitter';
 import {Env} from '@humanwhocodes/env';
+import {promises as fs} from 'node:fs';
 
 const env = new Env();
 
@@ -52,7 +53,7 @@ describe('websocket behavior', function () {
   /** @type {sinon.SinonSandbox} */
   let sandbox;
 
-  /** @type {import('../../lib').TizenRemoteOptions} */
+  /** @type {import('../../lib/tizen-remote').TizenRemoteOptions} */
   let remoteOpts;
 
   /** @type {string} */
@@ -301,6 +302,8 @@ describe('websocket behavior', function () {
           this.timeout('5s');
           await remote.connect();
 
+          // devour any error events; these are expected
+          remote.on(Event.ERROR, () => {});
           return expect(
             new Promise((resolve) => {
               remote.once(Event.DISCONNECT, resolve);
@@ -365,15 +368,58 @@ describe('websocket behavior', function () {
         });
       });
 
+      describe('when the server emits a "new token" message unprompted', function() {
+
+        beforeEach(function() {
+          if (!server) {
+            return this.skip();
+          }
+        });
+
+        it('should update the token', async function() {
+          // the new token _must_ be different than the old token!
+          const newToken = String(Date.now());
+
+          await /** @type {Promise<void>} */(new Promise((resolve, reject) => {
+            remote.once(Event.TOKEN, (token) => {
+              try {
+                expect(token, 'to be', newToken);
+                expect(remote.token, 'to be', newToken);
+                resolve();
+              } catch (err) {
+                reject(err);
+              }
+            });
+
+            server.broadcast({
+              data: {
+                token: newToken
+              },
+              event: constants.TOKEN_EVENT
+            });
+          }));
+
+          const tokenCache = JSON.parse(await fs.readFile(/** @type {string} */(remote.tokenCachePath), 'utf8'));
+          expect(tokenCache, 'to satisfy', {
+            [remote.base64Name]: {
+              token: newToken,
+            },
+          });
+        });
+      });
+
       describe('keypress behavior', function () {
         it('should send a click command', async function () {
-          await expect(
-            remote.click(Keys.ENTER),
-            'to emit from',
-            remote,
-            Event.SENT,
-            '{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":"KEY_ENTER","Option":"false","TypeOfRemote":"SendRemoteKey"}}'
-          );
+          const data = JSON.stringify({
+            method: constants.COMMAND_METHOD,
+            params: {
+              Cmd: KeyCmd.CLICK,
+              DataOfCmd: Keys.ENTER,
+              Option: constants.COMMAND_PARAMS_OPTION,
+              TypeOfRemote: constants.COMMAND_PARAMS_TYPE_OF_REMOTE,
+            },
+          });
+          await expect(remote.click(Keys.ENTER), 'to emit from', remote, Event.SENT, data);
         });
       });
     });

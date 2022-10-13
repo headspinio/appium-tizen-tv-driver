@@ -13,19 +13,19 @@ describe('TizenRemote', function () {
    */
   let sandbox;
 
-  /** @type {typeof import('../../lib/index').TizenRemote} */
+  /** @type {typeof import('../../lib/tizen-remote').TizenRemote} */
   let TizenRemote;
 
-  /** @type {typeof import('../../lib/index').WsEvent} */
+  /** @type {typeof import('../../lib/tizen-remote').WsEvent} */
   let WsEvent;
 
-  /** @type {typeof import('../../lib/index').Event} */
+  /** @type {typeof import('../../lib/tizen-remote').Event} */
   let Event;
 
   /** @type { {ws: MockWebSocket, '@humanwhocodes/env': {Env: sinon.SinonStub}, conf: typeof MockConf, lockfile: typeof MockLockfile, fs: typeof MockFs}} */
   let mocks;
 
-  /** @type {typeof import('../../lib/index').constants} */
+  /** @type {typeof import('../../lib/tizen-remote').constants} */
   let constants;
 
   /** @type {{get: sinon.SinonStub}} */
@@ -126,7 +126,7 @@ describe('TizenRemote', function () {
       fs: MockFs
     };
     ({TizenRemote, WsEvent, Event, constants} = rewiremock.proxy(
-      () => require('../../lib/index'),
+      () => require('../../lib/tizen-remote'),
       mocks
     ));
   });
@@ -180,7 +180,7 @@ describe('TizenRemote', function () {
   });
 
   describe('instance method', function () {
-    /** @type {import('../../lib/index').TizenRemote} */
+    /** @type {import('../../lib/tizen-remote').TizenRemote} */
     let remote;
 
     beforeEach(function () {

@@ -1,6 +1,6 @@
 import {promisify} from 'node:util';
 import {WebSocketServer} from 'ws';
-import {parse as parseUrl} from 'url';
+import {parse as parseUrl} from 'node:url';
 import d from 'debug';
 import delay from 'delay';
 
@@ -118,6 +118,16 @@ export class TestWSServer extends WebSocketServer {
 
   #stopKeepAliveInterval() {
     clearInterval(this.#keepAliveInterval);
+  }
+
+  /**
+   *
+   * @param {import('type-fest').JsonValue} data
+   */
+  broadcast(data) {
+    for (const ws of this.clients) {
+      ws.send(JSON.stringify(data));
+    }
   }
 
   /**
