@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import _fs from 'node:fs';
 import {TextCommand, KeyCommand} from './command';
 import {EventEmitter} from 'events';
 import {promisify, format} from 'node:util';
@@ -8,15 +9,12 @@ import delay from 'delay';
 import pRetry from 'p-retry';
 import {Keys} from './keys';
 import {Env} from '@humanwhocodes/env';
-import lockFile from 'lockfile';
+import {lock} from 'proper-lockfile';
 import Conf from 'conf';
 import path from 'path';
 import envPaths from 'env-paths';
 
 export {Keys};
-
-const lock = promisify(lockFile.lock);
-const unlock = promisify(lockFile.unlock);
 
 /**
  * This tricks TS into typing the events and associated data in {@linkcode TizenRemote}.
@@ -128,6 +126,11 @@ export const constants = /** @type {const} */ ({
    * Default value of `persistToken` option
    */
   DEFAULT_PERSIST_TOKEN: true,
+
+  /**
+   * Namespace for various usages
+   */
+  NS: 'tizen-remote'
 });
 
 /**
@@ -313,6 +316,20 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #cacheDir;
 
   /**
+   * Speculative path to the token cache file.
+   * Used for file locking.
+   * This path is determined by the `conf` module, but we attempt to mimic its behavior to get the path.
+   * @type {string}
+   */
+  #tokenCachePath;
+
+  /**
+   * Options for `lock`/`unlock`
+   * @type {import('proper-lockfile').LockOptions}
+   */
+  #lockOpts;
+
+  /**
    * @param {string} host - IP or hostname of the Tizen device
    * @param {TizenRemoteOptions} [opts]
    */
@@ -330,16 +347,31 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
     if (opts.debug) {
-      debug.enable('tizen-remote*');
+      debug.enable(`${constants.NS}*`);
     }
-    this.#debugger = debug(`tizen-remote [${this.#name}]`);
+    this.#debugger = debug(`${constants.NS} [${this.#name}]`);
 
     // note: if this is unset, we will attempt to get a token from the fs cache,
     // and if _that_ fails, we'll go ahead and ask the device for one.
     this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
-    this.#cacheDir = envPaths('tizen-remote', {suffix: 'nodejs'}).config;
+    this.#cacheDir = envPaths(constants.NS, {suffix: 'nodejs'}).config;
     this.#lockfilePath = path.join(this.#cacheDir, constants.TOKEN_CACHE_LOCKFILE_NAME);
-    this.#debug('Using lockfile %s', this.#lockfilePath);
+    this.#tokenCachePath = path.join(this.#cacheDir, `${constants.TOKEN_CACHE_BASENAME}.json`);
+    if (this.#persistToken) {
+      this.#debug('Expecting token cache at %s', this.#tokenCachePath);
+    }
+    // `realpath: false` prevents attempting to read a non-existent file
+    this.#lockOpts = {
+      realpath: false,
+      lockfilePath: this.#lockfilePath,
+      fs: _fs,
+      retries: {
+        retries: 3,
+        minTimeout: 100,
+        maxTimeout: 1000,
+        unref: true
+      }
+    };
 
     // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
     this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
@@ -404,30 +436,25 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async unsetToken() {
     if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      await this.#lock();
+      const unlock = await this.#lock();
       cache.delete(this.#tokenCacheKey);
-      await this.#unlock();
+      await unlock();
     }
     this.#token = undefined;
     this.#debug('Unset token for client %s', this.#name);
   }
 
   /**
-   * Locks the lockfile
+   * Locks the lockfile and returns an unlocking function.
    *
-   * Creates the cache dir if it does not exist.
+   * Creates the cache dir if it does not exist.  If the file to lock doesn't
+   * exist, then the unlocking function is a noop.
+   * @returns {Promise<() => Promise<void>>}
    */
   async #lock() {
+    const tokenCachePath = this.tokenCachePath ?? this.#tokenCachePath;
     await fs.mkdir(this.#cacheDir, {recursive: true});
-    await lock(this.#lockfilePath);
-  }
-
-  /**
-   * Unlocks the lockfile
-   */
-  async #unlock() {
-    await fs.mkdir(this.#cacheDir, {recursive: true});
-    await unlock(this.#lockfilePath);
+    return await lock(tokenCachePath, this.#lockOpts) ?? (() => Promise.resolve());
   }
 
   /**
@@ -465,11 +492,16 @@ export class TizenRemote extends createdTypedEmitterClass() {
     if (this.#tokenCache) {
       return this.#tokenCache;
     }
-    await this.#lock();
+    const unlock = await this.#lock();
     this.#tokenCache = new Conf({
+      projectName: constants.NS,
       configName: constants.TOKEN_CACHE_BASENAME,
     });
-    await this.#unlock();
+    if (this.tokenCachePath !== this.#tokenCachePath) {
+      this.#debug('Warning: token cache path (%s) is not what we expected (%s); updating', this.tokenCachePath, this.#tokenCachePath);
+      this.#tokenCachePath = this.#tokenCache.path;
+    }
+    await unlock();
     return this.#tokenCache;
   }
 
@@ -496,9 +528,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async writeToken(token) {
     if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      await this.#lock();
+      const unlock = await this.#lock();
       cache.set(this.#tokenCacheKey, token);
-      await this.#unlock();
+      await unlock();
     }
   }
 
