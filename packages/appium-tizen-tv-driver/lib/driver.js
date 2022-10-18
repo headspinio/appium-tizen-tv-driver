@@ -141,7 +141,7 @@ class TizenTVDriver extends BaseDriver {
   #chromedriver;
 
   /** @type {number} */
-  #rcKeypressCooldown = DEFAULT_RC_KEYPRESS_COOLDOWN
+  #rcKeypressCooldown = DEFAULT_RC_KEYPRESS_COOLDOWN;
 
   /**
    *
@@ -189,7 +189,9 @@ class TizenTVDriver extends BaseDriver {
     // if we have what looks like server address information in the deviceName, spread it out
     // through the udid and deviceAddress capabilities
     if (!tempCaps.deviceAddress || !tempCaps.udid) {
-      log.info(`No udid and/or deviceAddress provided; attempting to derive from deviceName "${tempCaps.deviceName}"`);
+      log.info(
+        `No udid and/or deviceAddress provided; attempting to derive from deviceName "${tempCaps.deviceName}"`
+      );
       const matches = tempCaps.deviceName?.match(DEVICE_ADDR_IN_DEVICE_NAME_REGEX);
       if (matches?.length) {
         if (!tempCaps.deviceAddress) {
@@ -262,7 +264,9 @@ class TizenTVDriver extends BaseDriver {
           throw new Error('For now, the appPackage capability is required');
         }
         if (!caps.noReset) {
-          await tizenUninstall(/** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */(caps));
+          await tizenUninstall(
+            /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+          );
         }
         // XXX this is for typescript
         await tizenInstall({...caps, app: caps.app});
@@ -306,7 +310,9 @@ class TizenTVDriver extends BaseDriver {
   async setupDebugger(caps) {
     const remoteDebugPort =
       caps.useOpenDebugPort ||
-      (await debugApp(/** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)));
+      (await debugApp(
+        /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+      ));
     const localDebugPort = await getPort();
     log.info(`Chose local port ${localDebugPort} for remote debug communication`);
     await forwardPort({
