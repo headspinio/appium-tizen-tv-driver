@@ -41,7 +41,7 @@
     "asyncbox": "2.0.4",
     "bluebird": "3.7.2",
     "get-port": "5.1.1",
-    "got": "11.8.2",
+    "got": "11.8.5",
     "keycode": "2.2.1",
     "lodash": "4.17.9",
     "source-map-support": "0.5.9",
