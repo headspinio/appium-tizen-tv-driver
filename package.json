@@ -62,7 +62,7 @@
     "@babel/preset-env": "7.18.2",
     "@babel/register": "7.18.9",
     "@humanwhocodes/env": "2.2.2",
-    "@types/bluebird": "3.5.36",
+    "@types/bluebird": "3.5.37",
     "@types/debug": "4.1.7",
     "@types/jquery": "3.5.14",
     "@types/lockfile": "1.0.2",
