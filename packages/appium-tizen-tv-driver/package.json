@@ -43,7 +43,7 @@
     "get-port": "5.1.1",
     "got": "11.8.5",
     "keycode": "2.2.1",
-    "lodash": "4.17.9",
+    "lodash": "4.17.21",
     "source-map-support": "0.5.9",
     "teen_process": "1.9.0",
     "yargs": "16.2.0"
