@@ -38,7 +38,7 @@
     "@babel/runtime": "7.18.2",
     "@headspinio/tizen-remote": "file:../tizen-remote",
     "appium-chromedriver": "5.2.4",
-    "asyncbox": "2.0.4",
+    "asyncbox": "2.9.2",
     "bluebird": "3.7.2",
     "get-port": "5.1.1",
     "got": "11.8.5",
