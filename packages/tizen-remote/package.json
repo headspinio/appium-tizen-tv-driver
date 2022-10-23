@@ -54,7 +54,7 @@
     "p-retry": "4.6.2",
     "proper-lockfile": "4.1.2",
     "source-map-support": "0.5.21",
-    "ws": "8.8.1"
+    "ws": "8.9.0"
   },
   "publishConfig": {
     "access": "public"
