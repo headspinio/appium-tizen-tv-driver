@@ -369,7 +369,6 @@ describe('websocket behavior', function () {
       });
 
       describe('when the server emits a "new token" message unprompted', function() {
-
         beforeEach(function() {
           if (!server) {
             return this.skip();
@@ -416,10 +415,25 @@ describe('websocket behavior', function () {
               Cmd: KeyCmd.CLICK,
               DataOfCmd: Keys.ENTER,
               Option: constants.COMMAND_PARAMS_OPTION,
-              TypeOfRemote: constants.COMMAND_PARAMS_TYPE_OF_REMOTE,
+              TypeOfRemote: 'SendRemoteKey',
             },
           });
           await expect(remote.click(Keys.ENTER), 'to emit from', remote, Event.SENT, data);
+        });
+      });
+
+      describe('send text behavior', function() {
+        it('should send text to an input field', async function() {
+          const data = JSON.stringify({
+            method: constants.COMMAND_METHOD,
+            params: {
+              Cmd: Buffer.from('wayne').toString('base64'),
+              DataOfCmd: 'base64',
+              Option: constants.COMMAND_PARAMS_OPTION,
+              TypeOfRemote: 'SendInputString',
+            },
+          });
+          await expect(remote.text('wayne'), 'to emit from', remote, Event.SENT, data);
         });
       });
     });

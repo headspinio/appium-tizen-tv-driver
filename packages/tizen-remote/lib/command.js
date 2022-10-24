@@ -30,18 +30,22 @@ export class TextCommand {
    * Original text
    * @type {string}
    */
-  text;
+  #text;
 
   /**
    * @param {string} text
    */
   constructor(text) {
-    this.text = text;
+    this.#text = text;
     this.params = {
       Cmd: Buffer.from(text).toString('base64'),
       DataOfCmd: 'base64',
       Option: constants.COMMAND_PARAMS_OPTION,
       TypeOfRemote: 'SendInputString',
     };
+  }
+
+  get text() {
+    return this.#text;
   }
 }
