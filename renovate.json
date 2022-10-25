@@ -15,6 +15,7 @@
         "@types/wrap-ansi",
         "execa",
         "find-up",
+        "get-log",
         "globby",
         "log-symbols",
         "read-pkg",
@@ -26,6 +27,12 @@
       ],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "extends": ["packages:eslint"],
+      "matchPackageNames": ["@appium/eslint-config-appium"],
+      "groupName": "ESLint-related packages",
+      "groupSlug": "eslint"
     }
   ],
   "baseBranches": ["main"],
