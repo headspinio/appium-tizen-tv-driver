@@ -17,7 +17,7 @@
         "env-paths",
         "execa",
         "find-up",
-        "get-log",
+        "get-port",
         "globby",
         "got",
         "log-symbols",
