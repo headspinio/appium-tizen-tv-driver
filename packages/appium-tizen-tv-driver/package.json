@@ -55,7 +55,7 @@
     "build": "babel lib --root-mode=upward --out-dir=build/lib",
     "prepare": "npm run build",
     "dev": "npm run build -- --watch",
-    "test": "mocha \"test/unit/**/*.spec.js\"",
+    "test": "mocha \"test/unit/**/*.spec.js\" -t 5s",
     "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s",
     "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore"
   },
