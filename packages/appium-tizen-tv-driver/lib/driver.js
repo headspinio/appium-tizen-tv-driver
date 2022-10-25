@@ -1,24 +1,23 @@
-import {BaseDriver} from 'appium/driver';
-import _ from 'lodash';
-import B from 'bluebird';
-import {retryInterval} from 'asyncbox';
-import {desiredCapConstraints} from './desired-caps';
 import {Keys, TizenRemote} from '@headspinio/tizen-remote';
-import {AsyncScripts, SyncScripts} from './scripts';
-
-import {tizenInstall, tizenUninstall, tizenRun} from './cli/tizen';
+import Chromedriver from 'appium-chromedriver';
+import {BaseDriver} from 'appium/driver';
+import {retryInterval} from 'asyncbox';
+import B from 'bluebird';
+import getPort from 'get-port';
+import got from 'got';
+import _ from 'lodash';
 import {
+  connectDevice,
   debugApp,
+  disconnectDevice,
   forwardPort,
   removeForwardedPort,
-  connectDevice,
-  disconnectDevice,
 } from './cli/sdb';
-import Chromedriver from 'appium-chromedriver';
-import getPort from 'get-port';
-import log from './logger';
-import got from 'got';
+import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
+import {desiredCapConstraints} from './desired-caps';
 import {getKeyData, isRcKeyCode} from './keymap';
+import log from './logger';
+import {AsyncScripts, SyncScripts} from './scripts';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
@@ -145,10 +144,13 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    *
-   * @param {ServerArgs} [opts]
+   * @param {DriverOpts<TizenTVDriverCapConstraints>} [opts]
    * @param {boolean} [shouldValidateCaps]
    */
-  constructor(opts = /** @type {ServerArgs} */ ({}), shouldValidateCaps = true) {
+  constructor(
+    opts = /** @type {DriverOpts<TizenTVDriverCapConstraints>} */ ({}),
+    shouldValidateCaps = true
+  ) {
     super(opts, shouldValidateCaps);
 
     this.locatorStrategies = [
@@ -176,7 +178,8 @@ class TizenTVDriver extends BaseDriver {
    * @param {W3CTizenTVDriverCaps} [w3cCapabilities2]
    * @param {W3CTizenTVDriverCaps} [w3cCapabilities3]
    * @param {DriverData[]} [driverData]
-   * @returns {Promise<[string, any]>}
+   * @override
+   * @returns {Promise<[string, TizenTVDriverCaps]>}
    */
   async createSession(w3cCapabilities1, w3cCapabilities2, w3cCapabilities3, driverData) {
     let [sessionId, capabilities] = /** @type {[string, TizenTVDriverCaps]} */ (
@@ -564,9 +567,9 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    * Sets the value of a text input box
-   * @param {string} text
-   * @param {string} elId
-   * @returns
+   * @param {string|string[]} text - If an array, will be joined with an empty character
+   * @param {string} elId - Element ID
+   * @returns {Promise<unknown>}
    */
   async setValue(text, elId) {
     if (
@@ -579,6 +582,7 @@ class TizenTVDriver extends BaseDriver {
           `${TEXT_STRATEGY_PROXY} or ${TEXT_STRATEGY_REMOTE}`
       );
     }
+    this.#remote;
 
     if (this.#isRemoteRcMode && this.opts.sendKeysStrategy === TEXT_STRATEGY_REMOTE) {
       if (Array.isArray(text)) {
@@ -624,6 +628,11 @@ export default TizenTVDriver;
  * @typedef StartChromedriverOptions
  * @property {string} executable
  * @property {number} debuggerPort
+ */
+
+/**
+ * @template {import('@appium/types').Constraints} C
+ * @typedef {import('@appium/types').DriverOpts<C>} DriverOpts
  */
 
 /**

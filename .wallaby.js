@@ -24,6 +24,7 @@ module.exports = (wallaby) => {
       './packages/*/test/**/helpers.js',
       './babel.config.json',
       './packages/tizen-remote/test/e2e/server.js',
+      './packages/appium-tizen-tv-driver/test/unit/mocks.js'
     ],
     testFramework: 'mocha',
     tests: [
