@@ -45,7 +45,7 @@
     "test": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/**/*.spec.js\""
   },
   "dependencies": {
-    "@babel/runtime": "7.18.2",
+    "@babel/runtime": "7.19.4",
     "@humanwhocodes/env": "2.2.2",
     "conf": "10.2.0",
     "debug": "4.3.4",
