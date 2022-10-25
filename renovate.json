@@ -13,11 +13,15 @@
     {
       "matchPackageNames": [
         "@types/wrap-ansi",
+        "delay",
+        "env-paths",
         "execa",
         "find-up",
         "get-log",
         "globby",
+        "got",
         "log-symbols",
+        "p-retry",
         "read-pkg",
         "strip-ansi",
         "supports-color",
