@@ -582,15 +582,12 @@ class TizenTVDriver extends BaseDriver {
           `${TEXT_STRATEGY_PROXY} or ${TEXT_STRATEGY_REMOTE}`
       );
     }
-    this.#remote;
 
     if (this.#isRemoteRcMode && this.opts.sendKeysStrategy === TEXT_STRATEGY_REMOTE) {
       if (Array.isArray(text)) {
         text = text.join('');
       }
-      await /** @type {TizenRemote} */ (this.#remote).text(text);
-      await this.pressKey(Keys.ENTER);
-      return;
+      return await /** @type {TizenRemote} */ (this.#remote).text(text);
     }
 
     return await this.proxyCommand(`/element/${elId}/value`, 'POST', {text});

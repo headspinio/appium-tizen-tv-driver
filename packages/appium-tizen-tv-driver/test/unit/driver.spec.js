@@ -73,12 +73,11 @@ describe('TizenTVDriver', function () {
           expect(mocks.MockTizenRemote.TizenRemote().text, 'was called once');
         });
 
-        it('should send ENTER', async function () {
+        it('should not send ENTER', async function () {
           await driver.setValue('stuff', 'some-element-id');
           expect(
             mocks.MockTizenRemote.TizenRemote().click,
-            'was called with',
-            mocks.MockTizenRemote.Keys.ENTER
+            'was not called'
           );
         });
       });
