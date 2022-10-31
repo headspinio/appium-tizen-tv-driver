@@ -30,3 +30,7 @@ jobs:
           useRollingCache: true
       - name: Run unit & E2E tests
         run: npm test
+      - name: Validate renovate config
+        uses: rinchsan/renovate-config-validator@1ea1e8514f6a33fdd71c40b0a5fa3512b9e7b936 # tag=v0
+        with:
+          pattern: '.renovaterc.json'
