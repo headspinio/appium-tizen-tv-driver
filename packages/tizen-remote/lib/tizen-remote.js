@@ -1,8 +1,9 @@
+import _ from 'lodash';
 import fs from 'node:fs/promises';
 import _fs from 'node:fs';
 import {TextCommand, KeyCommand} from './command';
 import {EventEmitter} from 'events';
-import {promisify, format} from 'node:util';
+import {promisify, formatWithOptions} from 'node:util';
 import WebSocket from 'ws';
 import debug from 'debug';
 import delay from 'delay';
@@ -15,6 +16,8 @@ import path from 'path';
 import envPaths from 'env-paths';
 
 export {Keys};
+
+const format = _.partial(formatWithOptions, {depth: null, colors: true});
 
 /**
  * This tricks TS into typing the events and associated data in {@linkcode TizenRemote}.
