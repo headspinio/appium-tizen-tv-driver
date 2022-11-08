@@ -1,5 +1,5 @@
 import {exec} from 'teen_process';
-import {fs} from 'appium/support';
+import {fs, system} from 'appium/support';
 import path from 'path';
 import log from '../logger';
 
@@ -9,10 +9,15 @@ const SDB_BIN_NAME = 'sdb';
 /**
  * Lookup of path parts by bin name, relative to `TIZEN_HOME` env var
  */
-const BIN_PATHS = Object.freeze({
-  [TIZEN_BIN_NAME]: ['tools', 'ide', 'bin', 'tizen'],
-  [SDB_BIN_NAME]: ['tools', 'sdb'],
-});
+const BIN_PATHS = system.isWindows()
+  ? Object.freeze({
+      [TIZEN_BIN_NAME]: ['tools', 'ide', 'bin', 'tizen.bat'],
+      [SDB_BIN_NAME]: ['tools', 'sdb.exe'],
+    })
+  : Object.freeze({
+      [TIZEN_BIN_NAME]: ['tools', 'ide', 'bin', TIZEN_BIN_NAME],
+      [SDB_BIN_NAME]: ['tools', SDB_BIN_NAME],
+    });
 
 /**
  * In-memory cache of known executable paths
@@ -33,7 +38,7 @@ async function runCmd(bin, args) {
   try {
     return await exec(bins[bin], args);
   } catch (err) {
-    const e = /** @type {import('teen_process').ExecError} */(err);
+    const e = /** @type {import('teen_process').ExecError} */ (err);
     const stdout = e.stdout.replace(/[\r\n]+/g, ' ');
     const stderr = e.stderr.replace(/[\r\n]+/g, ' ');
     e.message = `${e.message}. Stdout was: '${stdout}'. Stderr was: '${stderr}'`;
@@ -77,5 +82,5 @@ async function setBin(name) {
 export {runCmd, setBin, TIZEN_BIN_NAME, SDB_BIN_NAME};
 
 /**
- * @typedef {TIZEN_BIN_NAME|SDB_BIN_NAME} KnownBinName
+ * @typedef {typeof TIZEN_BIN_NAME|typeof SDB_BIN_NAME} KnownBinName
  */
