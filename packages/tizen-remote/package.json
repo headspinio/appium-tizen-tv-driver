@@ -37,9 +37,13 @@
     "index.js"
   ],
   "scripts": {
-    "build": "babel lib --root-mode=upward --out-dir=build/lib",
+    "build": "npm run build:distfiles",
+    "build:distfiles": "babel lib --root-mode=upward --out-dir=build/lib",
+    "build:docs": "typedoc",
+    "clean": "npm run clean:distfiles",
+    "clean:distfiles": "npx rimraf \"build/**/*.js\"",
+    "clean:docs": "npx rimraf \"docs/**/*\"",
     "dev": "npm run build -- --watch",
-    "docs": "typedoc",
     "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
     "prepare": "npm run build",
     "test": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/**/*.spec.js\""
