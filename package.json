@@ -26,7 +26,8 @@
   ],
   "scripts": {
     "prepare": "husky install && npm run --workspaces prepare",
-    "clean": "npm run --workspaces clean && npm ci",
+    "clean": "npm run --workspaces clean && npm run clean:types",
+    "clean:types": "tsc -b --clean",
     "test": "npm run --workspaces test",
     "dev": "run-p \"dev:*\"",
     "dev:distfiles": "lerna run --parallel --prefix --concurrency=8 dev",
