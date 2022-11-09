@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "npm run tizen-build",
+    "clean": "npx rimraf .buildResult",
     "tizen-build": "tizen build-web",
     "tizen-package": "tizen package -s $npm_config_sign -t wgt -- .buildResult",
     "tizen-install": "tizen install -n .buildResult/sample.wgt -s $npm_config_serial",
