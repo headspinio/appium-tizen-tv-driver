@@ -5,13 +5,13 @@
   "name": "tizen-remote",
   "includeVersion": true,
   "tsconfig": "./tsconfig.json",
-  "out": "doc",
+  "out": "docs",
   "plugin": ["typedoc-plugin-markdown"],
   "excludeExternals": true,
   "cleanOutputDir": true,
   "readme": "none",
   "disableSources": true,
-  
+
   "hideBreadcrumbs": true,
   "hideInPageTOC": true,
   "entryDocument": "index.md"
