@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.3](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.7.2...appium-tizen-tv-driver@0.7.3) (2022-11-09)
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.2.6 ([beb36ba](https://github.com/headspinio/appium-tizen-tv-driver/commit/beb36ba39f8ac55d33406dfd515ca60b082bf107))
+- **appium-tizen-tv-driver:** update dependency yargs to v17.6.2 ([3da1f76](https://github.com/headspinio/appium-tizen-tv-driver/commit/3da1f761333c1b8f727f2caa00500cf56d88c2e7))
+- **appium-tizen-tv-driver:** windows compat ([dc36ab0](https://github.com/headspinio/appium-tizen-tv-driver/commit/dc36ab0d7fb3dda3a3739493a12a34a664f90801))
+
 ## [0.7.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.7.1...appium-tizen-tv-driver@0.7.2) (2022-10-31)
 
 ### Bug Fixes
