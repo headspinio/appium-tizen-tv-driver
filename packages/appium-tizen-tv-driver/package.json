@@ -51,13 +51,15 @@
     "yargs": "17.6.2"
   },
   "scripts": {
-    "clean": "npx rimraf build",
-    "build": "babel lib --root-mode=upward --out-dir=build/lib",
-    "prepare": "npm run build",
+    "build": "npm run build:distfiles",
+    "build:distfiles": "babel lib --root-mode=upward --out-dir=build/lib",
+    "clean": "npm run clean:distfiles",
+    "clean:distfiles": "npx rimraf \"build/**/*.js\"",
     "dev": "npm run build -- --watch",
+    "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
+    "prepare": "npm run build",
     "test": "mocha \"test/unit/**/*.spec.js\" -t 5s",
-    "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s",
-    "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore"
+    "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s"
   },
   "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
   "appium": {
