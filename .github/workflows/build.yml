@@ -28,8 +28,22 @@ jobs:
         uses: bahmutov/npm-install@cb39a46f27f14697fec763d60fb23ad347e2befa # tag=v1
         with:
           useRollingCache: true
-      - name: Run unit & E2E tests
+      - name: Run smoke, unit & E2E tests
         run: npm test
+
+  lint:
+    name: Lint & Check Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
+      - name: Install dependencies
+        uses: bahmutov/npm-install@cb39a46f27f14697fec763d60fb23ad347e2befa # tag=v1
+        with:
+          useRollingCache: true
+      - name: ESLint
+        run: npm run lint
+      - name: Check types
+        run: npm run build:types
       - name: Validate renovate config
         uses: rinchsan/renovate-config-validator@1ea1e8514f6a33fdd71c40b0a5fa3512b9e7b936 # tag=v0
         with:

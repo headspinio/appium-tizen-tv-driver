@@ -46,7 +46,10 @@
     "dev": "npm run build -- --watch",
     "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
     "prepare": "npm run build",
-    "test": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/**/*.spec.js\""
+    "test": "npm run test:unit",
+    "test:e2e": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/e2e/*.spec.js\" -t 20s",
+    "test:smoke": "node index.js",
+    "test:unit": "cross-env BABEL_ENV=test DEBUG=\"tizen-remote*\" mocha \"test/unit/*.spec.js\""
   },
   "dependencies": {
     "@babel/runtime": "7.20.1",
