@@ -59,7 +59,8 @@
     "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
     "prepare": "npm run build",
     "test": "mocha \"test/unit/**/*.spec.js\" -t 5s",
-    "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s"
+    "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s",
+    "test:smoke": "node index.js"
   },
   "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
   "appium": {
