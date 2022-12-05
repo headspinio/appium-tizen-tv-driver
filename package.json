@@ -78,7 +78,7 @@
     "@types/teen_process": "2.0.0",
     "@types/ws": "8.5.3",
     "@types/yargs": "17.0.15",
-    "@wdio/types": "8.0.0",
+    "@wdio/types": "8.0.6",
     "appium": "2.0.0-beta.46",
     "babel-plugin-source-map-support": "2.2.0",
     "cross-env": "7.0.3",
@@ -104,7 +104,7 @@
     "unexpected": "13.0.1",
     "unexpected-eventemitter": "2.4.0",
     "unexpected-sinon": "11.1.0",
-    "webdriverio": "8.0.5"
+    "webdriverio": "8.0.6"
   },
   "engines": {
     "node": ">=14",
