@@ -30,8 +30,8 @@ package in your `package.json`)
   export PATH=${PATH}:${TIZEN_HOME}/tools:${TIZEN_HOME}/tools/ide/bin
   ```
 
-- The TV needs to be put into [developer
-- mode](https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
+- The TV needs to be put into [developer mode](
+  https://developer.samsung.com/smarttv/develop/getting-started/using-sdk/tv-device.html).
 - The TV must be connected to the Appium host via sdb (run `sdb connect <tv-ip>`). You can always
   verify that the TV is connected before running a test by running `sdb devices`.
 - The app you want to test needs to be a correctly-signed debug version of your app.
@@ -152,6 +152,11 @@ changes in the code and rebuild when anything does change:
 ```bash
 npm run watch
 ```
+
+## Troubleshooting
+- The application under test did not start; `sdb -s <device> shell 0 debug <package id>' exited with code 1`
+    - Please make sure the application under test is debuggable
+
 
 ## Credits
 
