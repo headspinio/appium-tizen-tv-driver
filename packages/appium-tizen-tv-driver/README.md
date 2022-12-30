@@ -154,8 +154,8 @@ npm run watch
 ```
 
 ## Troubleshooting
-- The application under tests did not start by `sdb -s <device> shell 0 debug <package id>' exited with code 1`
-    - Please make sure if the application under tests id debuggable
+- The application under test did not start; `sdb -s <device> shell 0 debug <package id>' exited with code 1`
+    - Please make sure the application under test is debuggable
 
 
 ## Credits
