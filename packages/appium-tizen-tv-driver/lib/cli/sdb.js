@@ -37,6 +37,19 @@ async function debugApp({appPackage, udid}) {
 }
 
 /**
+ * Launch (but do not attempt to debug) an app on the TV
+ *
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ */
+async function launchApp({appPackage, udid}) {
+  log.info(`Starting ${appPackage} in on ${udid}`);
+  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'was_execute', appPackage]);
+  if (/launch app failed/.test(stdout)) {
+    throw new Error(`Could not launch app. Stdout from launch call was: ${stdout}`);
+  }
+}
+
+/**
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
  */
 async function listApps({udid}) {
@@ -100,6 +113,7 @@ async function disconnectDevice({udid}) {
 export {
   runSDBCmd,
   debugApp,
+  launchApp,
   listApps,
   forwardPort,
   removeForwardedPorts,

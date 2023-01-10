@@ -46,6 +46,9 @@ export const desiredCapConstraints = /** @type {const} */({
     isString: true,
     inclusionCaseInsensitive: ['remote', 'js']
   },
+  rcOnly: {
+    isBoolean: true,
+  },
   rcDebugLog: {
     isBoolean: true
   },

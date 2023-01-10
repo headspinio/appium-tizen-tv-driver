@@ -156,6 +156,44 @@ describe('TizenTVDriver', function () {
     });
   });
 
+  describe('when run in "rcOnly" mode', function () {
+    before(async function () {
+      // this can take awhile as we may need to get a new token.
+      this.timeout('60s');
+      capabilities = {
+        ...baseCaps,
+        'appium:rcOnly': true,
+        'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
+        'appium:resetRcToken': true,
+      };
+
+      appiumServerPort = await getPort();
+      server = await startServer(appiumServerPort);
+      driver = await tizenBrowser({
+        hostname: TEST_HOST,
+        port: appiumServerPort,
+        connectionRetryCount: 0,
+        logLevel: 'debug',
+        capabilities,
+      });
+      listenForInterrupts(driver, server);
+    });
+
+    after(async function () {
+      this.timeout('20s');
+      await cleanup(driver, server);
+    });
+
+    it('should have access to remote commands', async function () {
+      await driver.pressKey(Keys.ENTER);
+    });
+
+    it('should not have access to proxied commands', async function () {
+      await expect(driver.getPageSource(), 'to be rejected with', /Not implemented yet/);
+    });
+
+  });
+
   describe('when run in "remote" mode', function () {
     describe('without token persistence', function () {
       before(async function () {
