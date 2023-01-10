@@ -225,6 +225,12 @@ class TizenTVDriver extends BaseDriver {
 
     const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
 
+    if (caps.rcOnly && caps.rcMode !== RC_MODE_REMOTE) {
+      log.info(`The rcMode capability was not set to remote but we are in rcOnly mode, so ` +
+               `forcing it to remote`);
+      caps.rcMode = this.opts.rcMode = RC_MODE_REMOTE;
+    }
+
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
     if (caps.rcMode === RC_MODE_REMOTE) {
       log.debug(`Received rcKeypressCooldown of type ${typeof caps.rcKeypressCooldown}`);
@@ -273,16 +279,26 @@ class TizenTVDriver extends BaseDriver {
         }
         // XXX this is for typescript
         await tizenInstall({...caps, app: caps.app});
-      } else if (!(caps.powerCyclePostUrl && caps.fullReset)) {
+      } else if (!(caps.powerCyclePostUrl && caps.fullReset) && !caps.rcOnly) {
         // if the user wants to run an existing app, it might already be running and therefore we
         // can't start it. But if we launch another app, it will kill any already-running app. So
         // launch the browser. Of course we don't need to do this if we already power cycled the
-        // TV.
+        // TV, or if we're in rcOnly mode.
         await tizenRun({appPackage: BROWSER_APP_ID, udid: caps.udid});
       }
     }
 
     try {
+      if (caps.rcOnly) {
+        log.info(`RC-only mode requested, will not launch app in debug mode`);
+        if (caps.appPackage) {
+          await tizenRun({appPackage: caps.appPackage, udid: caps.udid});
+        } else {
+          log.info(`No app package provided, will not launch any apps`);
+        }
+        return [sessionId, caps];
+      }
+
       const localDebugPort = await this.setupDebugger(caps);
 
       await this.startChromedriver({
