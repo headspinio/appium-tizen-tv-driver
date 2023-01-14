@@ -35,7 +35,7 @@
     "build/lib"
   ],
   "dependencies": {
-    "@appium/types": "0.7.0",
+    "@appium/types": "0.8.3",
     "@babel/runtime": "7.20.7",
     "@headspinio/tizen-remote": "^0.4.3",
     "appium-chromedriver": "5.2.14",
