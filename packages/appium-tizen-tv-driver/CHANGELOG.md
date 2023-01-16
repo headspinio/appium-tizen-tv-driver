@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.7.4...appium-tizen-tv-driver@0.8.0) (2023-01-16)
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency @appium/types to v0.6.0 ([a4ec6d1](https://github.com/headspinio/appium-tizen-tv-driver/commit/a4ec6d16ea561f2074a7635ac20b5148985e4455))
+- **appium-tizen-tv-driver:** update dependency @appium/types to v0.7.0 ([acfc660](https://github.com/headspinio/appium-tizen-tv-driver/commit/acfc660fb80876b06945901f031b7147ec453678))
+- **appium-tizen-tv-driver:** update dependency @appium/types to v0.8.3 ([74809f4](https://github.com/headspinio/appium-tizen-tv-driver/commit/74809f47177f931b6c2184f8453fb44d37e927cc))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.2.11 ([d25523b](https://github.com/headspinio/appium-tizen-tv-driver/commit/d25523bb8cbd2065476fdb7bb3cb101f2a591b83))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.2.12 ([97aca3e](https://github.com/headspinio/appium-tizen-tv-driver/commit/97aca3e236f253155163c19e5ca0928ddc9bd995))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.2.13 ([d9c0993](https://github.com/headspinio/appium-tizen-tv-driver/commit/d9c09934d52a79f2ab1cb7b55378b40f023245e2))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.2.14 ([60af5b8](https://github.com/headspinio/appium-tizen-tv-driver/commit/60af5b850ecd132d78de51781834381b10506802))
+- **appium-tizen-tv-driver:** update dependency got to v11.8.6 ([e2513e5](https://github.com/headspinio/appium-tizen-tv-driver/commit/e2513e5a7acb251cbc3c41b8f4fd0a2323455642))
+- **appium-tizen-tv-driver:** update dependency type-fest to v3.4.0 ([f5a4d1d](https://github.com/headspinio/appium-tizen-tv-driver/commit/f5a4d1d475dd739165709fae8cff189a5d629322))
+- **appium-tizen-tv-driver:** update dependency type-fest to v3.5.0 ([f77ff14](https://github.com/headspinio/appium-tizen-tv-driver/commit/f77ff14e8c5c15d588f9b470e549e3820552bd04))
+- **appium-tizen-tv-driver:** update dependency type-fest to v3.5.1 ([6b10344](https://github.com/headspinio/appium-tizen-tv-driver/commit/6b10344283b69bf7eeb75417e53235b0351b6271))
+- **appium-tizen-tv-driver:** update dependency type-fest to v3.5.2 ([07a1a87](https://github.com/headspinio/appium-tizen-tv-driver/commit/07a1a87929f2886d7c08b8f1cbe153775ed4d5f0))
+
+### Features
+
+- **appium-tizen-tv-driver:** add rcOnly mode ([00c4c5d](https://github.com/headspinio/appium-tizen-tv-driver/commit/00c4c5d2b35605c113af1aa806906a763253ed5c))
+
 ## [0.7.4](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.7.3...appium-tizen-tv-driver@0.7.4) (2022-12-05)
 
 ### Bug Fixes

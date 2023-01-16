@@ -1,6 +1,6 @@
 {
   "name": "@headspinio/tizen-remote",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Remote control automation for Tizen devices",
   "keywords": [
     "tizen",

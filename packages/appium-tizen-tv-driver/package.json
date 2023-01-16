@@ -9,7 +9,7 @@
     "mobile",
     "mobile testing"
   ],
-  "version": "0.7.4",
+  "version": "0.8.0",
   "author": "Jonathan Lipps <jlipps@headspin.io>",
   "license": "Apache-2.0",
   "repository": {
@@ -37,7 +37,7 @@
   "dependencies": {
     "@appium/types": "0.8.3",
     "@babel/runtime": "7.20.7",
-    "@headspinio/tizen-remote": "^0.4.3",
+    "@headspinio/tizen-remote": "^0.4.4",
     "appium-chromedriver": "5.2.14",
     "asyncbox": "2.9.4",
     "bluebird": "3.7.2",
