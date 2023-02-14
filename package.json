@@ -88,7 +88,7 @@
     "eslint-plugin-promise": "6.1.1",
     "get-port": "5.1.1",
     "husky": "8.0.3",
-    "lerna": "6.4.1",
+    "lerna": "6.5.0",
     "lint-staged": "13.1.2",
     "midnight-smoker": "1.2.2",
     "mocha": "10.2.0",
