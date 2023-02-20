@@ -36,7 +36,7 @@
   ],
   "dependencies": {
     "@appium/types": "0.9.1",
-    "@babel/runtime": "7.20.13",
+    "@babel/runtime": "7.21.0",
     "@headspinio/tizen-remote": "^0.4.4",
     "appium-chromedriver": "5.3.0",
     "asyncbox": "2.9.4",
