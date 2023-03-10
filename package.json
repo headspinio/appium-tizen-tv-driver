@@ -82,7 +82,7 @@
     "appium": "2.0.0-beta.57",
     "babel-plugin-source-map-support": "2.2.0",
     "cross-env": "7.0.3",
-    "eslint": "8.35.0",
+    "eslint": "8.36.0",
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-mocha": "10.1.0",
     "eslint-plugin-promise": "6.1.1",
