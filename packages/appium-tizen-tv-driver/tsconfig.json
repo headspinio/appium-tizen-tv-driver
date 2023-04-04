@@ -1,25 +1,16 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@appium/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "target": "esnext",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "allowJs": true,
-    "checkJs": true,
-    "declaration": true,
-    "declarationMap": false,
-    "declarationDir": "build",
-    "emitDeclarationOnly": true,
-    "moduleResolution": "node",
+    "outDir": "build",
     "types": ["node", "sinon", "mocha"],
-    "resolveJsonModule": true,
-    "composite": true,
     "paths": {
       "@headspinio/tizen-remote": ["../tizen-remote"]
-    }
+    },
+    "lib": ["es2020", "dom"],
+    "checkJs": true
   },
-  "include": ["lib/**/*", "test/**/*"],
-  "references": [{"path": "../tizen-remote"}]
+  "references": [{"path": "../tizen-remote"}],
+  "include": ["lib", "test"],
+  "exclude": ["**/*test-d.ts"]
 }

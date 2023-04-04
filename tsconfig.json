@@ -1,8 +1,12 @@
 {
-  "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
-  },
+  "$schema": "https://json.schemastore.org/tsconfig",
   "files": [],
-  "references": [{"path": "packages/tizen-remote"}]
+  "ts-node": {
+    "transpileOnly": true
+  },
+  "references": [
+    {"path": "packages/tizen-remote"},
+    {"path": "packages/appium-tizen-tv-driver"},
+    {"path": "packages/tizen-sample-app"}
+  ]
 }

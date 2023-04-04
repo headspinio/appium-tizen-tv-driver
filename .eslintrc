@@ -1,6 +1,6 @@
 {
-  "extends": "@appium/eslint-config-appium",
-  "overrides":[
+  "extends": ["@appium/eslint-config-appium-ts"],
+  "overrides": [
     {
       "files": "packages/tizen-remote/**/*.js",
       "rules": {
@@ -23,7 +23,8 @@
     {
       "files": "packages/tizen-sample-app/js/**/*.js",
       "env": {
-        "browser": true
+        "browser": true,
+        "jquery": true
       },
       "globals": {
         "tizen": false,

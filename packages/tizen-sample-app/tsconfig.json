@@ -1,8 +1,9 @@
 {
+  "extends": "@appium/tsconfig/tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "allowJs": true,
-    "types": ["jquery"]
+    "types": ["jquery"],
+    "lib": ["es2020", "dom"]
   },
-  "include": ["js"]
+  "files": ["js/main.js"]
 }
