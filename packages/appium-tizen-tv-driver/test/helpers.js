@@ -1,5 +1,5 @@
 import {server as baseServer, routeConfiguringFunction} from 'appium/driver';
-import TizenTVDriver from '../lib/driver';
+import {TizenTVDriver} from '../lib/driver';
 
 export const TEST_HOST = '127.0.0.1';
 

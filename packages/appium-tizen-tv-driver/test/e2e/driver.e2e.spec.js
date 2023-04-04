@@ -112,7 +112,8 @@ describe('TizenTVDriver', function () {
         port: appiumServerPort,
         connectionRetryCount: 0,
         logLevel: 'debug',
-        capabilities,
+        // @ts-ignore wdio's types are weird?
+        capabilities
       });
       listenForInterrupts(driver, server);
     });
@@ -174,6 +175,7 @@ describe('TizenTVDriver', function () {
         port: appiumServerPort,
         connectionRetryCount: 0,
         logLevel: 'debug',
+        // @ts-ignore wdio's types are weird?
         capabilities,
       });
       listenForInterrupts(driver, server);
@@ -191,7 +193,6 @@ describe('TizenTVDriver', function () {
     it('should not have access to proxied commands', async function () {
       await expect(driver.getPageSource(), 'to be rejected with', /Not implemented yet/);
     });
-
   });
 
   describe('when run in "remote" mode', function () {
@@ -214,6 +215,7 @@ describe('TizenTVDriver', function () {
           port: appiumServerPort,
           connectionRetryCount: 0,
           logLevel: 'debug',
+          // @ts-ignore wdio's types are weird?
           capabilities,
         });
         listenForInterrupts(driver, server);
@@ -256,13 +258,13 @@ describe('TizenTVDriver', function () {
       });
     });
 
-    describe('with token persistence', function() {
+    describe('with token persistence', function () {
       after(async function () {
         this.timeout('20s');
         await cleanup(driver, server);
       });
 
-      before(async function() {
+      before(async function () {
         // if this is set we will use a cached token instead of forcing a new one;
         if (!env.get('TEST_APPIUM_TIZEN_FORCE_TOKEN_CACHE')) {
           this.timeout('60s');
@@ -271,7 +273,7 @@ describe('TizenTVDriver', function () {
             'appium:rcMode': RC_MODE_REMOTE,
             'appium:rcToken': env.get('TEST_APPIUM_TIZEN_RC_TOKEN'),
             'appium:sendKeysStrategy': TEXT_STRATEGY_REMOTE,
-            'appium:resetRcToken': true
+            'appium:resetRcToken': true,
           };
 
           appiumServerPort = await getPort();
@@ -281,6 +283,7 @@ describe('TizenTVDriver', function () {
             port: appiumServerPort,
             connectionRetryCount: 0,
             logLevel: 'debug',
+            // @ts-ignore wdio's types are weird?
             capabilities,
           });
           listenForInterrupts(driver, server);
@@ -306,6 +309,7 @@ describe('TizenTVDriver', function () {
           port: appiumServerPort,
           connectionRetryCount: 0,
           logLevel: 'debug',
+          // @ts-ignore wdio's types are weird?
           capabilities,
         });
         listenForInterrupts(driver, server);
@@ -314,7 +318,7 @@ describe('TizenTVDriver', function () {
         const [name, code, duration] = await B.all([
           driver.$('#rc-button-name').getText(),
           driver.$('#rc-button-code').getText(),
-          driver.$('#event-duration').getText()
+          driver.$('#event-duration').getText(),
         ]);
         const result = {
           name,
@@ -332,8 +336,8 @@ describe('TizenTVDriver', function () {
         }
       });
 
-      describe('when rcKeypressCooldown is invalid', function() {
-        beforeEach(async function() {
+      describe('when rcKeypressCooldown is invalid', function () {
+        beforeEach(async function () {
           capabilities = {
             ...baseCaps,
             'appium:rcMode': RC_MODE_REMOTE,
@@ -350,7 +354,7 @@ describe('TizenTVDriver', function () {
           await cleanup(driver, server);
         });
 
-        describe('when it is negative', function() {
+        describe('when it is negative', function () {
           it('should fail', async function () {
             capabilities['appium:rcKeypressCooldown'] = -1;
             await expect(
@@ -359,6 +363,7 @@ describe('TizenTVDriver', function () {
                 port: appiumServerPort,
                 connectionRetryCount: 0,
                 logLevel: 'debug',
+                // @ts-ignore wdio's types are weird?
                 capabilities,
               }),
               'to be rejected with',
@@ -366,7 +371,7 @@ describe('TizenTVDriver', function () {
             );
           });
         });
-        describe('when it is not an integer', function() {
+        describe('when it is not an integer', function () {
           it('should fail', async function () {
             capabilities['appium:rcKeypressCooldown'] = 100.5;
             await expect(
@@ -375,6 +380,7 @@ describe('TizenTVDriver', function () {
                 port: appiumServerPort,
                 connectionRetryCount: 0,
                 logLevel: 'debug',
+                // @ts-ignore wdio's types are weird?
                 capabilities,
               }),
               'to be rejected with',
@@ -383,9 +389,8 @@ describe('TizenTVDriver', function () {
           });
         });
 
-        describe('when it is too big', function() {
+        describe('when it is too big', function () {
           it('should fail', async function () {
-            // @ts-expect-error
             capabilities['appium:rcKeypressCooldown'] = '9007199254740992';
             await expect(
               tizenBrowser({
@@ -393,6 +398,7 @@ describe('TizenTVDriver', function () {
                 port: appiumServerPort,
                 connectionRetryCount: 0,
                 logLevel: 'debug',
+                // @ts-ignore wdio's types are weird?
                 capabilities,
               }),
               'to be rejected with',
@@ -421,6 +427,7 @@ describe('TizenTVDriver', function () {
             port: appiumServerPort,
             connectionRetryCount: 0,
             logLevel: 'debug',
+            // @ts-ignore wdio's types are weird?
             capabilities,
           }),
           'to be rejected'
@@ -432,5 +439,4 @@ describe('TizenTVDriver', function () {
       });
     });
   });
-
 });

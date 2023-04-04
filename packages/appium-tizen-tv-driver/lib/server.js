@@ -1,6 +1,6 @@
 import log from './logger';
 import {routeConfiguringFunction, server as baseServer} from 'appium/driver';
-import TizenTVDriver from './driver';
+import {TizenTVDriver} from './driver';
 
 /**
  *
@@ -13,7 +13,6 @@ async function startServer(port, host) {
   log.debug('Driver ready!');
   let router = routeConfiguringFunction(tizenTVDriver);
   let server = await baseServer(
-    // @ts-expect-error
     {
       routeConfiguringFunction: router,
       port,
