@@ -24,19 +24,17 @@
     "node": ">=14",
     "npm": ">=6"
   },
-  "main": "index.js",
-  "bin": {},
+  "main": "build/lib/index.js",
   "directories": {
     "lib": "lib"
   },
   "files": [
-    "index.js",
     "lib",
     "build/lib"
   ],
+  "types": "build/lib/index.d.ts",
   "dependencies": {
     "@appium/types": "0.10.3",
-    "@babel/runtime": "7.21.0",
     "@headspinio/tizen-remote": "^0.4.4",
     "appium-chromedriver": "5.3.4",
     "asyncbox": "2.9.4",
@@ -51,16 +49,11 @@
     "yargs": "17.7.1"
   },
   "scripts": {
-    "build": "npm run build:distfiles",
-    "build:distfiles": "babel lib --root-mode=upward --out-dir=build/lib",
-    "clean": "npm run clean:distfiles",
-    "clean:distfiles": "npx rimraf \"build/**/*.js\"",
-    "dev": "npm run build -- --watch",
-    "lint": "eslint -c ../../.eslintrc --ignore-path ../../.eslintignore",
-    "prepare": "npm run build",
-    "test": "mocha \"test/unit/**/*.spec.js\" -t 5s",
+    "test": "run-p test:unit",
     "test:e2e": "mocha \"test/e2e/**/*.e2e.spec.js\" -t 60s",
-    "test:smoke": "node index.js"
+    "test:smoke": "node .",
+    "test:unit": "mocha \"test/unit/**/*.spec.js\" -t 5s",
+    "test:ci": "run-s test:smoke test:unit"
   },
   "homepage": "https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote#readme",
   "appium": {

@@ -8,6 +8,7 @@
     "prepare": "exit 0",
     "test": "exit 0",
     "test:smoke": "exit 0",
+    "test:ci": "exit 0",
     "tizen-build": "tizen build-web",
     "tizen-install": "tizen install -n .buildResult/sample.wgt -s $npm_config_serial",
     "tizen-package": "tizen package -s $npm_config_sign -t wgt -- .buildResult"
