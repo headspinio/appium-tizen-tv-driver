@@ -1,14 +1,12 @@
 // @ts-check
 
-/* global $ */
-
 const init = function () {
   $('#header').text('Initializing...');
 
   try {
 
-    // @ts-ignore
-    const supportedKeys = /** @type {{name: string, code: number}[]} */(tizen.tvinputdevice.getSupportedKeys());
+    // @ts-ignore no defs for tizen.*
+    const supportedKeys = /** @type { {name: string, code: number}[] } */(tizen.tvinputdevice.getSupportedKeys());
     $('#supported-btn-raw').text(JSON.stringify(supportedKeys, null, 2));
 
     const btnName = $('#rc-button-name');

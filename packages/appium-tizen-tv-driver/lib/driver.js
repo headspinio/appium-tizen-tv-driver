@@ -167,7 +167,7 @@ class TizenTVDriver extends BaseDriver {
   /**
    *
    * @param {any} value
-   * @returns {value is ScriptId}
+   * @returns {value is keyof typeof TizenTVDriver.executeMethodMap}
    */
   static isExecuteScript(value) {
     return value in TizenTVDriver.executeMethodMap;
@@ -349,6 +349,7 @@ class TizenTVDriver extends BaseDriver {
    */
   async startChromedriver({debuggerPort, executable}) {
     this.#chromedriver = new Chromedriver({
+      // @ts-ignore bad types
       port: await getPort(),
       executable,
     });
@@ -368,52 +369,51 @@ class TizenTVDriver extends BaseDriver {
   /**
    * Given a script of {@linkcode ScriptId} or some arbitrary JS, figure out
    * which it is and run it.
-   *
-   * @template [TArg=any]
+   * @template {ExecuteMethodArgs} [TArgs=unknown[]]
    * @template [TReturn=unknown]
-   * @template {import('type-fest').LiteralUnion<ScriptId, string>} [S=string]
-   * @param {S} script
-   * @param {S extends ScriptId ? [Record<string,any>] : TArg[]} args
-   * @returns {Promise<S extends ScriptId ? import('type-fest').AsyncReturnType<ExecuteMethod<S>> : {value: TReturn}>}
+   * @param {string} script - Either a script to run, or in the case of an Execute Method, the name of the script to execute.
+   * @param {TArgs} [args]
+   * @returns {Promise<TReturn>}
    */
   async execute(script, args) {
     if (TizenTVDriver.isExecuteScript(script)) {
-      log.debug(`Calling script "${script}" with arg ${JSON.stringify(args[0])}`);
+      log.debug(`Calling script "${script}" with args: ${JSON.stringify(args)}`);
       const methodArgs = /** @type {[Record<string,any>]} */ (args);
       return await this.executeMethod(script, [methodArgs[0]]);
     }
-    return await /** @type {Promise<S extends ScriptId ? import('type-fest').AsyncReturnType<ExecuteMethod<S>> : {value: TReturn}>} */ (
-      this.executeChromedriverScript(script, /** @type {TArg[]} */ (args))
-    );
+    return /** @type {TReturn} */(await this.executeChromedriverScript(script, /** @type {readonly unknown[]} */(args)));
   }
 
   /**
    * Execute some arbitrary JS via Chromedriver.
-   * @template [TReturn=any]
-   * @template [TArg=any]
+   * @template {readonly any[]} [TArgs=unknown[]]
+   * @template [TReturn=unknown]
    * @param {((...args: any[]) => TReturn)|string} script
-   * @param {TArg[]} [args]
+   * @param {TArgs} [args]
    * @returns {Promise<{value: TReturn}>}
    */
-  async executeChromedriverScript(script, args = []) {
+  async executeChromedriverScript(script, args) {
     return await this.#executeChromedriverScript('/execute/sync', script, args);
   }
 
   /**
    * Execute some arbitrary JS via Chromedriver.
+   * @template {readonly any[]} [TArgs=unknown[]]
    * @template [TReturn=unknown]
-   * @template [TArg=any]
    * @param {string} endpointPath - Relative path of the endpoint URL
    * @param {((...args: any[]) => TReturn)|string} script
-   * @param {TArg[]} [args]
+   * @param {TArgs} [args]
    * @returns {Promise<{value: TReturn}>}
    */
-  async #executeChromedriverScript(endpointPath, script, args = []) {
+  async #executeChromedriverScript(endpointPath, script, args) {
     const wrappedScript =
       typeof script === 'string' ? script : `return (${script}).apply(null, arguments)`;
+    if (!this.#chromedriver) {
+      throw new Error('Chromedriver is not running');
+    }
     return await this.#chromedriver.sendCommand(endpointPath, 'POST', {
       script: wrappedScript,
-      args,
+      args: args ?? [],
     });
   }
 
@@ -611,7 +611,6 @@ class TizenTVDriver extends BaseDriver {
 }
 
 export {TizenTVDriver, Keys};
-export default TizenTVDriver;
 
 /**
  * A known script identifier (e.g., `tizen: pressKey`)
@@ -649,12 +648,6 @@ export default TizenTVDriver;
  */
 
 /**
- * Lookup a method by its script ID.
- * @template {ScriptId} S
- * @typedef {TizenTVDriver[TizenTVDriverExecuteMethodMap[S]['command']]} ExecuteMethod
- */
-
-/**
  * Like {@linkcode TizenTVDriverCaps} but the actually-required stuff is required.
  * @typedef {import('type-fest').SetRequired<TizenTVDriverCaps, 'deviceAddress' | 'udid'>} StrictTizenTVDriverCaps
  */
@@ -664,4 +657,8 @@ export default TizenTVDriver;
  * @typedef {import('@headspinio/tizen-remote').RcKeyCode} RcKeyCode
  * @typedef {import('@appium/types').DriverData} DriverData
  * @typedef {import('@appium/types').ServerArgs} ServerArgs
+ */
+
+/**
+ * @typedef {readonly any[] | readonly [import('@appium/types').StringRecord] | Readonly<import('@appium/types').StringRecord>} ExecuteMethodArgs
  */

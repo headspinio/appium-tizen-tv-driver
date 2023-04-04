@@ -91,6 +91,7 @@ describe('TizenRemote', function () {
 
         this.init();
 
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         mockWs = this;
       }
 

@@ -30,7 +30,7 @@ export const AsyncScripts = Object.freeze({
  */
 export const SyncScripts = Object.freeze({
   exit: () => {
-    // @ts-expect-error
+    // @ts-expect-error - tizen is not defined in the browser
     window.tizen.application.getCurrentApplication().exit();
   },
   reset: () => {

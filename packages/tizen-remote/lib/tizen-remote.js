@@ -2,7 +2,7 @@ import _ from 'lodash';
 import fs from 'node:fs/promises';
 import _fs from 'node:fs';
 import {TextCommand, KeyCommand} from './command';
-import {EventEmitter} from 'events';
+import {EventEmitter} from 'node:events';
 import {promisify, formatWithOptions} from 'node:util';
 import WebSocket from 'ws';
 import debug from 'debug';
@@ -32,10 +32,9 @@ function createdTypedEmitterClass() {
 /**
  * Codes received when a connection to a WSS fails.
  * @see https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.1
- * @enum {string}
  * @group Constants
  */
-export const BadCode = Object.freeze({
+export const BadCode = /** @type {const} */ ({
   1002: 'Protocol Error',
   1003: 'Invalid Data Type',
   1005: 'No Status',
@@ -133,14 +132,14 @@ export const constants = /** @type {const} */ ({
   /**
    * Namespace for various usages
    */
-  NS: 'tizen-remote'
+  NS: 'tizen-remote',
 });
 
 /**
  * Events emitted by {@linkcode TizenRemote}.
  * @event
  */
-export const Event = Object.freeze({
+export const Event = /** @type {const} */ ({
   CONNECT: 'connect',
   CONNECTING: 'connecting',
   DISCONNECT: 'disconnect',
@@ -153,10 +152,9 @@ export const Event = Object.freeze({
 
 /**
  * Valid types of keypresses which can be sent in the msg command payload
- * @enum {KeyCommandType}
  * @group Constants
  */
-export const KeyCmd = Object.freeze({
+export const KeyCmd = /** @type {const} */ ({
   PRESS: 'Press',
   CLICK: 'Click',
   RELEASE: 'Release',
@@ -167,7 +165,7 @@ export const KeyCmd = Object.freeze({
  * @enum {string}
  * @event
  */
-export const WsEvent = Object.freeze({
+export const WsEvent = /** @type {const} */({
   CONNECT: 'connect',
   CLOSE: 'close',
   ERROR: 'error',
@@ -179,7 +177,7 @@ export const WsEvent = Object.freeze({
  * Type guard for {@link BadCode}.
  * @internal
  * @param {any} code
- * @returns {code is BadCode}
+ * @returns {code is keyof BadCode}
  */
 function isKnownBadCode(code) {
   return code in BadCode;
@@ -372,8 +370,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
         retries: 3,
         minTimeout: 100,
         maxTimeout: 1000,
-        unref: true
-      }
+        unref: true,
+      },
     };
 
     // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
@@ -457,7 +455,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async #lock() {
     const tokenCachePath = this.tokenCachePath ?? this.#tokenCachePath;
     await fs.mkdir(this.#cacheDir, {recursive: true});
-    return await lock(tokenCachePath, this.#lockOpts) ?? (() => Promise.resolve());
+    return (await lock(tokenCachePath, this.#lockOpts)) ?? (() => Promise.resolve());
   }
 
   /**
@@ -501,7 +499,11 @@ export class TizenRemote extends createdTypedEmitterClass() {
       configName: constants.TOKEN_CACHE_BASENAME,
     });
     if (this.tokenCachePath !== this.#tokenCachePath) {
-      this.#debug('Warning: token cache path (%s) is not what we expected (%s); updating', this.tokenCachePath, this.#tokenCachePath);
+      this.#debug(
+        'Warning: token cache path (%s) is not what we expected (%s); updating',
+        this.tokenCachePath,
+        this.#tokenCachePath
+      );
       this.#tokenCachePath = this.#tokenCache.path;
     }
     await unlock();
@@ -943,7 +945,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Path to the token cache file, if any
    * @type {string|undefined}
    */
-   get tokenCachePath () {
+  get tokenCachePath() {
     return this.#tokenCache?.path;
   }
 
@@ -951,7 +953,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Current token, if any
    * @type {string|undefined}
    */
-  get token () {
+  get token() {
     return this.#token;
   }
 
@@ -1094,7 +1096,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
- * Options for {@linkcode TizenRemote#constructor}.
+ * Options for {@linkcode TizenRemote.constructor}.
  * @group Options
  * @typedef TizenRemoteOptions
  * @property {string} [token] - Remote control token
@@ -1137,7 +1139,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
- * A "keypress" type event. Used by {@linkcode TizenRemoteCommandParams#DataOfCmd}.
+ * A "keypress" type event. Used by {@linkcode TizenRemoteCommandParams.DataOfCmd}.
  * @typedef {'Press' | 'Click' | 'Release'} KeyCommandType
  * @group Message Data
  */
@@ -1181,19 +1183,19 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
- * Options for {@linkcode TizenRemote#connect}.
+ * Options for {@linkcode TizenRemote.connect}.
  * @group Options
  * @typedef {NoTokenOption} ConnectOptions
  */
 
 /**
- * Options for {@linkcode TizenRemote#send} and {@linkcode TizenRemote#sendRequest}.
+ * Options for {@linkcode TizenRemote.send} and {@linkcode TizenRemote.sendRequest}.
  * @group Options
  * @typedef {NoTokenOption & NoConnectOption} SendOptions
  */
 
 /**
- * Options for {@linkcode TizenRemote#getToken}.
+ * Options for {@linkcode TizenRemote.getToken}.
  * @group Options
  * @typedef {NoConnectOption} GetTokenOptions
  */
@@ -1206,18 +1208,26 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
- * Options for {@linkcode TizenRemote#sendRequest}.
+ * Options for {@linkcode TizenRemote.sendRequest}.
  * @group Options
  * @typedef {NoTokenOption & NoConnectOption & TimeoutOption} SendRequestOptions
  */
 
 /**
+ * @internal
  * @typedef NewTokenMessage
  * @property {typeof constants.TOKEN_EVENT} event
- * @property {{token: string}} data
+ * @property {WithToken} data
+ */
+
+/**
+ * @internal
+ * @typedef WithToken
+ * @property {string} token
  */
 
 /**
  * The shape of the on-disk token cache
- * @typedef {Record<string,{token: string}>} TokenCache
+ * @internal
+ * @typedef {Record<string,WithToken>} TokenCache
  */
