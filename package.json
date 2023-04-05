@@ -97,7 +97,7 @@
     "rewiremock": "3.14.5",
     "sinon": "15.0.3",
     "strict-event-emitter-types": "2.0.0",
-    "type-fest": "3.7.2",
+    "type-fest": "3.8.0",
     "typedoc": "0.23.28",
     "typedoc-plugin-markdown": "3.14.0",
     "typescript": "5.0.3",
