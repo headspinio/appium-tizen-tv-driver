@@ -1,19 +1,14 @@
-import _ from 'lodash';
-import fs from 'node:fs/promises';
-import _fs from 'node:fs';
-import {TextCommand, KeyCommand} from './command';
-import {EventEmitter} from 'node:events';
-import {promisify, formatWithOptions} from 'node:util';
-import WebSocket from 'ws';
+import {strongbox} from '@appium/strongbox';
+import {Env} from '@humanwhocodes/env';
 import debug from 'debug';
 import delay from 'delay';
+import _ from 'lodash';
+import {EventEmitter} from 'node:events';
+import {formatWithOptions, promisify} from 'node:util';
 import pRetry from 'p-retry';
+import WebSocket from 'ws';
+import {KeyCommand, TextCommand} from './command';
 import {Keys} from './keys';
-import {Env} from '@humanwhocodes/env';
-import {lock} from 'proper-lockfile';
-import Conf from 'conf';
-import path from 'path';
-import envPaths from 'env-paths';
 
 export {Keys};
 
@@ -165,7 +160,7 @@ export const KeyCmd = /** @type {const} */ ({
  * @enum {string}
  * @event
  */
-export const WsEvent = /** @type {const} */({
+export const WsEvent = /** @type {const} */ ({
   CONNECT: 'connect',
   CLOSE: 'close',
   ERROR: 'error',
@@ -211,12 +206,13 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #port;
 
   /**
-   * Client identifier.
+   * Client identifier; a base64-encoded string of the `host`.
    *
-   * This will be associated with a token, so don't change it if you want to reuse a token!
+   * This is used in communication with the device.
+   *
    * @type {string}
    */
-  #name;
+  #id;
 
   /**
    * Super secret access token.
@@ -288,7 +284,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Token cache object.
    *
    * Will remain `undefined` if token persistence is disabled
-   * @type {Conf<Record<string,string>>|undefined}
+   * @type {import('@appium/strongbox').Item<string>|undefined}
    */
   #tokenCache;
 
@@ -299,36 +295,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #persistToken;
 
   /**
-   * Path to lockfile for token cache
-   * @type {string}
+   * Store for the token
+   * @type {import('@appium/strongbox').Strongbox}
    */
-  #lockfilePath;
-
-  /**
-   * Path to the (OS-dependent) cache dir containing both the token cache and the lockfile.
-   *
-   * This is determined via module `env-paths` both here and in the `conf` module.  We need
-   * this path before the cache is created due to the blocking writes in the `Conf` constructor,
-   * so we can create a lockfile here.  The path to the cache (and thus, this directory) is
-   * accessible via the `path` property of the `Conf` instance (`#tokenCache.path`) but by the
-   * time it's readable, it's too late.
-   * @type {string}
-   */
-  #cacheDir;
-
-  /**
-   * Speculative path to the token cache file.
-   * Used for file locking.
-   * This path is determined by the `conf` module, but we attempt to mimic its behavior to get the path.
-   * @type {string}
-   */
-  #tokenCachePath;
-
-  /**
-   * Options for `lock`/`unlock`
-   * @type {import('proper-lockfile').LockOptions}
-   */
-  #lockOpts;
+  #strongbox;
 
   /**
    * @param {string} host - IP or hostname of the Tizen device
@@ -343,36 +313,18 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     const env = new Env();
 
+    this.#strongbox = strongbox(constants.NS);
     this.#host = host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
-    this.#name = Buffer.from(opts.name ?? constants.DEFAULT_NAME).toString('base64');
-    if (opts.debug) {
-      debug.enable(`${constants.NS}*`);
-    }
-    this.#debugger = debug(`${constants.NS} [${this.#name}]`);
-
     // note: if this is unset, we will attempt to get a token from the fs cache,
     // and if _that_ fails, we'll go ahead and ask the device for one.
     this.#token = opts.token ?? env.get('TIZEN_REMOTE_TOKEN');
-    this.#cacheDir = envPaths(constants.NS, {suffix: 'nodejs'}).config;
-    this.#lockfilePath = path.join(this.#cacheDir, constants.TOKEN_CACHE_LOCKFILE_NAME);
-    this.#tokenCachePath = path.join(this.#cacheDir, `${constants.TOKEN_CACHE_BASENAME}.json`);
-    if (this.#persistToken) {
-      this.#debug('Expecting token cache at %s', this.#tokenCachePath);
+    this.#id = Buffer.from(this.#host).toString('base64');
+    if (opts.debug) {
+      debug.enable(`${constants.NS}*`);
     }
-    // `realpath: false` prevents attempting to read a non-existent file
-    this.#lockOpts = {
-      realpath: false,
-      lockfilePath: this.#lockfilePath,
-      fs: _fs,
-      retries: {
-        retries: 3,
-        minTimeout: 100,
-        maxTimeout: 1000,
-        unref: true,
-      },
-    };
+    this.#debugger = debug(`${constants.NS} [${this.#host}]`);
 
     // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
     this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
@@ -401,7 +353,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
     const url = new URL(
       `${this.#ssl ? 'wss' : 'ws'}://${this.#host}:${this.#port}${constants.API_PATH_V2}`
     );
-    url.searchParams.set('name', this.#name);
+    url.searchParams.set('name', this.#id);
     if (this.#token) {
       url.searchParams.set('token', this.#token);
     }
@@ -412,7 +364,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * Just returns the client name (which is a base64-encoded string).
    */
   get base64Name() {
-    return this.#name;
+    return this.#id;
   }
 
   /**
@@ -423,13 +375,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
   }
 
   /**
-   * The key to use for this client in the token cache
-   */
-  get #tokenCacheKey() {
-    return `${this.#name}.token`;
-  }
-
-  /**
    * Unsets token.
    *
    * If token cache persistence is enabled, this will remove it from the cache as well.
@@ -437,25 +382,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async unsetToken() {
     if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      const unlock = await this.#lock();
-      cache.delete(this.#tokenCacheKey);
-      await unlock();
+      await cache.clear();
     }
     this.#token = undefined;
-    this.#debug('Unset token for client %s', this.#name);
-  }
-
-  /**
-   * Locks the lockfile and returns an unlocking function.
-   *
-   * Creates the cache dir if it does not exist.  If the file to lock doesn't
-   * exist, then the unlocking function is a noop.
-   * @returns {Promise<() => Promise<void>>}
-   */
-  async #lock() {
-    const tokenCachePath = this.tokenCachePath ?? this.#tokenCachePath;
-    await fs.mkdir(this.#cacheDir, {recursive: true});
-    return (await lock(tokenCachePath, this.#lockOpts)) ?? (() => Promise.resolve());
+    this.#debug('Unset token for host %s', this.#host);
   }
 
   /**
@@ -469,9 +399,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
       result = true;
     } else if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      result = cache.has(this.#tokenCacheKey);
+      result = Boolean(cache.value);
       if (result) {
-        this.#debug('Found token in cache (%s)', cache.get(this.#tokenCacheKey));
+        this.#debug('Found token in cache (%s)', cache.value);
       }
     }
     if (!result) {
@@ -483,30 +413,21 @@ export class TizenRemote extends createdTypedEmitterClass() {
   /**
    * Initializes the token cache; otherwise returns the existing cache.
    *
-   * Because the `Conf` constructor performs a blocking write to the fs, we need to
-   * wrap the instantiation in a lock.
-   *
    * Aditionally, any future writes to the cache must be wrapped in the lock.
-   * @returns {Promise<Conf<Record<string,string>>>}
+   * @returns {Promise<import('@appium/strongbox').Item<string>>}
+   * @privateRemarks Do not call `#hasToken()` from here, as it will cause an infinite stack
    */
   async #getTokenCache() {
     if (this.#tokenCache) {
       return this.#tokenCache;
     }
-    const unlock = await this.#lock();
-    this.#tokenCache = new Conf({
-      projectName: constants.NS,
-      configName: constants.TOKEN_CACHE_BASENAME,
-    });
-    if (this.tokenCachePath !== this.#tokenCachePath) {
-      this.#debug(
-        'Warning: token cache path (%s) is not what we expected (%s); updating',
-        this.tokenCachePath,
-        this.#tokenCachePath
-      );
-      this.#tokenCachePath = this.#tokenCache.path;
+    if (this.#token) {
+      this.#tokenCache = await this.#strongbox.createItemWithValue(this.#host, this.#token);
+    } else {
+      this.#tokenCache = await this.#strongbox.createItem(this.#host);
+      this.#token = this.#tokenCache.value;
     }
-    await unlock();
+
     return this.#tokenCache;
   }
 
@@ -519,7 +440,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async readToken() {
     if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      return cache.get(this.#tokenCacheKey);
+      return await cache.read();
     }
   }
 
@@ -533,10 +454,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
   async writeToken(token) {
     if (this.#persistToken) {
       const cache = await this.#getTokenCache();
-      const unlock = await this.#lock();
-      cache.set(this.#tokenCacheKey, token);
-      await unlock();
+      await cache.write(token);
     }
+    this.#token = token;
   }
 
   /**
@@ -946,7 +866,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @type {string|undefined}
    */
   get tokenCachePath() {
-    return this.#tokenCache?.path;
+    return this.#tokenCache?.id;
   }
 
   /**
@@ -1096,22 +1016,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
  */
 
 /**
- * Options for {@linkcode TizenRemote.constructor}.
- * @group Options
- * @typedef TizenRemoteOptions
- * @property {string} [token] - Remote control token
- * @property {number|string} [port] - Port of the Tizen device's WS server
- * @property {string} [name] - Name of this "virtual remote control"
- * @property {boolean} [ssl] - Whether to use SSL
- * @property {number} [handshakeTimeout] - Timeout for the initial handshake (ms)
- * @property {number} [handshakeRetries] - Number of retries for the initial handshake
- * @property {number} [tokenTimeout] - Timeout for the token request (ms)
- * @property {boolean} [autoReconnect] - Whether to automatically reconnect on disconnection
- * @property {boolean} [persistToken] - Whether to persist the token to disk _and_ whether to read it from disk when needed
- * @property {boolean} [debug] - Whether to enable debug logging
- */
-
-/**
  * Types for event data emitted by a {@linkcode TizenRemote} instance.
  *
  * The keys of this type correspond to {@linkcode Event Events}.
@@ -1230,4 +1134,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
  * The shape of the on-disk token cache
  * @internal
  * @typedef {Record<string,WithToken>} TokenCache
+ */
+
+/**
+ * @typedef {import('./types').TizenRemoteOptions} TizenRemoteOptions
  */
