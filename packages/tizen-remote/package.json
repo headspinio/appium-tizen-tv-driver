@@ -45,16 +45,14 @@
     "test:types": "tsd"
   },
   "dependencies": {
+    "@appium/strongbox": "0.1.0",
     "@humanwhocodes/env": "2.2.2",
     "@types/node": "18.15.11",
     "@types/ws": "8.5.4",
-    "conf": "10.2.0",
     "debug": "4.3.4",
     "delay": "4.4.1",
-    "env-paths": "2.2.1",
     "lodash": "4.17.21",
     "p-retry": "4.6.2",
-    "proper-lockfile": "4.1.2",
     "strict-event-emitter-types": "2.0.0",
     "type-fest": "3.8.0",
     "ws": "8.13.0"

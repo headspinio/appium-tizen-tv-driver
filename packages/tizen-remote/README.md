@@ -5,13 +5,12 @@
 ## Basic Usage
 
 ```js
-import { TizenRemote, Keys } from '@headspinio/tizen-remote';
+import {TizenRemote, Keys} from '@headspinio/tizen-remote';
 
 const remote = new TizenRemote({
   host: 'my-tizen.device.local',
   port: 12345,
-  token: 'my-secret-token',
-  appId: 'my.app-id'
+  appId: 'my.app-id',
 });
 
 await remote.connect();
@@ -27,6 +26,7 @@ This package acts as a WebSocket client for the Tizen Remote API and provides va
 ## Features
 
 - Connects to a Tizen device's remote control service via WebSocket
+- Automatic pairing of remote control with the device (token stored per host)
 - Allows automation of keypresses
 - Supports auto-reconnection on unexpected disconnect
 - Supports multiple connection attempts with exponential backoff
@@ -39,7 +39,11 @@ npm i @headspinio/tizen-remote
 
 ## API
 
-(link API docs here)
+(TODO)
+
+## Environment
+
+If a `token` option is not provided via the `TizenRemote` constructor's options, this library will look for a token in the `TIZEN_REMOTE_TOKEN` environment variable (if neither are found, automatic pairing is attempted).
 
 ## License
 

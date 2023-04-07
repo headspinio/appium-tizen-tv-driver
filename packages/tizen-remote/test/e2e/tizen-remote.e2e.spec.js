@@ -53,7 +53,7 @@ describe('websocket behavior', function () {
   /** @type {sinon.SinonSandbox} */
   let sandbox;
 
-  /** @type {import('../../lib/tizen-remote').TizenRemoteOptions} */
+  /** @type {import('../../lib/types').TizenRemoteOptions} */
   let remoteOpts;
 
   /** @type {string} */
@@ -398,12 +398,8 @@ describe('websocket behavior', function () {
             });
           }));
 
-          const tokenCache = JSON.parse(await fs.readFile(/** @type {string} */(remote.tokenCachePath), 'utf8'));
-          expect(tokenCache, 'to satisfy', {
-            [remote.base64Name]: {
-              token: newToken,
-            },
-          });
+          const token = await fs.readFile(/** @type {string} */(remote.tokenCachePath), 'utf8');
+          expect(token, 'to equal', newToken);
         });
       });
 

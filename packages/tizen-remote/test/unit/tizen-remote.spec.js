@@ -22,35 +22,26 @@ describe('TizenRemote', function () {
   /** @type {typeof import('../../lib/tizen-remote').Event} */
   let Event;
 
-  /** @type { {ws: MockWebSocket, '@humanwhocodes/env': {Env: sinon.SinonStub}, conf: typeof MockConf, 'proper-lockfile': typeof MockLockfile, 'node:fs/promises': typeof MockFs, 'env-paths': typeof MockEnvPaths, fs: {}}} */
-  let mocks;
-
   /** @type {typeof import('../../lib/tizen-remote').constants} */
   let constants;
 
-  /** @type {{get: sinon.SinonStub}} */
+  /** @type { {get: sinon.SinonStub}} */
   let mockEnv;
 
   /** @type {InstanceType<MockWebSocket>} */
   let mockWs;
 
-  /** @type { sinon.SinonStub<any,typeof mockConf>} */
-  let MockConf;
-
-  /** @type { {lock: sinon.SinonStub, unlock: sinon.SinonStub}} */
-  let MockLockfile;
-
-  /** @type {{get: sinon.SinonStub<[string],string|undefined>, set: sinon.SinonStub<[string], void>, delete: sinon.SinonStub, path: string}} */
-  let mockConf;
-
-  /** @type {{unlink: sinon.SinonStub<[string],Promise<void>>, mkdir: sinon.SinonStub<[string, import('fs').MakeDirectoryOptions],Promise<void>>}} */
-  let MockFs;
+  /** @type { {Strongbox: typeof import('@appium/strongbox').Strongbox, strongbox: sinon.SinonStubbedMember<typeof import('@appium/strongbox').strongbox>, BaseItem: typeof import('@appium/strongbox').BaseItem}} */
+  let MockStrongbox;
 
   /** @type {new (url: string, opts?: import('ws').ClientOptions) => EventEmitter & {close: () => void, send: (msg: string, done: ((err?: Error) => void)) => void}} */
   let MockWebSocket;
 
-  /** @type {(name: string, ...args: any[]) => {config: string}} */
-  let MockEnvPaths;
+  /** @type {sinon.SinonStubbedInstance<import('@appium/strongbox').BaseItem<string>>} */
+  let mockItem;
+
+  /** @type {sinon.SinonStubbedInstance<import('@appium/strongbox').Strongbox>} */
+  let mockStrongbox;
 
   beforeEach(function () {
     sandbox = createSandbox();
@@ -109,34 +100,41 @@ describe('TizenRemote', function () {
       static CLOSED = 3;
     };
 
-    MockEnvPaths = sandbox.stub().returns({config: '/path/to/cache'});
-    MockLockfile = {lock: sandbox.stub().resolves(), unlock: sandbox.stub().resolves()};
-    mockConf = {
-      get: /** @type {typeof mockConf.get} */ (sandbox.stub().returns('cached-token')),
-      set: /** @type {typeof mockConf.set} */ sandbox.stub(),
-      path: '/path/to/cache/token-cache.json',
-      delete: sandbox.stub()
-    };
-    MockConf = sandbox.stub().returns(mockConf);
-    MockFs = {
-      unlink: /** @type {typeof MockFs['unlink']} */(sandbox.stub().resolves()),
-      mkdir: /** @type {typeof MockFs['mkdir']} */(sandbox.stub().resolves()),
-    };
-    mocks = {
-      '@humanwhocodes/env': {
-        Env: sandbox.stub().returns(mockEnv),
-      },
-      ws: MockWebSocket,
-      conf: MockConf,
-      'proper-lockfile': MockLockfile,
-      'node:fs/promises': MockFs,
-      fs: {},
-      'env-paths': MockEnvPaths,
-    };
+    MockStrongbox = /** @type {any} */ ({});
     ({TizenRemote, WsEvent, Event, constants} = rewiremock.proxy(
       () => require('../../lib/tizen-remote'),
-      mocks
-    ));
+      (r) => ({
+        '@humanwhocodes/env': {
+          Env: sandbox.stub().returns(mockEnv),
+        },
+        ws: MockWebSocket,
+        'node:fs/promises': r.mockThrough().dynamic(),
+        '@appium/strongbox': r
+          .mockThrough((prop, value) => {
+            if (prop === 'strongbox') {
+              MockStrongbox.strongbox = /** @type {typeof MockStrongbox.strongbox} */ (
+                sandbox.stub().callsFake(() => {
+                  mockStrongbox = sandbox.createStubInstance(MockStrongbox.Strongbox);
+                  mockItem = sandbox.createStubInstance(MockStrongbox.BaseItem);
+                  Object.defineProperty(mockItem, 'value', {
+                    get() {
+                      return 'mock-token';
+                    },
+                    configurable: true
+                  });
+                  mockStrongbox.createItem.resolves(mockItem);
+                  mockStrongbox.createItemWithValue.resolves(mockItem);
+                  return mockStrongbox;
+                })
+              );
+              return MockStrongbox.strongbox;
+            }
+            MockStrongbox[/** @type {keyof typeof MockStrongbox} */ (prop)] = value;
+            return value;
+          })
+          .dynamic(),
+      })
+    )); // this allows us to change the mock behavior on-the-fly)
   });
 
   afterEach(function () {
@@ -209,19 +207,20 @@ describe('TizenRemote', function () {
           describe('when token persistence is enabled', function () {
             it('should initialize the token cache', async function () {
               await remote.connect();
-              expect(mocks.conf, 'was called once');
+              expect(mockStrongbox.createItem, 'was called once');
             });
 
             describe('when token cache get is a hit', function () {
               it('should retrieve a token from the cache', async function () {
                 await remote.connect();
-                expect(mockConf.get, 'was called once');
+                expect(mockStrongbox.createItem, 'to have a call satisfying', ['host']);
+                expect(remote.token, 'to be', mockItem.value);
               });
             });
 
             describe('when token cache get is a miss', function () {
               beforeEach(function () {
-                mockConf.get.returns(undefined);
+                sandbox.replaceGetter(mockItem, 'value', () => undefined);
               });
 
               it('should attempt to retrieve the token from the device', async function () {
@@ -236,9 +235,8 @@ describe('TizenRemote', function () {
 
               it('should write the resulting token to the cache', async function () {
                 await remote.connect();
-                expect(mockConf.set, 'to have a call satisfying', [
-                  `${remote.base64Name}.token`,
-                  'server-token',
+                expect(mockItem.write, 'to have a call satisfying', [
+                  'server-token'
                 ]);
               });
             });
@@ -345,22 +343,22 @@ describe('TizenRemote', function () {
       });
     });
 
-    describe('unsetToken()', function() {
-      describe('when token persistence is enabled', function() {
-        it('should remove the token from the cache', async function() {
+    describe('unsetToken()', function () {
+      describe('when token persistence is enabled', function () {
+        it('should remove the token from the cache', async function () {
           await remote.unsetToken();
-          expect(mockConf.delete, 'to have a call satisfying', [`${remote.base64Name}.token`]);
+          expect(mockItem.clear, 'was called once');
         });
       });
 
-      describe('when token persistence is enabled', function() {
-        beforeEach(function() {
+      describe('when token persistence is enabled', function () {
+        beforeEach(function () {
           remote = new TizenRemote('host', {persistToken: false});
         });
 
-        it('should not touch the cache', async function() {
+        it('should not touch the cache', async function () {
           await remote.unsetToken();
-          expect(mockConf.delete, 'was not called');
+          expect(mockItem.clear, 'was not called');
         });
       });
     });
