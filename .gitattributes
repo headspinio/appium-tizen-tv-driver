@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Handle as a text file but merge via `npm install`
+package-lock.json merge=npm
