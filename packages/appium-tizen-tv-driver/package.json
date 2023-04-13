@@ -36,7 +36,7 @@
   "dependencies": {
     "@appium/types": "0.10.4",
     "@headspinio/tizen-remote": "^0.4.4",
-    "appium-chromedriver": "5.3.4",
+    "appium-chromedriver": "5.4.0",
     "asyncbox": "2.9.4",
     "bluebird": "3.7.2",
     "get-port": "5.1.1",
