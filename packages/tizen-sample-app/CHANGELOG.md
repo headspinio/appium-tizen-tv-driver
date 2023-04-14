@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.4](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-sample-app@0.1.3...@headspinio/tizen-sample-app@0.1.4) (2023-04-14)
+
+### Bug Fixes
+
+- type-related fixes ([cd1e78b](https://github.com/headspinio/appium-tizen-tv-driver/commit/cd1e78b0d7c930e56181f52b3b18eb4477ffe757))
+
 ## [0.1.3](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-sample-app@0.1.2...@headspinio/tizen-sample-app@0.1.3) (2022-12-05)
 
 **Note:** Version bump only for package @headspinio/tizen-sample-app

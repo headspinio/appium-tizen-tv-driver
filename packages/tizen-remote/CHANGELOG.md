@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.4.4...@headspinio/tizen-remote@0.5.0) (2023-04-14)
+
+### ⚠ BREAKING CHANGES
+
+- **tizen-remote:** Uses a new scheme for token storage. Instead of a single JSON file, we use one file per device. This will break existing token stores. Also, the `name` option of the `TizenRemote` constructor is no longer recognized.
+
+This replaces the bespoke token cache with the `@appium/strongbox` package. As such, it mitigates the need for lockfiles.
+
+### Features
+
+- **tizen-remote:** use per-host token storage ([7ea9983](https://github.com/headspinio/appium-tizen-tv-driver/commit/7ea9983f5dfb49c17565b66fa4716ce3e2c613aa))
+
+### Bug Fixes
+
+- **tizen-remote:** update dependency @babel/runtime to v7.20.13 ([9db2a56](https://github.com/headspinio/appium-tizen-tv-driver/commit/9db2a56859a837f662bb26436e90bb93332b1cb9))
+- **tizen-remote:** update dependency type-fest to v3.8.0 ([b473d3d](https://github.com/headspinio/appium-tizen-tv-driver/commit/b473d3d3d9a22f5d22ebf529886d2c19ef6c8cd2))
+- **tizen-remote:** update dependency ws to v8.12.1 ([2f1becc](https://github.com/headspinio/appium-tizen-tv-driver/commit/2f1becc032ab84564424086837f0977ad5d08d2a))
+- **tizen-remote:** update dependency ws to v8.13.0 ([cde366b](https://github.com/headspinio/appium-tizen-tv-driver/commit/cde366b29aa9b47b90b53a676ac2dfc18079bfa1))
+- type-related fixes ([cd1e78b](https://github.com/headspinio/appium-tizen-tv-driver/commit/cd1e78b0d7c930e56181f52b3b18eb4477ffe757))
+
 ## [0.4.4](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.4.3...@headspinio/tizen-remote@0.4.4) (2023-01-16)
 
 ### Bug Fixes
