@@ -32,7 +32,7 @@ import {promises as fs} from 'node:fs';
 
 const env = new Env();
 
-const HOST = /** @type {string} */ (env.get('TEST_TIZEN_REMOTE_HOST', '127.0.0.1'));
+const HOST = env.get('TEST_TIZEN_REMOTE_HOST', '127.0.0.1');
 const PORT = env.get('TEST_TIZEN_REMOTE_PORT');
 const TOKEN = env.get('TEST_TIZEN_REMOTE_TOKEN');
 
@@ -153,6 +153,11 @@ describe('websocket behavior', function () {
         beforeEach(function() {
           remoteOpts.persistToken = false;
         });
+
+        afterEach(async function() {
+          await remote.unsetToken();
+        });
+
         describe('when the remote has no token', function () {
           beforeEach(function () {
             if (!server) {
@@ -186,6 +191,48 @@ describe('websocket behavior', function () {
           });
           it('should not request a token from the server', async function () {
             return await expect(remote.connect(), 'not to emit from', remote, Event.TOKEN);
+          });
+        });
+      });
+
+      describe('when persistence is enabled', function() {
+        beforeEach(function() {
+          if (!server) {
+            return this.skip();
+          }
+
+          remoteOpts.persistToken = true;
+        });
+
+        describe('when the remote has no token', function () {
+          beforeEach(function () {
+            remoteOpts.token = undefined;
+            remote = new TizenRemote(HOST, remoteOpts);
+          });
+
+          afterEach(async function() {
+            await remote.unsetToken();
+          });
+
+          describe('when the token was not persisted', function() {
+            beforeEach(async function() {
+              await remote.unsetToken();
+            });
+
+            it('should request a token from the server', async function () {
+              return await expect(() => remote.connect(), 'to emit from', remote, Event.TOKEN);
+            });
+          });
+
+          describe('when the token was persisted', function() {
+            beforeEach(async function() {
+              await remote.unsetToken();
+              await remote.writeToken('some-token');
+            });
+
+            it('should not request a token from the server', async function () {
+              return await expect(() => remote.connect(), 'not to emit from', remote, Event.TOKEN);
+            });
           });
         });
       });
