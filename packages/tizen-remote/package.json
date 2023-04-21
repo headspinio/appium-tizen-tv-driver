@@ -45,7 +45,7 @@
     "test:types": "tsd"
   },
   "dependencies": {
-    "@appium/strongbox": "0.2.0",
+    "@appium/strongbox": "0.3.0",
     "@humanwhocodes/env": "2.2.2",
     "@types/node": "18.15.13",
     "@types/ws": "8.5.4",
