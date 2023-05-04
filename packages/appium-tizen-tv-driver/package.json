@@ -45,7 +45,7 @@
     "lodash": "4.17.21",
     "source-map-support": "0.5.21",
     "teen_process": "2.0.2",
-    "type-fest": "3.9.0",
+    "type-fest": "3.10.0",
     "yargs": "17.7.2"
   },
   "scripts": {
