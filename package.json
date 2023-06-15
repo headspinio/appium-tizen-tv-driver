@@ -84,7 +84,7 @@
     "@types/yargs": "17.0.24",
     "@typescript-eslint/eslint-plugin": "5.59.11",
     "@typescript-eslint/parser": "5.59.11",
-    "appium": "2.0.0-rc.2",
+    "appium": "2.0.0-rc.3",
     "conventional-changelog-conventionalcommits": "5.0.0",
     "cross-env": "7.0.3",
     "eslint": "8.42.0",
