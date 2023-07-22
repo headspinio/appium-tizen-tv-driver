@@ -78,7 +78,7 @@
     "@types/jquery": "3.5.16",
     "@types/lodash": "4.14.195",
     "@types/mocha": "10.0.1",
-    "@types/node": "18.16.20",
+    "@types/node": "18.17.0",
     "@types/sinon": "10.0.15",
     "@types/teen_process": "2.0.0",
     "@types/yargs": "17.0.24",
