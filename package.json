@@ -71,7 +71,7 @@
   "devDependencies": {
     "@appium/eslint-config-appium": "8.0.4",
     "@appium/eslint-config-appium-ts": "0.3.1",
-    "@appium/tsconfig": "0.3.0",
+    "@appium/tsconfig": "0.3.1",
     "@humanwhocodes/env": "2.2.2",
     "@types/bluebird": "3.5.38",
     "@types/debug": "4.1.8",
