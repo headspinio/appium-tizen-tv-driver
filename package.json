@@ -107,7 +107,7 @@
     "unexpected": "13.2.1",
     "unexpected-eventemitter": "2.4.0",
     "unexpected-sinon": "11.1.0",
-    "webdriverio": "8.15.9"
+    "webdriverio": "8.15.10"
   },
   "engines": {
     "node": ">=14",
