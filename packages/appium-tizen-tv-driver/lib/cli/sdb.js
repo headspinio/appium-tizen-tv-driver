@@ -74,7 +74,7 @@ function _parseListAppsCmd(input) {
       }
       return {appName: match.groups.name, appPackage: match.groups.id};
     })
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 /**

@@ -29,10 +29,10 @@ describe('sdb', function () {
       ' Network status widget '	 'org.tizen.rs-network-status'
       'SamsungAccountService'	 'com.samsung.tizen.samsung-account'
       =================================================
-      `
+      `;
 
       // Spaces in the app name should exist as-is.
-      expect(_parseListAppsCmd(returnValue), "to equal", [
+      expect(_parseListAppsCmd(returnValue), 'to equal', [
         { appName: 'HdmiCec', appPackage: 'org.tizen.hdmicec' },
         { appName: 'automation-app', appPackage: 'org.tizen.automation-app' },
         { appName: '뉴스리듬', appPackage: 'jObNpkM9m9.newsrhythm' },

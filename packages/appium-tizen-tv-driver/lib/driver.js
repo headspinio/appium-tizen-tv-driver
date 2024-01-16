@@ -620,7 +620,7 @@ class TizenTVDriver extends BaseDriver {
    * @returns {Promise<[appName: string, appPackage: string]>}
    */
   async tizentvListApps() {
-    return await listApps({udid: this.opts.udid})
+    return await listApps({udid: this.opts.udid});
   }
 }
 
