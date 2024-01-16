@@ -2,7 +2,7 @@ import log from '../logger';
 import {runCmd, SDB_BIN_NAME} from './helpers';
 
 const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5})$/;
-const APP_LIST_RE = /^[^']*'(?<name>[^']+)'[^']+'(?<id>[^']+)'.*$/;
+const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'.*$/;
 
 /**
  *
@@ -50,24 +50,31 @@ async function launchApp({appPackage, udid}) {
 }
 
 /**
+ * Return the list of installed applications with the pair of
+ * an application name and the package name.
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @returns {Promise<[appName: string, appPackage: string]>}
  */
 async function listApps({udid}) {
   log.info(`Listing apps installed on '${udid}'`);
   const {stdout} = await runSDBCmd(udid, ['shell', '0', 'applist']);
-  const apps = stdout
+  const apps = _parseListAppsCmd(stdout);
+  log.info(`There are ${apps.length} apps installed`);
+  return apps;
+}
+
+// FIXME: change to a class method and use #
+function _parseListAppsCmd(input) {
+  return input
     .split('\n')
     .map((line) => {
-      // TODO WIP fix this regex
       const match = line.match(APP_LIST_RE);
       if (!match?.groups) {
         return false;
       }
       return {appName: match.groups.name, appPackage: match.groups.id};
     })
-    .filter(Boolean);
-  log.info(`There are ${apps.length} apps installed`);
-  return apps;
+    .filter(Boolean)
 }
 
 /**
@@ -115,6 +122,7 @@ export {
   debugApp,
   launchApp,
   listApps,
+  _parseListAppsCmd,
   forwardPort,
   removeForwardedPorts,
   connectDevice,
