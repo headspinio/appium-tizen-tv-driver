@@ -422,10 +422,18 @@ export class TizenRemote extends createdTypedEmitterClass() {
       return this.#tokenCache;
     }
     if (this.#token) {
+      this.#debug('Creating in-memory token cache and persisting token %s', this.#token);
       this.#tokenCache = await this.#strongbox.createItemWithValue(this.#host, this.#token);
+      this.#debug('Persisted token %s to %s', this.#token, this.#tokenCache.id);
     } else {
+      this.#debug('Creating in-memory token cache');
       this.#tokenCache = await this.#strongbox.createItem(this.#host);
       this.#token = this.#tokenCache.value;
+      if (this.#token) {
+        this.#debug('Read persisted token %s to %s', this.#token, this.#tokenCache.id);
+      } else {
+        this.#debug('No token persisted');
+      }
     }
 
     return this.#tokenCache;

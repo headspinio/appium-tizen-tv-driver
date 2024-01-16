@@ -362,5 +362,41 @@ describe('TizenRemote', function () {
         });
       });
     });
+
+    describe('hasToken()', function() {
+      describe('when the token is set', function() {
+        beforeEach(function() {
+          remote = new TizenRemote('host', {token: 'foo'});
+        });
+
+        it('should resolve true', async function() {
+          await expect(remote.hasToken(), 'to be fulfilled with', true);
+        });
+      });
+
+      describe('when the token is not set', function() {
+        describe('when persistence is enabled', function() {
+          beforeEach(function() {
+            remote = new TizenRemote('host', {persistToken: true});
+          });
+
+          describe('when no token is persisted', function() {
+            beforeEach(function() {
+              sandbox.replaceGetter(mockItem, 'value', () => undefined);
+            });
+
+            it('should resolve false', async function() {
+              await expect(remote.hasToken(), 'to be fulfilled with', false);
+            });
+          });
+
+          describe('when a token is persisted', function() {
+            it('should resolve false', async function() {
+              await expect(remote.hasToken(), 'to be fulfilled with', true);
+            });
+          });
+        });
+      });
+    });
   });
 });
