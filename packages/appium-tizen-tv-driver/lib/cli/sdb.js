@@ -66,7 +66,8 @@ async function listApps({udid}) {
 // FIXME: change to a class method and use #
 function _parseListAppsCmd(input) {
   return input
-    .split('\n')
+    // the new string by tizen was '\r\n', so here should consider the case as well.
+    .split(/\r\n|\n/)
     .map((line) => {
       const match = line.match(APP_LIST_RE);
       if (!match?.groups) {
