@@ -11,6 +11,7 @@ import {
   debugApp,
   disconnectDevice,
   forwardPort,
+  listApps,
   removeForwardedPort,
 } from './cli/sdb';
 import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
@@ -118,6 +119,10 @@ class TizenTVDriver extends BaseDriver {
     'tizen: longPressKey': Object.freeze({
       command: 'longPressKey',
       params: {required: ['key'], optional: ['duration']},
+    }),
+    'tizen: listApps': Object.freeze({
+      command: 'tizentvListApps',
+      params: {},
     }),
   });
 
@@ -607,6 +612,15 @@ class TizenTVDriver extends BaseDriver {
     }
 
     return await this.proxyCommand(`/element/${elId}/value`, 'POST', {text});
+  }
+
+  /**
+   * Return the list of installed applications with the pair of
+   * an application name and the package name.
+   * @returns {Promise<[appName: string, appPackage: string]>}
+   */
+  async tizentvListApps() {
+    return await listApps({udid: this.opts.udid});
   }
 }
 
