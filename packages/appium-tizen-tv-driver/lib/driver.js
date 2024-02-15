@@ -294,21 +294,21 @@ class TizenTVDriver extends BaseDriver {
       }
     }
 
+    let installedPackages;
+    try {
+      installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
+    } catch (e) {
+      log.info(`An error '${e.message}' occurred during checking ${caps.appPackage} existence on the device, ` +
+        `but it may be ignorable. Proceeding the app installation.`);
+    }
+    if (_.isArray(installedPackages) && !installedPackages.includes(caps.appPackage)) {
+      throw new errors.SessionNotCreatedError(`${caps.appPackage} does not exist on the device.`);
+    }
+
     try {
       if (caps.rcOnly) {
         log.info(`RC-only mode requested, will not launch app in debug mode`);
         if (caps.appPackage) {
-          let installedPackages;
-          try {
-            installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
-          } catch (e) {
-            log.info(`An error '${e.message}' occurred during checking ${caps.appPackage} existence on the device, ` +
-              `but it may be ignorable. Proceeding the app installation.`);
-          }
-          if (_.isArray(installedPackages) && !installedPackages.includes(caps.appPackage)) {
-            throw new errors.SessionNotCreatedError(`${caps.appPackage} does not exist on the device.`);
-          }
-
           await tizenRun({appPackage: caps.appPackage, udid: caps.udid});
         } else {
           log.info(`No app package provided, will not launch any apps`);
