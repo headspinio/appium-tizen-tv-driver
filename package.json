@@ -25,6 +25,7 @@
     "packages/*"
   ],
   "scripts": {
+    "prepare": "npm run rebuild",
     "preversion": "run-s rebuild",
     "prepublishOnly": "run-s rebuild",
     "clean": "run-s clean:packages clean:distfiles clean:nx",
