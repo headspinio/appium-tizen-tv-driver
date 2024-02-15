@@ -1,6 +1,6 @@
 import {Keys, TizenRemote} from '@headspinio/tizen-remote';
 import Chromedriver from 'appium-chromedriver';
-import {BaseDriver} from 'appium/driver';
+import {BaseDriver, errors} from 'appium/driver';
 import {retryInterval} from 'asyncbox';
 import B from 'bluebird';
 import getPort from 'get-port';
@@ -215,14 +215,15 @@ class TizenTVDriver extends BaseDriver {
 
     // now we need to ensure that, one way or another, those capabilities were sent in
     if (!tempCaps.udid) {
-      throw new Error(
+
+      throw new errors.SessionNotCreatedError(
         `The 'appium:udid' capability is required, or 'appium:deviceName' must ` +
           `look like <host>:<port>`
       );
     }
 
     if (!tempCaps.deviceAddress) {
-      throw new Error(
+      throw new errors.SessionNotCreatedError(
         `The 'appium:deviceAddress' capability is required, or 'appium:deviceName' ` +
           `must look like <host>:<port>`
       );
@@ -240,7 +241,7 @@ class TizenTVDriver extends BaseDriver {
     if (caps.rcMode === RC_MODE_REMOTE) {
       log.debug(`Received rcKeypressCooldown of type ${typeof caps.rcKeypressCooldown}`);
       if (caps.rcKeypressCooldown !== undefined && !isPositiveInteger(caps.rcKeypressCooldown)) {
-        throw new Error('appium:rcKeypressCooldown must be a positive integer');
+        throw new errors.SessionNotCreatedError('appium:rcKeypressCooldown must be a positive integer');
       }
       this.#rcKeypressCooldown = caps.rcKeypressCooldown ?? DEFAULT_RC_KEYPRESS_COOLDOWN;
       this.#remote = new TizenRemote(caps.deviceAddress, {
@@ -275,7 +276,7 @@ class TizenTVDriver extends BaseDriver {
         if (!caps.appPackage) {
           // TODO extract appPackage from app if user did not include it, so we don't need to require
           // it
-          throw new Error('For now, the appPackage capability is required');
+          throw new errors.SessionNotCreatedError('For now, the appPackage capability is required');
         }
         if (!caps.noReset) {
           await tizenUninstall(
@@ -290,6 +291,19 @@ class TizenTVDriver extends BaseDriver {
         // launch the browser. Of course we don't need to do this if we already power cycled the
         // TV, or if we're in rcOnly mode.
         await tizenRun({appPackage: BROWSER_APP_ID, udid: caps.udid});
+      }
+    }
+
+    if (caps.appPackage) {
+      let installedPackages;
+      try {
+        installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
+      } catch (e) {
+        log.info(`An error '${e.message}' occurred during checking ${caps.appPackage} existence on the device, ` +
+          `but it may be ignorable. Proceeding the app installation.`);
+      }
+      if (_.isArray(installedPackages) && !installedPackages.includes(caps.appPackage)) {
+        throw new errors.SessionNotCreatedError(`${caps.appPackage} does not exist on the device.`);
       }
     }
 
@@ -617,7 +631,7 @@ class TizenTVDriver extends BaseDriver {
   /**
    * Return the list of installed applications with the pair of
    * an application name and the package name.
-   * @returns {Promise<[appName: string, appPackage: string]>}
+   * @returns {Promise<[{appName: string, appPackage: string}]>}
    */
   async tizentvListApps() {
     return await listApps({udid: this.opts.udid});

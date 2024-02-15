@@ -53,7 +53,7 @@ async function launchApp({appPackage, udid}) {
  * Return the list of installed applications with the pair of
  * an application name and the package name.
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
- * @returns {Promise<[appName: string, appPackage: string]>}
+ * @returns {Promise<[{appName: string, appPackage: string}]>}
  */
 async function listApps({udid}) {
   log.info(`Listing apps installed on '${udid}'`);
