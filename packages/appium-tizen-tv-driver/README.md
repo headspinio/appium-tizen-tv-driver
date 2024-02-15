@@ -136,6 +136,18 @@ exported by the [@headspinio/tizen-remote](https://github.com/headspinio/appium-
 
 Refer to your Appium client library for how to use this method.
 
+### Get the list of installed applications
+
+> The list of installed applications.
+> Each item has `appName` and `appPackage`.
+
+- `POST /session/:sessionId/execute`
+
+#### Arguments
+
+- `script`: `tizen: listApps`
+
+
 ### Proxied Commands
 
 Once a session is started, all commands other than the ones mentioned above are proxied to
