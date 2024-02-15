@@ -3,6 +3,51 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.0...@headspinio/tizen-remote@0.5.1) (2024-02-15)
+
+### Bug Fixes
+
+- **tizen-remote:** update appium-related packages ([53528f3](https://github.com/headspinio/appium-tizen-tv-driver/commit/53528f30f28a2b050741d4c6ab4dcdc9cbe00c25))
+- **tizen-remote:** update dependency @appium/strongbox to v0.3.0 ([1c7baee](https://github.com/headspinio/appium-tizen-tv-driver/commit/1c7baee4113b5f8b50411a936a39bc5398685623))
+- **tizen-remote:** update dependency @types/node to v18.15.12 ([43df40f](https://github.com/headspinio/appium-tizen-tv-driver/commit/43df40f4b9b34508d91cb284c4cf05bad51bc19b))
+- **tizen-remote:** update dependency @types/node to v18.15.13 ([8f1d4a4](https://github.com/headspinio/appium-tizen-tv-driver/commit/8f1d4a45aced7e7b4f6bcbe014236a072a04f0d1))
+- **tizen-remote:** update dependency @types/node to v18.16.0 ([441f846](https://github.com/headspinio/appium-tizen-tv-driver/commit/441f8462818ae41dc273372b4c06a4a549a60f67))
+- **tizen-remote:** update dependency @types/node to v18.16.1 ([7377a29](https://github.com/headspinio/appium-tizen-tv-driver/commit/7377a297b4904f353f8b38059399202439c48a8d))
+- **tizen-remote:** update dependency @types/node to v18.16.10 ([27250a3](https://github.com/headspinio/appium-tizen-tv-driver/commit/27250a33a8f1d785457a98eed5960220efc5ffd3))
+- **tizen-remote:** update dependency @types/node to v18.16.12 ([1887ac0](https://github.com/headspinio/appium-tizen-tv-driver/commit/1887ac0c1a589a7843e6ceda082adb0fac6bd00a))
+- **tizen-remote:** update dependency @types/node to v18.16.13 ([932fea8](https://github.com/headspinio/appium-tizen-tv-driver/commit/932fea88a6c915b2a5782e7d6a7dce792fe96564))
+- **tizen-remote:** update dependency @types/node to v18.16.14 ([4042253](https://github.com/headspinio/appium-tizen-tv-driver/commit/40422538b6984c10e8735ac553e63dc7c5185d28))
+- **tizen-remote:** update dependency @types/node to v18.16.16 ([f38f32c](https://github.com/headspinio/appium-tizen-tv-driver/commit/f38f32c51f703a83326f44ff1d21eaae30727532))
+- **tizen-remote:** update dependency @types/node to v18.16.17 ([9062c83](https://github.com/headspinio/appium-tizen-tv-driver/commit/9062c837ed3c7c733b729c24e0c211c4de74bc04))
+- **tizen-remote:** update dependency @types/node to v18.16.18 ([e35d7c1](https://github.com/headspinio/appium-tizen-tv-driver/commit/e35d7c13f2f8b8d4245dea45d2fe6f7532f713d9))
+- **tizen-remote:** update dependency @types/node to v18.16.19 ([ead2b96](https://github.com/headspinio/appium-tizen-tv-driver/commit/ead2b964d9a5b967e7163dd77ee77e87983d7236))
+- **tizen-remote:** update dependency @types/node to v18.16.2 ([b86de7d](https://github.com/headspinio/appium-tizen-tv-driver/commit/b86de7d891491cfb1a9d176284e3be6b135e42ce))
+- **tizen-remote:** update dependency @types/node to v18.16.20 ([3801bfb](https://github.com/headspinio/appium-tizen-tv-driver/commit/3801bfb7ddeacc792d6f33284ff47996f7344f85))
+- **tizen-remote:** update dependency @types/node to v18.16.3 ([099ac58](https://github.com/headspinio/appium-tizen-tv-driver/commit/099ac58d3367f944aef63b3b2689faa838fe40d8))
+- **tizen-remote:** update dependency @types/node to v18.16.4 ([129b310](https://github.com/headspinio/appium-tizen-tv-driver/commit/129b310ecee2f718cdbb930df0e1444031556e58))
+- **tizen-remote:** update dependency @types/node to v18.16.5 ([f860eb2](https://github.com/headspinio/appium-tizen-tv-driver/commit/f860eb2e61e860c5135cf3355ee6bf0390d46813))
+- **tizen-remote:** update dependency @types/node to v18.16.6 ([8be895a](https://github.com/headspinio/appium-tizen-tv-driver/commit/8be895ae611fda0feab36cbd043e3f86a296e1d9))
+- **tizen-remote:** update dependency @types/node to v18.16.7 ([264147e](https://github.com/headspinio/appium-tizen-tv-driver/commit/264147ec3f0757488c94546bab47940aeae1e8ec))
+- **tizen-remote:** update dependency @types/node to v18.16.8 ([e56b29e](https://github.com/headspinio/appium-tizen-tv-driver/commit/e56b29e4d0ad164c2105f96829680ae3ee2da90f))
+- **tizen-remote:** update dependency @types/node to v18.16.9 ([cbed1a3](https://github.com/headspinio/appium-tizen-tv-driver/commit/cbed1a3d9ae59c736743d7dc2de32478cdf645c8))
+- **tizen-remote:** update dependency @types/node to v18.17.0 ([e34b40a](https://github.com/headspinio/appium-tizen-tv-driver/commit/e34b40a2461b868a7fa1a5ec6d4addcea03161ad))
+- **tizen-remote:** update dependency @types/node to v18.17.1 ([88073b9](https://github.com/headspinio/appium-tizen-tv-driver/commit/88073b9a48821c4410a6f7887fa3209bb7449762))
+- **tizen-remote:** update dependency @types/node to v18.17.11 ([1a5eafc](https://github.com/headspinio/appium-tizen-tv-driver/commit/1a5eafc7b9d8145bbc8fa98f0bb1df23eecd8bb7))
+- **tizen-remote:** update dependency @types/node to v18.17.12 ([0e7e4e5](https://github.com/headspinio/appium-tizen-tv-driver/commit/0e7e4e5a14ac17f87c4fd381a7505aced5452d0b))
+- **tizen-remote:** update dependency @types/node to v18.17.2 ([24742d6](https://github.com/headspinio/appium-tizen-tv-driver/commit/24742d66651c9652b3665affc3237a412c058098))
+- **tizen-remote:** update dependency @types/node to v18.17.3 ([4fb0eaf](https://github.com/headspinio/appium-tizen-tv-driver/commit/4fb0eaf38e865a4d7d579cdcd8e2dc2fef3d3b06))
+- **tizen-remote:** update dependency @types/node to v18.17.4 ([3e4875d](https://github.com/headspinio/appium-tizen-tv-driver/commit/3e4875db8682b35e7ef9e5eaf82b8a2717bfd59c))
+- **tizen-remote:** update dependency @types/node to v18.17.5 ([eb04949](https://github.com/headspinio/appium-tizen-tv-driver/commit/eb04949e5d28357a3dbf3c764672df738c628338))
+- **tizen-remote:** update dependency @types/ws to v8.5.5 ([c27db84](https://github.com/headspinio/appium-tizen-tv-driver/commit/c27db848e6f677e591424bdf4f118bafa61b0fd2))
+- **tizen-remote:** update dependency type-fest to v3.10.0 ([2b4f913](https://github.com/headspinio/appium-tizen-tv-driver/commit/2b4f913b6e5296a96e31286863a69aa46c3d0a62))
+- **tizen-remote:** update dependency type-fest to v3.11.0 ([2ad9d87](https://github.com/headspinio/appium-tizen-tv-driver/commit/2ad9d872cc88f30eff0d61276b120d1311bea43c))
+- **tizen-remote:** update dependency type-fest to v3.11.1 ([0e3e27d](https://github.com/headspinio/appium-tizen-tv-driver/commit/0e3e27dc70e2e4058d59e55db7907f555b343406))
+- **tizen-remote:** update dependency type-fest to v3.12.0 ([060973d](https://github.com/headspinio/appium-tizen-tv-driver/commit/060973d85ee053bf75651dd6eb2f1ae726059012))
+- **tizen-remote:** update dependency type-fest to v3.13.0 ([7c884aa](https://github.com/headspinio/appium-tizen-tv-driver/commit/7c884aa0930d224161386240bea65bdef9887f42))
+- **tizen-remote:** update dependency type-fest to v3.13.1 ([d15b019](https://github.com/headspinio/appium-tizen-tv-driver/commit/d15b01940710389736a0490ec86d7ac4ae0e02be))
+- **tizen-remote:** update dependency type-fest to v3.9.0 ([5bfea23](https://github.com/headspinio/appium-tizen-tv-driver/commit/5bfea237bde2f7aa8e0a6ec739f1ef46dbb79c10))
+- **tizen-remote:** update dependency ws to v8.16.0 ([a386d0b](https://github.com/headspinio/appium-tizen-tv-driver/commit/a386d0bdf20fc6a3505564c92ac26f3c9492fc9b))
+
 ## [0.5.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.4.4...@headspinio/tizen-remote@0.5.0) (2023-04-14)
 
 ### ⚠ BREAKING CHANGES
