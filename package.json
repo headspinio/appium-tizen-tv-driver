@@ -25,7 +25,7 @@
     "packages/*"
   ],
   "scripts": {
-    "prepare": "run-p install-husky rebuild",
+    "prepare": "npm run rebuild",
     "preversion": "run-s rebuild",
     "prepublishOnly": "run-s rebuild",
     "clean": "run-s clean:packages clean:distfiles clean:nx",
@@ -45,7 +45,6 @@
     "reinstall": "run-s clean:workspaces ci",
     "ci": "npm ci",
     "lint": "eslint .",
-    "install-husky": "husky install",
     "tunnel:base": "ssh -N -L $npm_config_port:$npm_config_device:$npm_config_port -F $npm_config_sshconfig $npm_config_user@$npm_config_host",
     "tunnel:wss": "npm run tunnel:base --port=8002",
     "tunnel:sdb": "npm run tunnel:base --port=26101",
@@ -53,15 +52,6 @@
     "sdb:local:disconnect": "sdb disconnect",
     "sdb:remote:disconnect": "ssh -F $npm_config_sshconfig $npm_config_user@$npm_config_host $npm_config_path/sdb disconnect",
     "tunnel": "run-p tunnel:wss tunnel:sdb"
-  },
-  "lint-staged": {
-    "*.{md,yml}": [
-      "prettier --write"
-    ],
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ]
   },
   "prettier": {
     "bracketSpacing": false,
@@ -92,9 +82,7 @@
     "eslint-plugin-mocha": "10.2.0",
     "eslint-plugin-promise": "6.1.1",
     "get-port": "5.1.1",
-    "husky": "8.0.3",
     "lerna": "7.4.2",
-    "lint-staged": "15.2.2",
     "midnight-smoker": "2.0.4",
     "mocha": "10.2.0",
     "npm-run-all": "4.1.5",
