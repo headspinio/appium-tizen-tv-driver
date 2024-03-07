@@ -2,7 +2,7 @@ import log from '../logger';
 import {runCmd, SDB_BIN_NAME} from './helpers';
 
 const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5})$/;
-const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'.*$/;
+const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
 
 /**
  *
