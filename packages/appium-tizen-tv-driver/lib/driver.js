@@ -329,6 +329,8 @@ class TizenTVDriver extends BaseDriver {
         throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
       }
 
+      log.info(`isAutodownloadEnabled: ${this.#isChromedriverAutodownloadEnabled()}`);
+
       // TODO:
       // chromedriverExecutableDir or chromedriverExecutable is required.
       await this.startChromedriver({
@@ -379,11 +381,13 @@ class TizenTVDriver extends BaseDriver {
    *
    * @param {StartChromedriverOptions} opts
    */
-  async startChromedriver({debuggerPort, executable}) {
+  async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled}) {
     this.#chromedriver = new Chromedriver({
       // @ts-ignore bad types
       port: await getPort(),
       executable,
+      executableDir,
+      isAutodownloadEnabled,
     });
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
