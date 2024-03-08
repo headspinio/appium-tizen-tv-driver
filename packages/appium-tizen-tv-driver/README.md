@@ -68,7 +68,7 @@ package in your `package.json`)
 | `appium:rcDebugLog` | Set to `true` to enable debug logs from the interaction with the device's remote control API. |
 | `appium:rcKeypressCooldown` | Cooldown (in milliseconds) after each keypress via remote.  Only applies if `appium:rcMode` is `remote`.  Increase this number if keypress commands complete before the app under test reflects the keypress. Defaults to `750` ms. |
 
-(*) `appium:chromedriverExecutable` or `appium:chromedriverExecutableDir` are rquired. The chromedriver autodwonload will work only when `appium:chromedriverExecutableDir` is provided.
+(*) `appium:chromedriverExecutable` or `appium:chromedriverExecutableDir` are rquired. The chromedriver autodwonload works only when `appium:chromedriverExecutableDir` is provided.
 If both capabilities are given, `appium:chromedriverExecutableDir` will be prior.
 
 ## Commands
