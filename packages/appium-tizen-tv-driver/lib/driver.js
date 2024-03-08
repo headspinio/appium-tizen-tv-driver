@@ -387,6 +387,8 @@ class TizenTVDriver extends BaseDriver {
       // get the result of chrome info to use auto detection.
       try {
         result = await got.get(`http://${debuggerAddress}/json/version`).json();
+        // To respect the executableDir.
+        executable = undefined;
       } catch (err) {
         throw new errors.SessionNotCreatedError(
           `Could not get the chrome browser information to detect proper chromedriver version. Error: ${err.message}`
@@ -712,8 +714,8 @@ export {TizenTVDriver, Keys};
 /**
  * Options for {@linkcode TizenTVDriver.startChromedriver}
  * @typedef StartChromedriverOptions
- * @property {string} executable
- * @property {string} executableDir
+ * @property {string|undefined} executable
+ * @property {string|undefined} executableDir
  * @property {boolean} isAutodownloadEnabled
  * @property {number} debuggerPort
  */
