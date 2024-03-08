@@ -22,7 +22,9 @@ export const desiredCapConstraints = /** @type {const} */({
   },
   chromedriverExecutable: {
     isString: true,
-    presence: true, // for now require a custom chromedriver to work with tv version
+  },
+  chromedriverExecutableDir: {
+    isString: true,
   },
   isDeviceApiSsl: {
     isBoolean: true,

@@ -35,6 +35,11 @@ const DEFAULT_CAPS = {
 const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
 
 /**
+ *
+ */
+const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
+
+/**
  * Constant for "rc" text input mode, which uses the Tizen Remote Control API
  */
 export const TEXT_STRATEGY_REMOTE = 'rc';
@@ -320,9 +325,17 @@ class TizenTVDriver extends BaseDriver {
 
       const localDebugPort = await this.setupDebugger(caps);
 
+      if (!_.isString(caps.chromedriverExecutable) && !_.isString(caps.chromedriverExecutableDir)) {
+        throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
+      }
+
+      // TODO:
+      // chromedriverExecutableDir or chromedriverExecutable is required.
       await this.startChromedriver({
         debuggerPort: localDebugPort,
         executable: /** @type {string} */ (caps.chromedriverExecutable),
+        executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
+        isAutodownloadEnabled:  /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
       });
 
       if (!caps.noReset) {
@@ -470,6 +483,20 @@ class TizenTVDriver extends BaseDriver {
     await this.#disconnectRemote();
     await this.cleanUpPorts();
     return await super.deleteSession();
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  #isChromedriverAutodownloadEnabled() {
+    if (this.isFeatureEnabled(CHROMEDRIVER_AUTODOWNLOAD_FEATURE)) {
+      return true;
+    }
+    this.log.debug(
+      `Automated Chromedriver download is disabled. ` +
+        `Use '${CHROMEDRIVER_AUTODOWNLOAD_FEATURE}' server feature to enable it`,
+    );
+    return false;
   }
 
   /**
@@ -667,6 +694,8 @@ export {TizenTVDriver, Keys};
  * Options for {@linkcode TizenTVDriver.startChromedriver}
  * @typedef StartChromedriverOptions
  * @property {string} executable
+ * @property {string} executableDir
+ * @property {boolean} isAutodownloadEnabled
  * @property {number} debuggerPort
  */
 
