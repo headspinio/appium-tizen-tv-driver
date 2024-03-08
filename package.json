@@ -91,7 +91,7 @@
     "sinon": "15.2.0",
     "ts-node": "10.9.2",
     "tsd": "0.28.1",
-    "typescript": "5.3.3",
+    "typescript": "5.4.2",
     "unexpected": "13.2.1",
     "unexpected-eventemitter": "2.4.0",
     "unexpected-sinon": "11.1.0",
