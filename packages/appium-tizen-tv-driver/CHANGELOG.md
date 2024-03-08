@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.9.0...appium-tizen-tv-driver@0.9.1) (2024-03-08)
+
+### Bug Fixes
+
+- improve app list parsing on windows ([f0098c7](https://github.com/headspinio/appium-tizen-tv-driver/commit/f0098c7844cd4e75e733f1f18b7771338625fe8a))
+
 ## [0.9.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.8.1...appium-tizen-tv-driver@0.9.0) (2024-02-15)
 
 ### Features
