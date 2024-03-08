@@ -335,7 +335,7 @@ class TizenTVDriver extends BaseDriver {
         debuggerPort: localDebugPort,
         executable: /** @type {string} */ (caps.chromedriverExecutable),
         executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
-        isAutodownloadEnabled:  /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
+        isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
       });
 
       if (!caps.noReset) {
