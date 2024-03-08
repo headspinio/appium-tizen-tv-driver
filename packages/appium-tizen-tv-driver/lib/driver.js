@@ -393,6 +393,7 @@ class TizenTVDriver extends BaseDriver {
    *
    * @param {StartChromedriverOptions} opts
    */
+  // @ts-ignore
   async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled, details}) {
 
     // TODO: need to get 'details' as the result of /version
