@@ -333,12 +333,14 @@ class TizenTVDriver extends BaseDriver {
 
       // dummy
       const details = {
-        "Browser": "Chrome/63.0.3239.0",
-        "Protocol-Version": "1.2",
-        "User-Agent": "Mozilla/5.0 (SMART-TV; LINUX; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/5.0 TV Safari/537.36",
-        "V8-Version": "6.3.294",
-        "WebKit-Version": "537.36 (@0ced44f6f658d59a57d436f1a95308d722d235e9)",
-        "webSocketDebuggerUrl": "ws://localhost:34305/devtools/browser/8e7e7ced-8e21-495f-8dfe-48bfb6800b6b"
+        info: {
+          "Browser": "Chrome/63.0.3239.0",
+          "Protocol-Version": "1.2",
+          "User-Agent": "Mozilla/5.0 (SMART-TV; LINUX; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/5.0 TV Safari/537.36",
+          "V8-Version": "6.3.294",
+          "WebKit-Version": "537.36 (@0ced44f6f658d59a57d436f1a95308d722d235e9)",
+          "webSocketDebuggerUrl": "ws://localhost:34305/devtools/browser/8e7e7ced-8e21-495f-8dfe-48bfb6800b6b"
+        }
       }
 
       // TODO:
