@@ -329,8 +329,6 @@ class TizenTVDriver extends BaseDriver {
         throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
       }
 
-      // TODO:
-      // chromedriverExecutableDir or chromedriverExecutable is required.
       await this.startChromedriver({
         debuggerPort: localDebugPort,
         executable: /** @type {string} */ (caps.chromedriverExecutable),
@@ -506,6 +504,7 @@ class TizenTVDriver extends BaseDriver {
   }
 
   /**
+   * Returns whether the session can enable autodownloadd feature.
    * @returns {boolean}
    */
   #isChromedriverAutodownloadEnabled() {
