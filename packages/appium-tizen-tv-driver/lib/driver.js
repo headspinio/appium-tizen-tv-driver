@@ -377,7 +377,6 @@ class TizenTVDriver extends BaseDriver {
    *
    * @param {StartChromedriverOptions} opts
    */
-  // @ts-ignore
   async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled}) {
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
