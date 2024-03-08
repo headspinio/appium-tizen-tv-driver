@@ -386,7 +386,7 @@ class TizenTVDriver extends BaseDriver {
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
-    const details = await got.get(`${debuggerAddress}/json/version`);
+    const details = await got.get(`http://${debuggerAddress}/json/version`);
     log.info(`result: ${JSON.stringify(details)}`);
     // const details = {
     //   info: {
