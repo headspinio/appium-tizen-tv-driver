@@ -430,6 +430,7 @@ class TizenTVDriver extends BaseDriver {
     if (!this.#chromedriver) {
       throw new Error('Chromedriver is not running');
     }
+    // @ts-ignore
     return await this.#chromedriver.sendCommand(endpointPath, 'POST', {
       script: wrappedScript,
       args: args ?? [],
@@ -458,6 +459,7 @@ class TizenTVDriver extends BaseDriver {
       }
       log.debug(`Stopping chromedriver`);
       // stop listening for the stopped state event
+      // @ts-ignore
       this.#chromedriver.removeAllListeners(Chromedriver.EVENT_CHANGED);
       try {
         await this.#chromedriver.stop();
