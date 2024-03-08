@@ -35,7 +35,7 @@ const DEFAULT_CAPS = {
 const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
 
 /**
- *
+ * A security flag to enable chromedriver auto download feature
  */
 const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
 
