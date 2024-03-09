@@ -52,6 +52,6 @@ jobs:
       - name: ESLint
         run: npm run lint
       - name: Validate renovate config
-        uses: rinchsan/renovate-config-validator@1ea1e8514f6a33fdd71c40b0a5fa3512b9e7b936 # v0.0.12
+        uses: rinchsan/renovate-config-validator@a12a2b98cd4db923c33d1ce407c57afb43f3ff59 # v0.2.0
         with:
           pattern: '.renovaterc.json'
