@@ -35,6 +35,11 @@ const DEFAULT_CAPS = {
 const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
 
 /**
+ * A security flag to enable chromedriver auto download feature
+ */
+const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
+
+/**
  * Constant for "rc" text input mode, which uses the Tizen Remote Control API
  */
 export const TEXT_STRATEGY_REMOTE = 'rc';
@@ -320,9 +325,15 @@ class TizenTVDriver extends BaseDriver {
 
       const localDebugPort = await this.setupDebugger(caps);
 
+      if (!_.isString(caps.chromedriverExecutable) && !_.isString(caps.chromedriverExecutableDir)) {
+        throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
+      }
+
       await this.startChromedriver({
         debuggerPort: localDebugPort,
         executable: /** @type {string} */ (caps.chromedriverExecutable),
+        executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
+        isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
       });
 
       if (!caps.noReset) {
@@ -366,14 +377,34 @@ class TizenTVDriver extends BaseDriver {
    *
    * @param {StartChromedriverOptions} opts
    */
-  async startChromedriver({debuggerPort, executable}) {
+  async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled}) {
+
+    const debuggerAddress = `127.0.0.1:${debuggerPort}`;
+
+    let result;
+    if (executableDir) {
+      // get the result of chrome info to use auto detection.
+      try {
+        result = await got.get(`http://${debuggerAddress}/json/version`).json();
+        log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
+        // To respect the executableDir.
+        executable = undefined;
+      } catch (err) {
+        throw new errors.SessionNotCreatedError(
+          `Could not get the chrome browser information to detect proper chromedriver version. Error: ${err.message}`
+        );
+      }
+    }
+
     this.#chromedriver = new Chromedriver({
       // @ts-ignore bad types
       port: await getPort(),
       executable,
+      executableDir,
+      isAutodownloadEnabled,
+      // @ts-ignore
+      details: {info: result}
     });
-
-    const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
     await this.#chromedriver.start({
       'goog:chromeOptions': {
@@ -472,6 +503,21 @@ class TizenTVDriver extends BaseDriver {
     await this.#disconnectRemote();
     await this.cleanUpPorts();
     return await super.deleteSession();
+  }
+
+  /**
+   * Returns whether the session can enable autodownloadd feature.
+   * @returns {boolean}
+   */
+  #isChromedriverAutodownloadEnabled() {
+    if (this.isFeatureEnabled(CHROMEDRIVER_AUTODOWNLOAD_FEATURE)) {
+      return true;
+    }
+    this.log.debug(
+      `Automated Chromedriver download is disabled. ` +
+        `Use '${CHROMEDRIVER_AUTODOWNLOAD_FEATURE}' server feature to enable it`,
+    );
+    return false;
   }
 
   /**
@@ -668,7 +714,9 @@ export {TizenTVDriver, Keys};
 /**
  * Options for {@linkcode TizenTVDriver.startChromedriver}
  * @typedef StartChromedriverOptions
- * @property {string} executable
+ * @property {string|undefined} executable
+ * @property {string|undefined} executableDir
+ * @property {boolean} isAutodownloadEnabled
  * @property {number} debuggerPort
  */
 
