@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.9.1...appium-tizen-tv-driver@0.10.0) (2024-03-11)
+
+### Features
+
+- let chromedriver enable autodownalod ([#574](https://github.com/headspinio/appium-tizen-tv-driver/issues/574)) ([842c5fe](https://github.com/headspinio/appium-tizen-tv-driver/commit/842c5fe481cff52c927d5bf8ea1c17d1fbc8becb))
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.38 ([#512](https://github.com/headspinio/appium-tizen-tv-driver/issues/512)) ([e714314](https://github.com/headspinio/appium-tizen-tv-driver/commit/e714314150bdc0ddaf4b5630e46ca11ee7649615))
+- **appium-tizen-tv-driver:** update dependency asyncbox to v3 ([#580](https://github.com/headspinio/appium-tizen-tv-driver/issues/580)) ([f98c768](https://github.com/headspinio/appium-tizen-tv-driver/commit/f98c7688b1150ecc4e0a3b361936c918a5a2025d))
+
 ## [0.9.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.9.0...appium-tizen-tv-driver@0.9.1) (2024-03-08)
 
 ### Bug Fixes
