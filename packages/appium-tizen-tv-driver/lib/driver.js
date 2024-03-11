@@ -386,6 +386,7 @@ class TizenTVDriver extends BaseDriver {
       // get the result of chrome info to use auto detection.
       try {
         result = await got.get(`http://${debuggerAddress}/json/version`).json();
+        log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
         // To respect the executableDir.
         executable = undefined;
       } catch (err) {
