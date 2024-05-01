@@ -21,6 +21,12 @@ import log from './logger';
 import {AsyncScripts, SyncScripts} from './scripts';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
+const GALLERY_APP_ID = 'com.samsung.tv.gallery';
+const DEFAULT_APP_LAUNCH_CANDIDATES = [
+  BROWSER_APP_ID,
+  GALLERY_APP_ID
+];
+
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
 
 /** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode'>} */
@@ -295,7 +301,11 @@ class TizenTVDriver extends BaseDriver {
         // can't start it. But if we launch another app, it will kill any already-running app. So
         // launch the browser. Of course we don't need to do this if we already power cycled the
         // TV, or if we're in rcOnly mode.
-        await tizenRun({appPackage: BROWSER_APP_ID, udid: caps.udid});
+        try {
+          await this.#launchExistingAppInForeground(caps.udid, caps.appPackage);
+        } catch (e) {
+          throw new errors.SessionNotCreatedError(`Failed to launch non ${caps.appPackage} package to bring the package process ends. Error: ${e.message}`);
+        }
       }
     }
 
@@ -349,6 +359,35 @@ class TizenTVDriver extends BaseDriver {
       await this.cleanUpPorts();
       throw e;
     }
+  }
+
+  /**
+   * Runs "tizen run -p <package>" command to bring the app foreground.
+   *
+   * @param {string} udid
+   * @param {string?} appPackage
+   */
+  async #launchExistingAppInForeground(udid, appPackage) {
+    log.info(`Attempt to launch existing apps from candidates.`);
+    for (const pkgId of DEFAULT_APP_LAUNCH_CANDIDATES) {
+      if (appPackage === pkgId) {
+        continue;
+      }
+
+      try {
+        await tizenRun({appPackage: pkgId, udid});
+        log.info(`${pkgId} started successfully`);
+        return;
+      } catch (e) {
+        log.info(`Failed to run ${pkgId} as ${e.message}. Attempt to the next package from candidate.`);
+      }
+    }
+
+    // Apps such as "org.tizen.homesetting" succeeds in launching with the tzien run command,
+    // but nothing is shown on the screen. It might not help to
+    throw new Error(
+      `None of ${DEFAULT_APP_LAUNCH_CANDIDATES.join(',')} existed on the device was launchable.`
+    );
   }
 
   /**
