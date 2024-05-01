@@ -396,11 +396,20 @@ class TizenTVDriver extends BaseDriver {
    * @returns {Promise<number>}
    */
   async setupDebugger(caps) {
-    const remoteDebugPort =
-      caps.useOpenDebugPort ||
-      (await debugApp(
-        /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
-      ));
+    let remoteDebugPort;
+
+    if (!caps.useOpenDebugPort) {
+      try {
+        remoteDebugPort = await debugApp(
+          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+        );
+      } catch (e) {
+        throw new errors.SessionNotCreatedError(`Failed to launch ${caps.appPackage} as debug mode. It might not be debuggable. Original error: ${e.message}`);
+      }
+    } else {
+      remoteDebugPort = caps.useOpenDebugPort;
+    }
+
     const localDebugPort = await getPort();
     log.info(`Chose local port ${localDebugPort} for remote debug communication`);
     await forwardPort({
