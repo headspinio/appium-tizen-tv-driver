@@ -313,7 +313,9 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     const env = new Env();
 
+    //  The strongbox suffix is default value, "-nodejs". Please do not modify it.
     this.#strongbox = strongbox(constants.NS);
+
     this.#host = host;
     this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
