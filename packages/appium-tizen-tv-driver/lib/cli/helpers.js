@@ -7,6 +7,11 @@ const TIZEN_BIN_NAME = 'tizen';
 const SDB_BIN_NAME = 'sdb';
 
 /**
+ * Default timeout to wait for the tizen command.
+ */
+const CMD_TIMEOUT_MS = 240000;
+
+/**
  * Lookup of path parts by bin name, relative to `TIZEN_HOME` env var
  */
 const BIN_PATHS = system.isWindows()
@@ -36,7 +41,7 @@ async function runCmd(bin, args) {
   }
   log.info(`Running command: ${bins[bin]} ${args.join(' ')}`);
   try {
-    return await exec(bins[bin], args);
+    return await exec(bins[bin], args, {timeout: CMD_TIMEOUT_MS});
   } catch (err) {
     const e = /** @type {import('teen_process').ExecError} */ (err);
     const stdout = e.stdout.replace(/[\r\n]+/g, ' ');
