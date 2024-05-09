@@ -448,7 +448,7 @@ class TizenTVDriver extends BaseDriver {
    * Set chrome version v63.0.3239.0 as the minimal version
    * for autodownload to use proper chromedriver version.
    * Older than the chromedriver version could raise no Chrome binary found error,
-   * which is no makes sense for TV automation usage.
+   * which no makes sense for TV automation usage.
    *
    * @param {BrowserVersionInfo} browserVersionInfo
    * @return {BrowserVersionInfo}
