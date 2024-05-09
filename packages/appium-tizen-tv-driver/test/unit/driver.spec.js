@@ -83,7 +83,7 @@ describe('TizenTVDriver', function () {
       });
     });
 
-    describe('fixChromedriverVersion', function () {
+    describe('fixChromeVersionForAutodownload', function () {
       beforeEach(async function () {
         driver = new TizenTVDriver();
       });
@@ -96,7 +96,7 @@ describe('TizenTVDriver', function () {
           'WebKit-Version': '537.36 (@24d4006dbb9188e920764a35a60873d6a0157c12)'
         };
         expect(
-          driver.fixChromedriverVersion(browserInfo),
+          driver.fixChromeVersionForAutodownload(browserInfo),
           'to equal',
           {
             'Browser': 'Chrome/63.0.3239.0',
@@ -117,7 +117,7 @@ describe('TizenTVDriver', function () {
           'webSocketDebuggerUrl': 'ws://127.0.0.1:35645/devtools/browser/7381318c-0c82-4453-a0e9-a0ecbf486254'
         };
         expect(
-          driver.fixChromedriverVersion(browserInfo),
+          driver.fixChromeVersionForAutodownload(browserInfo),
           'to equal',
           browserInfo
         );
