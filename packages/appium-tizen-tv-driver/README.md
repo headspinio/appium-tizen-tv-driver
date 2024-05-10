@@ -45,6 +45,11 @@ package in your `package.json`)
   ```bash
   appium driver run tizentv pair-remote --host 10.192.45.12
   ```
+  - Note: The pairing popup could appear a couple of times. Please allow all of them.
+  - Note: The command could print `Invalid WebSocket frame: invalid status code 1005` error and fail without showing any popups.
+    One possible reason here is this pairing request was denied in the past. Please check if such a "denied" item exists in the device list below.
+    Then, please re-run the `pair-remote` command.
+    - Go to _Settings_ -> _General_ -> _External Device Manager_ -> _Device Connect Manager_ -> _Device List_ and delete the "denied" item. (This device list place could depend on TV kinds)
 
 ## Capabilities
 
