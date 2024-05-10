@@ -29,6 +29,19 @@ const DEFAULT_APP_LAUNCH_CANDIDATES = [
 
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
 
+/**
+ * To get chrome version from the browser info.
+ */
+const VERSION_PATTERN = /([\d.]+)/;
+
+/**
+ * Minimal chrome browser for autodownload.
+ * Chromedriver for older than this chrome version could have an issue
+ * to raise no chrome binary error.
+ */
+const MIN_CHROME_MAJOR_VERSION = 63;
+const MIN_CHROME_VERSION = 'Chrome/63.0.3239.0';
+
 /** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode'>} */
 const DEFAULT_CAPS = {
   appLaunchCooldown: DEFAULT_APP_LAUNCH_COOLDOWN,
@@ -422,6 +435,42 @@ class TizenTVDriver extends BaseDriver {
   }
 
   /**
+   * @typedef BrowserVersionInfo
+   * @property {string} Browser
+   * @property {string} Protocol-Version
+   * @property {string} User-Agent
+   * @property {string} WebKit-Version
+   * @property {string} [V8-Version]
+   * @property {string} [webSocketDebuggerUrl]
+   */
+
+  /**
+   * Set chrome version v63.0.3239.0 as the minimal version
+   * for autodownload to use proper chromedriver version.
+   * Older than the chromedriver version could raise no Chrome binary found error,
+   * which no makes sense for TV automation usage.
+   *
+   * @param {BrowserVersionInfo} browserVersionInfo
+   * @return {BrowserVersionInfo}
+   */
+  fixChromeVersionForAutodownload(browserVersionInfo) {
+    const chromeVersion = VERSION_PATTERN.exec(browserVersionInfo.Browser ?? '');
+    if (!chromeVersion) {
+      return browserVersionInfo;
+    }
+
+    const majorV = chromeVersion[1].split('.')[0];
+    if (_.toInteger(majorV) < MIN_CHROME_MAJOR_VERSION) {
+      log.info(`The device chrome version is ${chromeVersion[1]}, ` +
+        `which could cause an issue for the matched chromedriver version. ` +
+        `Setting ${MIN_CHROME_VERSION} as browser forcefully`);
+      browserVersionInfo.Browser = MIN_CHROME_VERSION;
+    }
+
+    return browserVersionInfo;
+  }
+
+  /**
    *
    * @param {StartChromedriverOptions} opts
    */
@@ -435,6 +484,7 @@ class TizenTVDriver extends BaseDriver {
       try {
         result = await got.get(`http://${debuggerAddress}/json/version`).json();
         log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
+        result = this.fixChromeVersionForAutodownload(result);
         // To respect the executableDir.
         executable = undefined;
       } catch (err) {

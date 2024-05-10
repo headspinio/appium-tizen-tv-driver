@@ -46,11 +46,11 @@ describe('TizenTVDriver', function () {
   });
 
   describe('instance method', function () {
+    /** @type {InstanceType<TizenTVDriver>} */
+    let driver;
+
     describe('setValue()', function () {
       describe('when configured to use the RC', function () {
-        /** @type {InstanceType<TizenTVDriver>} */
-        let driver;
-
         beforeEach(async function () {
           driver = new TizenTVDriver();
           await driver.createSession({
@@ -80,6 +80,47 @@ describe('TizenTVDriver', function () {
             'was not called'
           );
         });
+      });
+    });
+
+    describe('fixChromeVersionForAutodownload', function () {
+      beforeEach(async function () {
+        driver = new TizenTVDriver();
+      });
+
+      it('Set minimal chrome version', function () {
+        const browserInfo = {
+          'Browser': 'Chrome/56.0.2924.0',
+          'Protocol-Version': '1.2',
+          'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 4.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 TV Safari/537.36',
+          'WebKit-Version': '537.36 (@24d4006dbb9188e920764a35a60873d6a0157c12)'
+        };
+        expect(
+          driver.fixChromeVersionForAutodownload(browserInfo),
+          'to equal',
+          {
+            'Browser': 'Chrome/63.0.3239.0',
+            'Protocol-Version': '1.2',
+            'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 4.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 TV Safari/537.36',
+            'WebKit-Version': '537.36 (@24d4006dbb9188e920764a35a60873d6a0157c12)'
+          }
+        );
+      });
+
+      it('Use the given chrome version', function () {
+        const browserInfo = {
+          'Browser': 'Chrome/63.0.3239.0',
+          'Protocol-Version': '1.2',
+          'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/5.0 TV Safari/537.36',
+          'V8-Version': '6.3.294',
+          'WebKit-Version': '537.36 (@0ced44f6f658d59a57d436f1a95308d722d235e9)',
+          'webSocketDebuggerUrl': 'ws://127.0.0.1:35645/devtools/browser/7381318c-0c82-4453-a0e9-a0ecbf486254'
+        };
+        expect(
+          driver.fixChromeVersionForAutodownload(browserInfo),
+          'to equal',
+          browserInfo
+        );
       });
     });
   });
