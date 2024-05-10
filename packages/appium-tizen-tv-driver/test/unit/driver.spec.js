@@ -122,7 +122,6 @@ describe('TizenTVDriver', function () {
           browserInfo
         );
       });
-
     });
   });
 });
