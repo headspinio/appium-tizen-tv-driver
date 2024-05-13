@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.10.1...appium-tizen-tv-driver@0.10.2) (2024-05-13)
+
+### Bug Fixes
+
+- Use chromedriver v2.36 as minimal version for appium:chromedriverExecutableDir usage ([#591](https://github.com/headspinio/appium-tizen-tv-driver/issues/591)) ([3ef43eb](https://github.com/headspinio/appium-tizen-tv-driver/commit/3ef43eb579e80b0eeebe9ff3c3e40b08736982d5))
+
 ## [0.10.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.10.0...appium-tizen-tv-driver@0.10.1) (2024-05-01)
 
 ### Bug Fixes

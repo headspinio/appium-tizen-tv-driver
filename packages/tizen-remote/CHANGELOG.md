@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.1...@headspinio/tizen-remote@0.5.2) (2024-05-13)
+
+**Note:** Version bump only for package @headspinio/tizen-remote
+
 ## [0.5.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.0...@headspinio/tizen-remote@0.5.1) (2024-02-15)
 
 ### Bug Fixes
