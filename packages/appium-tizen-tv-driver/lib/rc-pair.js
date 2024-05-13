@@ -1,6 +1,7 @@
 import yargs from 'yargs/yargs';
 import {TizenRemote, Keys as KEYS} from '@headspinio/tizen-remote';
 import {RC_OPTS} from './driver';
+import got from 'got';
 
 /**
  *
@@ -8,6 +9,13 @@ import {RC_OPTS} from './driver';
  * @returns {Promise<void>}
  */
 export async function pairRemote({host, port}) {
+  try {
+    await got.get(`http://${host}:8001`);
+  } catch (err) {
+    console.log(`The device ${host} might be denied in the past pairing. Please make sure that the device ${host} has no denied devices, especially named '${host}'.`); // eslint-disable-line no-console
+    throw err;
+  }
+
   const rc = new TizenRemote(host, {...RC_OPTS, port});
 
   try {
