@@ -16,6 +16,12 @@ export async function pairRemote({host, port}) {
     throw err;
   }
 
+  // Possible port detection
+  const deviceData = await got.get(`http://${host}:8001/api/v2/`).json();
+  if (deviceData?.device?.TokenAuthSupport !== 'true' && port === 8002) {
+    port = 8001;
+  }
+
   const rc = new TizenRemote(host, {...RC_OPTS, port});
 
   try {
