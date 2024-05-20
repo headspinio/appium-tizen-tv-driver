@@ -51,6 +51,7 @@
     "@types/ws": "8.5.5",
     "debug": "4.3.4",
     "delay": "4.4.1",
+    "got": "11.8.6",
     "lodash": "4.17.21",
     "p-retry": "4.6.2",
     "strict-event-emitter-types": "2.0.0",
