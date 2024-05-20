@@ -712,7 +712,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    *
    * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
    * @param {NoConnectOption & {force?: boolean}} opts
-   * @returns {Promise<string | null>}
+   * @returns {Promise<string | undefined>}
    */
   async getToken({noConnect = false, force = false} = {}) {
     if (!force) {
@@ -746,7 +746,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
         throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
       }
       this.#debug('The device may not support token as old model.');
-      return null;
+      return undefined;
     } finally {
       this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
     }
