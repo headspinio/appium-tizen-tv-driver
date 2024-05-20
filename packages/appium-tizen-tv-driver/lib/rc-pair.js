@@ -16,6 +16,12 @@ export async function pairRemote({host, port}) {
     throw err;
   }
 
+  const deviceData = await got.get(`http://${host}:8001/api/v2/`).json();
+  if (deviceData?.device?.TokenAuthSupport === undefined) {
+    console.log('The device may not have TokenAuthSupport availability. It does not require remote control token. Please use rcMode=remote without token.'); // eslint-disable-line no-console
+    return;
+  }
+
   const rc = new TizenRemote(host, {...RC_OPTS, port});
 
   try {
