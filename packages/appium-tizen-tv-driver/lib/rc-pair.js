@@ -29,7 +29,7 @@ export async function pairRemote({host, port}) {
       throw new Error(`Could not retrieve token; please try allowing the remote again`);
     }
 
-    console.log('The device may not token supported device. Allowing the notification is sufficient.');  // eslint-disable-line no-console
+    console.log('The device may not token supported device. Allowing the notification is sufficient.'); // eslint-disable-line no-console
   } finally {
     await rc.disconnect();
   }
