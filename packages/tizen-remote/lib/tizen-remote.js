@@ -78,6 +78,11 @@ export const constants = /** @type {const} */ ({
   DEFAULT_PORT: 8002,
 
   /**
+   * Default port on the Tizen device to connect to with `ws`.
+   */
+  DEFAULT_PORT_NO_SSL: 8001,
+
+  /**
    * Use SSL when connecting to the Tizen device
    */
   DEFAULT_SSL: true,
@@ -201,7 +206,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
   /**
    * Websocket port on Tizen device
    * @type {number}
-   * @defaultValue See {@linkcode constants.DEFAULT_PORT}
+   * @defaultValue See {@linkcode constants.DEFAULT_PORT} or {@linkcode constants.DEFAULT_PORT_NO_SSL}
    */
   #port;
 
@@ -316,8 +321,12 @@ export class TizenRemote extends createdTypedEmitterClass() {
     //  The strongbox suffix is default value, "-nodejs". Please do not modify it.
     this.#strongbox = strongbox(constants.NS);
 
+    // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
+    const devicePortCandidate = Number(opts.port ?? constants.DEFAULT_PORT);
+    this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : devicePortCandidate === 8002;
     this.#host = host;
-    this.#port = Number(opts.port ?? constants.DEFAULT_PORT);
+    this.#port = this.#ssl ? devicePortCandidate : constants.DEFAULT_PORT_NO_SSL;
+
     this.#persistToken = Boolean(opts.persistToken ?? constants.DEFAULT_PERSIST_TOKEN);
     // note: if this is unset, we will attempt to get a token from the fs cache,
     // and if _that_ fails, we'll go ahead and ask the device for one.
@@ -328,8 +337,6 @@ export class TizenRemote extends createdTypedEmitterClass() {
     }
     this.#debugger = debug(`${constants.NS} [${this.#host}]`);
 
-    // automatically set ssl flag if port is 8002 and no `ssl` opt is explicitly set
-    this.#ssl = opts.ssl !== undefined ? Boolean(opts.ssl) : this.#port === 8002;
     this.#autoReconnect =
       opts.autoReconnect !== undefined
         ? Boolean(opts.autoReconnect)

@@ -163,6 +163,21 @@ describe('TizenRemote', function () {
       });
     });
 
+    describe('when "port" prop in options is default', function () {
+      it('should create a URL with the "wss" scheme', function () {
+        const remote = new TizenRemote('host');
+        expect(remote.url, 'to start with', 'wss://host:8002/api/v2/channels/samsung.remote.control');
+      });
+      it('should create a URL with the "ws" scheme for ssl true', function () {
+        const remote = new TizenRemote('host', {ssl: true});
+        expect(remote.url, 'to start with', 'wss://host:8002/api/v2/channels/samsung.remote.control');
+      });
+      it('should create a URL with the "ws" scheme for ssl false', function () {
+        const remote = new TizenRemote('host', {ssl: false});
+        expect(remote.url, 'to start with', 'ws://host:8001/api/v2/channels/samsung.remote.control');
+      });
+    });
+
     describe('when "port" prop in options is 8002', function () {
       it('should create a URL with the "wss" scheme', function () {
         const remote = new TizenRemote('host', {port: 8002});
