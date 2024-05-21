@@ -147,7 +147,7 @@ Refer to your Appium client library for how to use this method.
 
 ### Get the list of installed applications
 
-> The list of installed applications.
+> The list of installed applications. Old device models (e.g. Year 2016) may return always an empty list as not supported.
 > Each item has `appName` and `appPackage`.
 
 - `POST /session/:sessionId/execute`
