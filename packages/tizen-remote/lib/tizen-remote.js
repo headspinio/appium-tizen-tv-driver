@@ -394,9 +394,22 @@ export class TizenRemote extends createdTypedEmitterClass() {
     if (_.isBoolean(this.#tokenSupportCache)) {
       return this.#tokenSupportCache;
     }
-    const deviceData = await got.get(`http://${this.#host}:8001/api/v2/`).json();
-    this.#tokenSupportCache = deviceData?.device?.TokenAuthSupport === 'true';
-    return this.#tokenSupportCache;
+    try {
+      const deviceData = await got.get(`http://${this.#host}:8001/api/v2/`).json();
+      this.#tokenSupportCache = this._getTokenSupportDevice(deviceData) === 'true';
+      return this.#tokenSupportCache;
+    } catch {
+      // defaults to true for newer TVs.
+      return true;
+    }
+  }
+  /**
+   * Private. Accessible for testing
+   * @param {any} jsonBody
+   * @returns {'true'|'false'|undefined}
+   */
+  _getTokenSupportDevice(jsonBody) {
+    return jsonBody?.device?.TokenAuthSupport;
   }
 
   /**

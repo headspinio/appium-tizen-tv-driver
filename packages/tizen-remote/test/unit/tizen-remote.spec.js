@@ -362,5 +362,135 @@ describe('TizenRemote', function () {
         });
       });
     });
+
+    describe('isTokenSupportedDevice()', function () {
+      beforeEach(function () {
+        remote = new TizenRemote('host');
+    });
+    describe('with TokenAuthSupport', function () {
+        it('should true', function () {
+          const r = remote._getTokenSupportDevice({
+            'device': {
+              'FrameTVSupport': 'false',
+              'GamePadSupport': 'true',
+              'ImeSyncedSupport': 'true',
+              'Language': 'en_US',
+              'OS': 'Tizen',
+              'PowerState': 'on',
+              'TokenAuthSupport': 'true',
+              'VoiceSupport': 'true',
+              'WallScreenRatio': '0',
+              'WallService': 'false',
+              'countryCode': 'CA',
+              'description': 'Samsung DTV RCR',
+              'developerIP': '192.168.11.147',
+              'developerMode': '1',
+              'duid': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'firmwareVersion': 'Unknown',
+              'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'ip': '192.168.11.41',
+              'model': '19_MUSEM_UHD',
+              'modelName': 'UN49RU8000FXZC',
+              'name': 'tv',
+              'networkType': 'wired',
+              'resolution': '3840x2160',
+              'smartHubAgreement': 'true',
+              'type': 'Samsung SmartTV',
+              'udn': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'wifiMac': '00:7c:2d:d5:22:f3'
+            },
+            'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+            'isSupport': '{"DMP_DRM_PLAYREADY":"false","DMP_DRM_WIDEVINE":"false","DMP_available":"true","EDEN_available":"true","FrameTVSupport":"false","ImeSyncedSupport":"true","TokenAuthSupport":"true","remote_available":"true","remote_fourDirections":"true","remote_touchPad":"true","remote_voiceControl":"true"}\n',
+            'name': 'tv',
+            'remote': '1.0',
+            'type': 'Samsung SmartTV',
+            'uri': 'http://192.168.11.41:8001/api/v2/',
+            'version': '2.0.25'
+          });
+          expect(r, 'to equal', 'true');
+        });
+        it('should false', function () {
+          const r = remote._getTokenSupportDevice({
+            'device': {
+              'FrameTVSupport': 'false',
+              'GamePadSupport': 'true',
+              'ImeSyncedSupport': 'true',
+              'Language': 'en_US',
+              'OS': 'Tizen',
+              'PowerState': 'on',
+              'TokenAuthSupport': 'false',
+              'VoiceSupport': 'true',
+              'WallScreenRatio': '0',
+              'WallService': 'false',
+              'countryCode': 'CA',
+              'description': 'Samsung DTV RCR',
+              'developerIP': '192.168.11.147',
+              'developerMode': '1',
+              'duid': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'firmwareVersion': 'Unknown',
+              'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'ip': '192.168.11.41',
+              'model': '19_MUSEM_UHD',
+              'modelName': 'UN49RU8000FXZC',
+              'name': 'tv',
+              'networkType': 'wired',
+              'resolution': '3840x2160',
+              'smartHubAgreement': 'true',
+              'type': 'Samsung SmartTV',
+              'udn': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'wifiMac': '00:7c:2d:d5:22:f3'
+            },
+            'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+            'isSupport': '{"DMP_DRM_PLAYREADY":"false","DMP_DRM_WIDEVINE":"false","DMP_available":"true","EDEN_available":"true","FrameTVSupport":"false","ImeSyncedSupport":"true","TokenAuthSupport":"false","remote_available":"true","remote_fourDirections":"true","remote_touchPad":"true","remote_voiceControl":"true"}\n',
+            'name': 'tv',
+            'remote': '1.0',
+            'type': 'Samsung SmartTV',
+            'uri': 'http://192.168.11.41:8001/api/v2/',
+            'version': '2.0.25'
+          });
+          expect(r, 'to equal', 'false');
+        });
+        it('should null', function () {
+          const r = remote._getTokenSupportDevice({
+            'device': {
+              'FrameTVSupport': 'false',
+              'GamePadSupport': 'true',
+              'ImeSyncedSupport': 'true',
+              'Language': 'en_US',
+              'OS': 'Tizen',
+              'PowerState': 'on',
+              'VoiceSupport': 'true',
+              'WallScreenRatio': '0',
+              'WallService': 'false',
+              'countryCode': 'CA',
+              'description': 'Samsung DTV RCR',
+              'developerIP': '192.168.11.147',
+              'developerMode': '1',
+              'duid': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'firmwareVersion': 'Unknown',
+              'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'ip': '192.168.11.41',
+              'model': '19_MUSEM_UHD',
+              'modelName': 'UN49RU8000FXZC',
+              'name': 'tv',
+              'networkType': 'wired',
+              'resolution': '3840x2160',
+              'smartHubAgreement': 'true',
+              'type': 'Samsung SmartTV',
+              'udn': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+              'wifiMac': '00:7c:2d:d5:22:f3'
+            },
+            'id': 'uuid:94a93b85-fe59-46aa-9007-6d25b52df02b',
+            'isSupport': '{"DMP_DRM_PLAYREADY":"false","DMP_DRM_WIDEVINE":"false","DMP_available":"true","EDEN_available":"true","FrameTVSupport":"false","ImeSyncedSupport":"true","remote_available":"true","remote_fourDirections":"true","remote_touchPad":"true","remote_voiceControl":"true"}\n',
+            'name': 'tv',
+            'remote': '1.0',
+            'type': 'Samsung SmartTV',
+            'uri': 'http://192.168.11.41:8001/api/v2/',
+            'version': '2.0.25'
+          });
+          expect(r, 'to equal', undefined);
+        });
+      });
+    });
   });
 });
