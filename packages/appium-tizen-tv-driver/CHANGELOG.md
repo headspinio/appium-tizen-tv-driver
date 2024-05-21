@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.3](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.10.2...appium-tizen-tv-driver@0.10.3) (2024-05-21)
+
+### Bug Fixes
+
+- improved non token supported device handling ([#597](https://github.com/headspinio/appium-tizen-tv-driver/issues/597)) ([fe51c87](https://github.com/headspinio/appium-tizen-tv-driver/commit/fe51c877ec29bbf62dc33fba48308ff66337d91a))
+
 ## [0.10.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.10.1...appium-tizen-tv-driver@0.10.2) (2024-05-13)
 
 ### Bug Fixes
