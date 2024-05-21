@@ -24,7 +24,12 @@ export async function pairRemote({host, port}) {
       console.log(token); // eslint-disable-line no-console
       return;
     }
-    throw new Error(`Could not retrieve token; please try allowing the remote again`);
+
+    if (await rc.isTokenSupportedDevice()) {
+      throw new Error(`Could not retrieve token; please try allowing the remote again`);
+    }
+
+    console.log('The device may not support token-based authentication. Allowing the pop-up notification is sufficient.'); // eslint-disable-line no-console
   } finally {
     await rc.disconnect();
   }

@@ -331,7 +331,7 @@ class TizenTVDriver extends BaseDriver {
           `but it may be ignorable. Proceeding the app installation.`);
       }
       if (_.isArray(installedPackages) && !installedPackages.includes(caps.appPackage)) {
-        throw new errors.SessionNotCreatedError(`${caps.appPackage} does not exist on the device.`);
+        log.info(`${caps.appPackage} might not exist on the device, or the TV model is old thus no installed app information existed.`);
       }
     }
 

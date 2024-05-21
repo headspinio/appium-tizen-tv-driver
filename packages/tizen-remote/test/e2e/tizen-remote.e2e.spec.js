@@ -56,13 +56,13 @@ describe('websocket behavior', function () {
   /** @type {import('../../lib/types').TizenRemoteOptions} */
   let remoteOpts;
 
-  /** @type {string} */
+  /** @type {string|undefined} */
   let token;
 
   /**
    * Connects, gets a token, disconnects.
    * @param {number} port
-   * @returns {Promise<string>}
+   * @returns {Promise<string|undefined>}
    */
   async function getInitialToken(port) {
     const remote = new TizenRemote(HOST, {

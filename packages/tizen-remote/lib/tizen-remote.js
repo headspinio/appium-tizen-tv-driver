@@ -9,6 +9,7 @@ import pRetry from 'p-retry';
 import WebSocket from 'ws';
 import {KeyCommand, TextCommand} from './command';
 import {Keys} from './keys';
+import got from 'got';
 
 export {Keys};
 
@@ -289,6 +290,12 @@ export class TizenRemote extends createdTypedEmitterClass() {
   #tokenCache;
 
   /**
+   * If the target device supports token.
+   * @type {boolean | undefined}
+   */
+  #tokenSupportCache;
+
+  /**
    * Whether or not to persist tokens to the cache
    * @type {boolean}
    */
@@ -337,6 +344,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
     this.#handshakeTimeout = opts.handshakeTimeout ?? constants.DEFAULT_HANDSHAKE_TIMEOUT;
     this.#handshakeRetries = opts.handshakeRetries ?? constants.DEFAULT_HANDSHAKE_RETRIES;
     this.#tokenTimeout = opts.tokenTimeout ?? constants.DEFAULT_TOKEN_TIMEOUT;
+
+    this.#tokenSupportCache = undefined;
   }
 
   /**
@@ -374,6 +383,33 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   get url() {
     return this.#url.toString();
+    }
+
+  /**
+   * Return True if the target device has 'TokenAuthSupport' param for the api/v2 endpoint.
+   * No 'TokenAuthSupport' indicates the device does not require "token".
+   * @returns {Promise<boolean>}
+   */
+  async isTokenSupportedDevice() {
+    if (_.isBoolean(this.#tokenSupportCache)) {
+      return this.#tokenSupportCache;
+    }
+    try {
+      const deviceData = await got.get(`http://${this.#host}:8001/api/v2/`).json();
+      this.#tokenSupportCache = this._getDeviceSupportsTokens(deviceData) === 'true';
+      return this.#tokenSupportCache;
+    } catch {
+      // defaults to true for newer TVs.
+      return true;
+    }
+  }
+  /**
+   * Private. Accessible for testing
+   * @param {any} jsonBody
+   * @returns {'true'|'false'|undefined}
+   */
+  _getDeviceSupportsTokens(jsonBody) {
+    return jsonBody?.device?.TokenAuthSupport;
   }
 
   /**
@@ -689,7 +725,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    *
    * If a new token must be requested, expect to wait _at least_ thirty (30) seconds.
    * @param {NoConnectOption & {force?: boolean}} opts
-   * @returns {Promise<string>}
+   * @returns {Promise<string | undefined>}
    */
   async getToken({noConnect = false, force = false} = {}) {
     if (!force) {
@@ -719,7 +755,11 @@ export class TizenRemote extends createdTypedEmitterClass() {
         this.emit(Event.TOKEN, token);
         return token;
       }
-      throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
+      if (await this.isTokenSupportedDevice()) {
+        throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
+      }
+      this.#debug('The device may not support token as old model.');
+      return;
     } finally {
       this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
     }
