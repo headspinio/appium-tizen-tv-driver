@@ -369,7 +369,7 @@ describe('TizenRemote', function () {
     });
     describe('with TokenAuthSupport', function () {
         it('should true', function () {
-          const r = remote._getTokenSupportDevice({
+          const r = remote._getDeviceSupportsTokens({
             'device': {
               'FrameTVSupport': 'false',
               'GamePadSupport': 'true',
@@ -410,7 +410,7 @@ describe('TizenRemote', function () {
           expect(r, 'to equal', 'true');
         });
         it('should false', function () {
-          const r = remote._getTokenSupportDevice({
+          const r = remote._getDeviceSupportsTokens({
             'device': {
               'FrameTVSupport': 'false',
               'GamePadSupport': 'true',
@@ -451,7 +451,7 @@ describe('TizenRemote', function () {
           expect(r, 'to equal', 'false');
         });
         it('should null', function () {
-          const r = remote._getTokenSupportDevice({
+          const r = remote._getDeviceSupportsTokens({
             'device': {
               'FrameTVSupport': 'false',
               'GamePadSupport': 'true',

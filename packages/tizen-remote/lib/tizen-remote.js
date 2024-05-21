@@ -396,7 +396,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
     }
     try {
       const deviceData = await got.get(`http://${this.#host}:8001/api/v2/`).json();
-      this.#tokenSupportCache = this._getTokenSupportDevice(deviceData) === 'true';
+      this.#tokenSupportCache = this._getDeviceSupportsTokens(deviceData) === 'true';
       return this.#tokenSupportCache;
     } catch {
       // defaults to true for newer TVs.
@@ -408,7 +408,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    * @param {any} jsonBody
    * @returns {'true'|'false'|undefined}
    */
-  _getTokenSupportDevice(jsonBody) {
+  _getDeviceSupportsTokens(jsonBody) {
     return jsonBody?.device?.TokenAuthSupport;
   }
 
@@ -759,7 +759,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
         throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
       }
       this.#debug('The device may not support token as old model.');
-      return undefined;
+      return;
     } finally {
       this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
     }
