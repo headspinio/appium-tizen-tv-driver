@@ -1,5 +1,8 @@
 # Appium Tizen TV Driver
 
+[![npm version](https://img.shields.io/npm/v/appium-tizen-tv-driver.svg)](https://www.npmjs.com/package/appium-tizen-tv-driver)
+
+
 > Tizen TV Driver for [Appium](https://appium.io)
 
 The Appium Tizen TV Driver is a test automation tool for Samsung Tizen TV devices. It works with
