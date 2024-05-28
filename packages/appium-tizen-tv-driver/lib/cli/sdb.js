@@ -1,8 +1,12 @@
 import log from '../logger';
 import {runCmd, SDB_BIN_NAME} from './helpers';
+import {util} from 'appium/support';
+import _ from 'lodash';
 
 const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5})$/;
 const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
+
+const WAIT_TIME = '30';
 
 /**
  *
@@ -15,11 +19,25 @@ async function runSDBCmd(udid, args) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * Return a list of debug command for the given platform version
+ * @param {string} platformVersion the platform version available via `sdb capability` result
+ * @param {string} appPackage
+ * @returns {Array<string>}
  */
-async function debugApp({appPackage, udid}) {
+function buildDebugCommand(platformVersion, appPackage) {
+  return util.compareVersions(platformVersion, '<', '4.0.0')
+    // this WAIT_TIME_SEC is maybe seconds, or it could be attempt count.
+    ? ['shell', '0', 'debug', appPackage, WAIT_TIME]
+    : ['shell', '0', 'debug', appPackage];
+}
+
+/**
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {string|number} platformVersion Platform version info available via `sdb capability` command
+ */
+async function debugApp({appPackage, udid}, platformVersion) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'debug', appPackage]);
+  const {stdout} = await runSDBCmd(udid, buildDebugCommand(`${platformVersion}`, appPackage));
   try {
     const port = stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
     if (!port) {
@@ -129,6 +147,7 @@ export {
   connectDevice,
   disconnectDevice,
   removeForwardedPort,
+  buildDebugCommand
 };
 
 /**

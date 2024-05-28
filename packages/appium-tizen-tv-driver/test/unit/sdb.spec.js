@@ -1,10 +1,37 @@
 import unexpected from 'unexpected';
 import unexpectedSinon from 'unexpected-sinon';
-import {_parseListAppsCmd} from '../../lib/cli/sdb';
+import {_parseListAppsCmd, buildDebugCommand} from '../../lib/cli/sdb';
 
 const expect = unexpected.clone().use(unexpectedSinon);
 
 describe('sdb', function () {
+  describe('buildDebugCommand', function () {
+    it('should for newer platform version', function () {
+      for (const platformVersion of [
+        '4',
+        '4.0',
+        '4.0.0',
+        '4.0.0.0'
+      ]) {
+        expect(
+          buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper']
+        );
+      }
+    });
+    it('should for older platform version', function () {
+      for (const platformVersion of [
+        '3',
+        '3.5',
+        '3.5.9',
+        '3.5.9.9'
+      ]) {
+        expect(
+          buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper', '30']
+        );
+      }
+    });
+  });
+
   describe('_parseListAppsCmd', function () {
     it('should return the list of apps', function () {
       const returnValue = "\tApplication List for user 5001\r\n\tUser's Application \r\n\t Name \t AppID \r\n\t=================================================\r\n\t'alexa-fullscreen-app'\t 'com.samsung.tv.alexa-client-xapp-ut-on-tv'\r\n\t'ContentSharing.Provider.Ftp'\t 'com.samsung.tv.coss.provider.d2d'\r\n\t'Xbox'\t 'GHI3a0zMSx.XboxGamePass'\r\n\t'cloning'\t 'org.tizen.cloning'\r\n\t'csfs'\t 'com.samsung.tv.csfs'\r\n\t'あ'\t 'pIaMf8YZyZ.service'\r\n\t'service-application'\t 'org.tizen.was-appsync'\r\n\t'fuzzy-search-engine'\t 'com.samsung.tv.fuzzy-search-engine'\r\n\t'pisa-control-service'\t 'org.tizen.pisa-control-service'\r\n\t'SmartThings Home CCTV Service'\t 'com.samsung.tv.iot-service-home-cctv_FLUX'\r\n\t'samsung-pass'\t 'com.samsung.tizen.samsung-pass-agent'\r\n\t'pluginplatform'\t 'com.samsung.tizen.smartthings-plugin-platform'\r\n\t'LibAriaFW'\t 'lib-ariafw-tv'\r\n\t'com.samsung.tv.ondevice-voice'\t 'com.samsung.tv.ondevice-voice'\r\n\t'PBS Video'\t '70fRFUwYlD.OtterGAProd'\r\n\t'iacr'\t 'com.samsung.tv.iacr'\r\n\t'Samsung Health'\t 'com.samsung.tv.samsung-health'\r\n\t''\t 'com.samsung.tv.remoteapp.local_stream'\r\n\t=================================================\r\n";
