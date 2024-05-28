@@ -3,7 +3,7 @@ import {runCmd, SDB_BIN_NAME} from './helpers';
 import {util} from 'appium/support';
 import _ from 'lodash';
 
-const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5})$/;
+const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5}).*/;
 const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
 
 const WAIT_TIME = '30';
@@ -32,6 +32,15 @@ function buildDebugCommand(platformVersion, appPackage) {
 }
 
 /**
+ *
+ * @param {*} stdout
+ * @returns
+ */
+function parseDebugPort(stdout) {
+  return stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
+}
+
+/**
  * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  * @param {string|number} platformVersion Platform version info available via `sdb capability` command
  */
@@ -39,7 +48,7 @@ async function debugApp({appPackage, udid}, platformVersion) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
   const {stdout} = await runSDBCmd(udid, buildDebugCommand(`${platformVersion}`, appPackage));
   try {
-    const port = stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
+    const port = parseDebugPort(stdout);
     if (!port) {
       throw new Error(`Cannot parse debug port from sdb output`);
     }
@@ -147,7 +156,8 @@ export {
   connectDevice,
   disconnectDevice,
   removeForwardedPort,
-  buildDebugCommand
+  buildDebugCommand,
+  parseDebugPort
 };
 
 /**

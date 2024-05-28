@@ -1,6 +1,6 @@
 import unexpected from 'unexpected';
 import unexpectedSinon from 'unexpected-sinon';
-import {_parseListAppsCmd, buildDebugCommand} from '../../lib/cli/sdb';
+import {_parseListAppsCmd, buildDebugCommand, parseDebugPort} from '../../lib/cli/sdb';
 
 const expect = unexpected.clone().use(unexpectedSinon);
 
@@ -29,6 +29,29 @@ describe('sdb', function () {
           buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper', '30']
         );
       }
+    });
+  });
+
+  describe('parseDebugPort', function () {
+    it('should parse the version as zero', function () {
+      const stdout = 'port: 0\r\n\tresult: launched\r\n';
+      expect(
+        parseDebugPort(stdout), 'to equal', '0'
+      );
+    });
+
+    it('should parse the version as non-zero', function () {
+      const stdout = 'port: 44670\r\n\tresult: launched\r\n';
+      expect(
+        parseDebugPort(stdout), 'to equal', '44670'
+      );
+    });
+
+    it('should parse the version for platform version 4 or newer', function () {
+      const stdout = '... successfully launched pid = 32003 with debug 1 port: 44670';
+      expect(
+        parseDebugPort(stdout), 'to equal', '44670'
+      );
     });
   });
 
