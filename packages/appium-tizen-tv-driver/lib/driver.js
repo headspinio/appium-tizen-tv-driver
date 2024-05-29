@@ -424,7 +424,8 @@ class TizenTVDriver extends BaseDriver {
           /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
         );
       } catch (e) {
-        throw new errors.SessionNotCreatedError(`Failed to launch ${caps.appPackage} as debug mode. It might not be debuggable. Original error: ${e.message}`);
+        // While the app was debuggable, the `debug` command could succeed. Then the device could be weird. It may require the device config check.
+        throw new errors.SessionNotCreatedError(`Failed to launch ${caps.appPackage} as debug mode. It might not be debuggable, or the device condition was weird. Original error: ${e.message}`);
       }
     } else {
       remoteDebugPort = caps.useOpenDebugPort;
