@@ -55,7 +55,6 @@ describe('sdb', function () {
     });
   });
 
-
   describe('_parseCapability', function () {
     it('newer device, platform 5.0', function () {
       const stdout = `
@@ -170,7 +169,6 @@ sdbd_cap_version:1.0`;
       expect(parsedResult.platform_version, 'to equal', '5.0');
     });
   });
-
 
   describe('_parseListAppsCmd', function () {
     it('should return the list of apps', function () {
