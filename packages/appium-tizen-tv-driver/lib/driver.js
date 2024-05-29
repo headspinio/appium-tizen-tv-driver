@@ -289,7 +289,7 @@ class TizenTVDriver extends BaseDriver {
     // At least tizen tv platform 2.5 and lower should support rcMode only.
     if (util.compareVersions(this.#platformVersion, '<', '3')) {
       if (caps.rcMode === RC_MODE_REMOTE) {
-        log.info(`The ${this.opts.udid} Tizen platform version support only rcOnly mode.`);
+        log.info(`The ${this.opts.udid} Tizen platform version supports only rcOnly mode.`);
         caps.rcOnly = true;
       } else {
         throw new errors.SessionNotCreatedError(
