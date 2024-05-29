@@ -166,7 +166,7 @@ sdbd_cap_version:1.0`;
           sdbd_cap_version: '1.0'
         }
       );
-      expect(parsedResult.platform_version, 'to equal', '5.0');
+      expect(parsedResult.platform_version, 'to equal', '2.4.0');
     });
   });
 
