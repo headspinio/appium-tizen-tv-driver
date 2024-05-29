@@ -296,7 +296,7 @@ class TizenTVDriver extends BaseDriver {
       } else {
         throw new errors.SessionNotCreatedError(
           `Tizen ${this.#platformVersion} needs to be 'remote' mode for 'rcMode'.`
-        )
+        );
       }
     }
 
