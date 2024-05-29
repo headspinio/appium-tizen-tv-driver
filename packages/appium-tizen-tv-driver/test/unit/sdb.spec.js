@@ -57,7 +57,7 @@ describe('sdb', function () {
 
 
   describe('_parseCapability', function () {
-    it('newer device', function () {
+    it('newer device, platform 5.0', function () {
       const stdout = `
 secure_protocol:enabled
 intershell_support:disabled
@@ -119,6 +119,52 @@ netcoredbg_support:enabled`;
           appid2pid_support: 'enabled',
           pkgcmd_debugmode: 'enabled',
           netcoredbg_support: 'enabled'
+        }
+      );
+      expect(parsedResult.platform_version, 'to equal', '5.0');
+    });
+    it('old device, platform 2.4', function () {
+      const stdout = `
+secure_protocol:enabled
+intershell_support:disabled
+filesync_support:push
+usbproto_support:enabled
+sockproto_support:enabled
+syncwinsz_support:enabled
+rootonoff_support:disabled
+zone_support:disabled
+multiuser_support:disabled
+cpu_arch:armv7
+profile_name:tv
+vendor_name:Samsung
+can_launch:tv-samsung-public_-_tv-samsung-partner
+platform_version:2.4.0
+product_version:2.0
+sdbd_version:2.2.31
+sdbd_plugin_version:1.0.0
+sdbd_cap_version:1.0`;
+
+      const parsedResult = _parseCapability(stdout);
+      expect(
+        parsedResult, 'to equal', {
+          secure_protocol: 'enabled',
+          intershell_support: 'disabled',
+          filesync_support: 'push',
+          usbproto_support: 'enabled',
+          sockproto_support: 'enabled',
+          syncwinsz_support: 'enabled',
+          rootonoff_support: 'disabled',
+          zone_support: 'disabled',
+          multiuser_support: 'disabled',
+          cpu_arch: 'armv7',
+          profile_name: 'tv',
+          vendor_name: 'Samsung',
+          can_launch: 'tv-samsung-public_-_tv-samsung-partner',
+          platform_version: '2.4.0',
+          product_version: '2.0',
+          sdbd_version: '2.2.31',
+          sdbd_plugin_version: '1.0.0',
+          sdbd_cap_version: '1.0'
         }
       );
       expect(parsedResult.platform_version, 'to equal', '5.0');
