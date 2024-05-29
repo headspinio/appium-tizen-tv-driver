@@ -796,7 +796,7 @@ class TizenTVDriver extends BaseDriver {
    * @returns
    */
   async tizentvTerminateApp(pkgId) {
-    return await terminateApp({udid: this.opts.udid}, pkgId)
+    return await terminateApp({udid: this.opts.udid}, pkgId);
   }
 }
 
