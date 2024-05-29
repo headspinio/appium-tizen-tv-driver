@@ -275,9 +275,9 @@ class TizenTVDriver extends BaseDriver {
     this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
     // @ts-ignore
     if (deviceCaps?.platform_version) {
-      log.info(`The ${this.opts.udid} Tizen platform version is ${this.#platformVersion}`);
+      log.info(`The Tizen platform version is ${this.#platformVersion}`);
     } else {
-      log.info(`The ${this.opts.udid} Tizen platform version is unknown. Using ${DEFAULT_PLATFORM_VERSION}.`);
+      log.info(`The Tizen platform version is unknown. Using ${DEFAULT_PLATFORM_VERSION}.`);
     }
 
     if (caps.rcOnly && caps.rcMode !== RC_MODE_REMOTE) {
