@@ -31,10 +31,12 @@ async function runSDBCmd(udid, args) {
  * @returns {Array<string>}
  */
 function _buildDebugCommand(platformVersion, appPackage) {
-  return util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)
+  const cmd = ['shell', '0', 'debug', appPackage];
+  if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
     // this WAIT_TIME_SEC is maybe seconds, or it could be attempt count.
-    ? ['shell', '0', 'debug', appPackage, WAIT_TIME]
-    : ['shell', '0', 'debug', appPackage];
+    cmd.push(WAIT_TIME);
+  }
+  return cmd;
 }
 
 /**
