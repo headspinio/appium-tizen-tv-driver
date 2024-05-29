@@ -181,6 +181,9 @@ npm run watch
 ## Troubleshooting
 - The application under test did not start; `sdb -s <device> shell 0 debug <package id>' exited with code 1`
     - Please make sure the application under test is debuggable
+- The application under test keeps raising an error succh as `Could not launch the null application` (as part of the error message)
+    - Please specify `appium:app` capability. Then usually tizentv driver uninstalls the app before installing the app to terminate the running app process forcefully.
+    - Perhaps the TV device internal is weird state to launch the app process.
 
 
 ## Credits
