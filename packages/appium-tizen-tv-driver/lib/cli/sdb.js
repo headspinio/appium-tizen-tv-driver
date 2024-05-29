@@ -11,6 +11,8 @@ const WAIT_TIME = '30';
 
 /**
  * sdb shell debug command has different format lower/bigger than this version.
+ * At least 3.0.0 and 2.5.0 should be `shell 0 debug <app> <number>`,
+ * 5.0 and newer should be `shell 0 debug <app> <number>`.
  */
 const PLATFORM_VERSION_COMMAND_COMPATIBILITY = '4.0.0';
 
@@ -33,7 +35,7 @@ async function runSDBCmd(udid, args) {
 function _buildDebugCommand(platformVersion, appPackage) {
   const cmd = ['shell', '0', 'debug', appPackage];
   if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
-    // this WAIT_TIME_SEC is maybe seconds, or it could be attempt count.
+    // this WAIT_TIME is maybe in seconds, or it could be attempt count.
     cmd.push(WAIT_TIME);
   }
   return cmd;
