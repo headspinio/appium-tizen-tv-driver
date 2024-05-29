@@ -271,7 +271,9 @@ class TizenTVDriver extends BaseDriver {
 
     // Raise an error if the `sdb capabilities` might raise an exception
     const deviceCaps = await deviceCapabilities({udid: this.opts.udid});
+    // @ts-ignore
     this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
+    // @ts-ignore
     if (deviceCaps?.platform_version) {
       log.info(`The ${this.opts.udid} Tizen platform version is ${this.#platformVersion}`);
     } else {
