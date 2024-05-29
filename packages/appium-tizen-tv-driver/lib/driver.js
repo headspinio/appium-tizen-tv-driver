@@ -13,6 +13,7 @@ import {
   forwardPort,
   listApps,
   removeForwardedPort,
+  deviceCapabilities
 } from './cli/sdb';
 import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
 import {desiredCapConstraints} from './desired-caps';
@@ -57,6 +58,14 @@ const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
  * A security flag to enable chromedriver auto download feature
  */
 const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
+
+
+/**
+ * Use '5.0' platform version to handle the session is for newer device if it was not available.
+ * https://developer.samsung.com/smarttv/develop/specifications/web-engine-specifications.html
+ */
+const DEFAULT_PLATFORM_VERSION = '5.0';
+
 
 /**
  * Constant for "rc" text input mode, which uses the Tizen Remote Control API
@@ -171,6 +180,10 @@ class TizenTVDriver extends BaseDriver {
   /** @type {number} */
   #rcKeypressCooldown = DEFAULT_RC_KEYPRESS_COOLDOWN;
 
+  /** @type {string}  Tizen OS platform version*/
+  #platformVersion = DEFAULT_PLATFORM_VERSION;
+
+
   /**
    *
    * @param {DriverOpts<TizenTVDriverCapConstraints>} [opts]
@@ -254,6 +267,15 @@ class TizenTVDriver extends BaseDriver {
     }
 
     const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
+
+    // Raise an error if the `sdb capabilities` might raise an exception
+    const deviceCaps = await deviceCapabilities({udid: this.opts.udid});
+    this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
+    if (deviceCaps?.platform_version) {
+      log.info(`The ${this.opts.udid} Tizen platform version is ${this.#platformVersion}`);
+    } else {
+      log.info(`The ${this.opts.udid} Tizen platform version is unknown. Using ${DEFAULT_PLATFORM_VERSION}.`);
+    }
 
     if (caps.rcOnly && caps.rcMode !== RC_MODE_REMOTE) {
       log.info(`The rcMode capability was not set to remote but we are in rcOnly mode, so ` +
@@ -414,7 +436,8 @@ class TizenTVDriver extends BaseDriver {
     if (!caps.useOpenDebugPort) {
       try {
         remoteDebugPort = await debugApp(
-          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps),
+          this.#platformVersion
         );
       } catch (e) {
         throw new errors.SessionNotCreatedError(`Failed to launch ${caps.appPackage} as debug mode. It might not be debuggable. Original error: ${e.message}`);
@@ -777,10 +800,10 @@ class TizenTVDriver extends BaseDriver {
   /**
    * Return the list of installed applications with the pair of
    * an application name and the package name.
-   * @returns {Promise<[{appName: string, appPackage: string}]>}
+   * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
    */
   async tizentvListApps() {
-    return await listApps({udid: this.opts.udid});
+    return await listApps({udid: this.opts.udid}, this.#platformVersion);
   }
 }
 

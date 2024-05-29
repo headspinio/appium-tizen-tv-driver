@@ -8,6 +8,12 @@ const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
 
 const WAIT_TIME = '30';
 
+
+/**
+ * sdb shell debug command has different format lower/bigger than this version.
+ */
+const PLATFORM_VERSION_COMMAND_COMPATIBILITY = '4.0.0';
+
 /**
  *
  * @param {string?} udid
@@ -24,8 +30,8 @@ async function runSDBCmd(udid, args) {
  * @param {string} appPackage
  * @returns {Array<string>}
  */
-function buildDebugCommand(platformVersion, appPackage) {
-  return util.compareVersions(platformVersion, '<', '4.0.0')
+function _buildDebugCommand(platformVersion, appPackage) {
+  return util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)
     // this WAIT_TIME_SEC is maybe seconds, or it could be attempt count.
     ? ['shell', '0', 'debug', appPackage, WAIT_TIME]
     : ['shell', '0', 'debug', appPackage];
@@ -36,7 +42,7 @@ function buildDebugCommand(platformVersion, appPackage) {
  * @param {*} stdout
  * @returns
  */
-function parseDebugPort(stdout) {
+function _parseDebugPort(stdout) {
   return stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
 }
 
@@ -46,9 +52,9 @@ function parseDebugPort(stdout) {
  */
 async function debugApp({appPackage, udid}, platformVersion) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, buildDebugCommand(`${platformVersion}`, appPackage));
+  const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
   try {
-    const port = parseDebugPort(stdout);
+    const port = _parseDebugPort(stdout);
     if (!port) {
       throw new Error(`Cannot parse debug port from sdb output`);
     }
@@ -80,9 +86,16 @@ async function launchApp({appPackage, udid}) {
  * Return the list of installed applications with the pair of
  * an application name and the package name.
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
- * @returns {Promise<[{appName: string, appPackage: string}]>}
+ * @param {string} platformVersion
+ * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
  */
-async function listApps({udid}) {
+async function listApps({udid}, platformVersion) {
+  if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
+    // Old output needs more complex parsing logic.
+    log.info(`listApps is not supported for platform version ${platformVersion}`);
+    return [];
+  }
+
   log.info(`Listing apps installed on '${udid}'`);
   const {stdout} = await runSDBCmd(udid, ['shell', '0', 'applist']);
   const apps = _parseListAppsCmd(stdout);
@@ -103,6 +116,30 @@ function _parseListAppsCmd(input) {
       return {appName: match.groups.name, appPackage: match.groups.id};
     })
     .filter(Boolean);
+}
+
+/**
+ * Return a dictionary of the result of 'sdb capability'
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @returns {Promise<{}>}
+ */
+async function deviceCapabilities({udid}) {
+  log.info(`Getting capabilities on '${udid}'`);
+  const {stdout} = await runSDBCmd(udid, ['capability']);
+  return _parseCapability(stdout);
+}
+
+function _parseCapability (input) {
+  const eachLine = input.split(/\r\n|\n/);
+  const caps = {};
+  for (const line of eachLine) {
+    const [key, value] = line.split(':');
+    if (_.isEmpty(key)) {
+      continue;
+    }
+    caps[key] = value;
+  }
+  return caps;
 }
 
 /**
@@ -156,8 +193,10 @@ export {
   connectDevice,
   disconnectDevice,
   removeForwardedPort,
-  buildDebugCommand,
-  parseDebugPort
+  _buildDebugCommand,
+  _parseDebugPort,
+  _parseCapability,
+  deviceCapabilities
 };
 
 /**

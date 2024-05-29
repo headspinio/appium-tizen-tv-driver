@@ -1,6 +1,6 @@
 import unexpected from 'unexpected';
 import unexpectedSinon from 'unexpected-sinon';
-import {_parseListAppsCmd, buildDebugCommand, parseDebugPort} from '../../lib/cli/sdb';
+import {_parseListAppsCmd, _buildDebugCommand, _parseDebugPort, _parseCapability} from '../../lib/cli/sdb';
 
 const expect = unexpected.clone().use(unexpectedSinon);
 
@@ -14,7 +14,7 @@ describe('sdb', function () {
         '4.0.0.0'
       ]) {
         expect(
-          buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper']
+          _buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper']
         );
       }
     });
@@ -26,7 +26,7 @@ describe('sdb', function () {
         '3.5.9.9'
       ]) {
         expect(
-          buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper', '30']
+          _buildDebugCommand(platformVersion, 'biF5E2SN9M.AppiumHelper'), 'to equal', ['shell', '0', 'debug', 'biF5E2SN9M.AppiumHelper', '30']
         );
       }
     });
@@ -36,24 +36,95 @@ describe('sdb', function () {
     it('should parse the version as zero', function () {
       const stdout = 'port: 0\r\n\tresult: launched\r\n';
       expect(
-        parseDebugPort(stdout), 'to equal', '0'
+        _parseDebugPort(stdout), 'to equal', '0'
       );
     });
 
     it('should parse the version as non-zero', function () {
       const stdout = 'port: 44670\r\n\tresult: launched\r\n';
       expect(
-        parseDebugPort(stdout), 'to equal', '44670'
+        _parseDebugPort(stdout), 'to equal', '44670'
       );
     });
 
     it('should parse the version for platform version 4 or newer', function () {
       const stdout = '... successfully launched pid = 32003 with debug 1 port: 44670';
       expect(
-        parseDebugPort(stdout), 'to equal', '44670'
+        _parseDebugPort(stdout), 'to equal', '44670'
       );
     });
   });
+
+
+  describe('_parseCapability', function () {
+    it('newer device', function () {
+      const stdout = `
+secure_protocol:enabled
+intershell_support:disabled
+filesync_support:pushpull
+usbproto_support:disabled
+sockproto_support:enabled
+syncwinsz_support:enabled
+sdbd_rootperm:disabled
+rootonoff_support:disabled
+encryption_support:disabled
+zone_support:disabled
+multiuser_support:enabled
+cpu_arch:armv7
+sdk_toolpath:/home/owner/share/tmp/sdk_tools
+profile_name:tv
+vendor_name:Samsung
+can_launch:tv-samsung
+device_name:Tizen
+platform_version:5.0
+product_version:4.0
+sdbd_version:2.2.31
+sdbd_plugin_version:3.7.1_TV_REL
+sdbd_cap_version:1.0
+log_enable:disabled
+log_path:/tmp
+appcmd_support:disabled
+appid2pid_support:enabled
+pkgcmd_debugmode:enabled
+netcoredbg_support:enabled`;
+
+      const parsedResult = _parseCapability(stdout);
+      expect(
+        parsedResult, 'to equal', {
+          secure_protocol: 'enabled',
+          intershell_support: 'disabled',
+          filesync_support: 'pushpull',
+          usbproto_support: 'disabled',
+          sockproto_support: 'enabled',
+          syncwinsz_support: 'enabled',
+          sdbd_rootperm: 'disabled',
+          rootonoff_support: 'disabled',
+          encryption_support: 'disabled',
+          zone_support: 'disabled',
+          multiuser_support: 'enabled',
+          cpu_arch: 'armv7',
+          sdk_toolpath: '/home/owner/share/tmp/sdk_tools',
+          profile_name: 'tv',
+          vendor_name: 'Samsung',
+          can_launch: 'tv-samsung',
+          device_name: 'Tizen',
+          platform_version: '5.0',
+          product_version: '4.0',
+          sdbd_version: '2.2.31',
+          sdbd_plugin_version: '3.7.1_TV_REL',
+          sdbd_cap_version: '1.0',
+          log_enable: 'disabled',
+          log_path: '/tmp',
+          appcmd_support: 'disabled',
+          appid2pid_support: 'enabled',
+          pkgcmd_debugmode: 'enabled',
+          netcoredbg_support: 'enabled'
+        }
+      );
+      expect(parsedResult.platform_version, 'to equal', '5.0');
+    });
+  });
+
 
   describe('_parseListAppsCmd', function () {
     it('should return the list of apps', function () {
