@@ -12,6 +12,7 @@ import {
   disconnectDevice,
   forwardPort,
   listApps,
+  terminateApp,
   removeForwardedPort,
 } from './cli/sdb';
 import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
@@ -148,6 +149,12 @@ class TizenTVDriver extends BaseDriver {
       command: 'tizentvListApps',
       params: {},
     }),
+
+    'tizen: terminateApp': Object.freeze({
+      command: 'tizentvTerminateApp',
+      params: {required: ['pkgId']},
+    }),
+
   });
 
   /** @type {TizenRemote|undefined} */
@@ -781,6 +788,15 @@ class TizenTVDriver extends BaseDriver {
    */
   async tizentvListApps() {
     return await listApps({udid: this.opts.udid});
+  }
+
+  /**
+   * Terminate the given app package id.
+   * @param {string} pkgId
+   * @returns
+   */
+  async tizentvTerminateApp(pkgId) {
+    return await terminateApp({udid: this.opts.udid}, pkgId)
   }
 }
 

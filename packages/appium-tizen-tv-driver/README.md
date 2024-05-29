@@ -159,6 +159,19 @@ Refer to your Appium client library for how to use this method.
 
 - `script`: `tizen: listApps`
 
+### Terminate the package id
+
+> Send kill command to the given package id.
+> This package id is not entire `appPackage`.
+> It could be the same as the `appPackage`, but it also could be different.
+> e.g. `org.tizen.browser` works both `appPackage` and `pkgId`, but `9Ur5IzDKqV.TizenYouTube` works as `appPackage` but the `9Ur5IzDKqV` part is `pkgId`.
+
+- `POST /session/:sessionId/execute`
+
+#### Arguments
+
+- `script`: `tizen: terminateApp`
+- `pkgId`: package id
 
 ### Proxied Commands
 
