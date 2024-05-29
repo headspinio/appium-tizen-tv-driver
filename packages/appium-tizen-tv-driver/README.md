@@ -54,7 +54,7 @@ package in your `package.json`)
     Then, please re-run the `pair-remote` command.
     - Go to _Settings_ -> _General_ -> _External Device Manager_ -> _Device Connect Manager_ -> _Device List_ and delete the "denied" item. (This device list place could depend on TV kinds)
 - WebKit based Tizen TV model does not support chromedriver automation. Please use `'appium:rcMode':'remote'`. Then, the session will work as rcOnly mode.
-  - Tizen 2.4 (2016) and lower version in [Web Engine Specifications](https://developer.samsung.com/smarttv/develop/specifications/web-engine-specifications.html). Then, the automation will forcefully be `rcOnly` mode.
+  - Tizen 2.4 (2016) and lower versions in [Web Engine Specifications](https://developer.samsung.com/smarttv/develop/specifications/web-engine-specifications.html) have WebKit engine, which does not support toolchains for Chromium.
 
 
 ## Capabilities
