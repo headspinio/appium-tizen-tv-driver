@@ -150,7 +150,7 @@ Refer to your Appium client library for how to use this method.
 
 ### Get the list of installed applications
 
-> The list of installed applications. Old device models (e.g. Year 2016) may return always an empty list as not supported.
+> The list of installed applications. Old device models (e.g. Year 2016) may always return an empty list as not supported.
 > Each item has `appName` and `appPackage`.
 
 - `POST /session/:sessionId/execute`
@@ -161,7 +161,7 @@ Refer to your Appium client library for how to use this method.
 
 ### Activate the package name
 
-> Send launch command with the given package name to the device under test.
+> Send a launch command with the given package name to the device under test.
 > This package name is the same as what you give as `appium:appPackage`.
 > Note that this command does not start the package with debug mode.
 > Chromedriver automation will not start against the package name.
@@ -175,8 +175,8 @@ Refer to your Appium client library for how to use this method.
 
 ### Terminate the package id
 
-> Send kill command with the given package id to the device under test.
-> This package id is not entire `appPackage`.
+> Send a kill command with the given package id to the device under test.
+> This package id is not the entire `appPackage`.
 > It could be the same as the `appPackage`, but it also could be different.
 > Please check the `pkgId` value in your application under test package.
 > e.g. `org.tizen.browser` works both `appPackage` and `pkgId`, but `9Ur5IzDKqV.TizenYouTube` works as `appPackage` but the `9Ur5IzDKqV` part is `pkgId` used in this command.
