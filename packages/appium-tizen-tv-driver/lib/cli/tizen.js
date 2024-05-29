@@ -41,8 +41,9 @@ async function tizenInstall({app, udid}) {
   // e.g. Different signature app is already installed.
   const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid]);
   if (/successfully/.test(stdout)) {
-    throw new Error(`Could not install app ${app}. Stdout from install call was: ${stdout}`);
+    return;
   }
+  throw new Error(`Could not install app ${app}. Stdout from install call was: ${stdout}`);
 }
 
 /**
