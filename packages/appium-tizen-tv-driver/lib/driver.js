@@ -20,6 +20,7 @@ import {desiredCapConstraints} from './desired-caps';
 import {getKeyData, isRcKeyCode} from './keymap';
 import log from './logger';
 import {AsyncScripts, SyncScripts} from './scripts';
+import { util } from 'appium/support';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const GALLERY_APP_ID = 'com.samsung.tv.gallery';
@@ -281,6 +282,20 @@ class TizenTVDriver extends BaseDriver {
       log.info(`The rcMode capability was not set to remote but we are in rcOnly mode, so ` +
                `forcing it to remote`);
       caps.rcMode = this.opts.rcMode = RC_MODE_REMOTE;
+    }
+
+    if (caps.rcMode !== RC_MODE_REMOTE && util.compareVersions(this.#platformVersion, '<', '3')) {
+    }
+
+    if (util.compareVersions(this.#platformVersion, '<', '3')) {
+      if (caps.rcMode === RC_MODE_REMOTE) {
+        log.info(`The ${this.opts.udid} Tizen platform version support only rcOnly mode.`);
+        caps.rcOnly = true;
+      } else {
+        throw new errors.SessionNotCreatedError(
+          `Tizen ${this.#platformVersion} needs to be 'remote' mode for 'rcMode'.`
+        )
+      }
     }
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
