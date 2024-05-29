@@ -277,7 +277,7 @@ class TizenTVDriver extends BaseDriver {
     if (deviceCaps?.platform_version) {
       log.info(`The Tizen platform version is ${this.#platformVersion}`);
     } else {
-      log.info(`The Tizen platform version is unknown. Using ${DEFAULT_PLATFORM_VERSION}.`);
+      log.info(`The Tizen platform version is unknown, using ${DEFAULT_PLATFORM_VERSION} as preset version.`);
     }
 
     if (caps.rcOnly && caps.rcMode !== RC_MODE_REMOTE) {
@@ -286,14 +286,15 @@ class TizenTVDriver extends BaseDriver {
       caps.rcMode = this.opts.rcMode = RC_MODE_REMOTE;
     }
 
-    // At least platform 2.5 and lower should be rcMode only.
+    // At least tizen tv platform 2.5 and lower should support rcMode only.
     if (util.compareVersions(this.#platformVersion, '<', '3')) {
       if (caps.rcMode === RC_MODE_REMOTE) {
         log.info(`The ${this.opts.udid} Tizen platform version support only rcOnly mode.`);
         caps.rcOnly = true;
       } else {
         throw new errors.SessionNotCreatedError(
-          `Tizen ${this.#platformVersion} needs to be 'remote' mode for 'rcMode'.`
+          `The session needs to be 'appium:rcMode': 'remote' because the Tizen ${this.#platformVersion} version ` +
+            `is WebKit based engine. It does not work for Chromium based toolchains like WebInspector and chromedriver.`
         );
       }
     }
