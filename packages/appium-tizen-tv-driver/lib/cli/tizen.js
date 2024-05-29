@@ -40,7 +40,7 @@ async function tizenInstall({app, udid}) {
   // If an error occurred in the installation command, it will raise an error as well.
   // e.g. Different signature app is already installed.
   const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid]);
-  if (/successfully/.test(stdout)) {
+  if (/successfully/i.test(stdout)) {
     return;
   }
   throw new Error(`Could not install app ${app}. Stdout from install call was: ${stdout}`);
@@ -82,11 +82,11 @@ async function tizenUninstall({appPackage, udid}) {
   // Total time: 00:00:00.324
 
   const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid]);
-  if (/uninstall completed/.test(stdout)) {
+  if (/uninstall completed/i.test(stdout)) {
     // ok
     return;
   }
-  if (/Package ID is not valid/.test(stdout)) {
+  if (/Package ID is not valid/i.test(stdout)) {
     // This case could indicate the app does not exist. Ignoring.
     return;
   }
