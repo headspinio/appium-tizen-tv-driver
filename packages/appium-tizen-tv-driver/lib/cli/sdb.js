@@ -58,10 +58,9 @@ async function launchApp({appPackage, udid}) {
 async function terminateApp({udid}, pkgId) {
   log.info(`Terminating ${pkgId} in on ${udid}`);
   const {stdout} = await runSDBCmd(udid, ['shell', '0', 'kill', pkgId]);
-  if (/is already Terminated/.test(stdout)) {
-    return;
+  if (/failed/.test(stdout)) {
+    throw new Error(`Could not terminate app. Please make sure if the given '${pkgId}' was correct package id. Stdout from kill call was: ${stdout}`);
   }
-  throw new Error(`Could not terminate app. Please make sure if the given '${pkgId}' was correct package id. Stdout from kill call was: ${stdout}`);
 }
 
 

@@ -159,9 +159,23 @@ Refer to your Appium client library for how to use this method.
 
 - `script`: `tizen: listApps`
 
+### Activate the application package
+
+> Send launch command with the given package name.
+> This package name is the same as what you give as `appium:appPackage`.
+> Note that this command does not start the package with debug mode.
+> Chromedriver automation will not start against this device.
+
+- `POST /session/:sessionId/execute`
+
+#### Arguments
+
+- `script`: `tizen: activateApp`
+- `appPackage`: application package name to launch
+
 ### Terminate the package id
 
-> Send kill command to the given package id.
+> Send kill command with the given package id.
 > This package id is not entire `appPackage`.
 > It could be the same as the `appPackage`, but it also could be different.
 > e.g. `org.tizen.browser` works both `appPackage` and `pkgId`, but `9Ur5IzDKqV.TizenYouTube` works as `appPackage` but the `9Ur5IzDKqV` part is `pkgId`.
@@ -171,7 +185,7 @@ Refer to your Appium client library for how to use this method.
 #### Arguments
 
 - `script`: `tizen: terminateApp`
-- `pkgId`: package id
+- `pkgId`: package id to terminate
 
 ### Proxied Commands
 

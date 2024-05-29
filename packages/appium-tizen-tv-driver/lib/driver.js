@@ -13,6 +13,7 @@ import {
   forwardPort,
   listApps,
   terminateApp,
+  launchApp,
   removeForwardedPort,
 } from './cli/sdb';
 import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
@@ -149,7 +150,10 @@ class TizenTVDriver extends BaseDriver {
       command: 'tizentvListApps',
       params: {},
     }),
-
+    'tizen: activateApp': Object.freeze({
+      command: 'tizentvActivateApp',
+      params: {required: ['appPackage']},
+    }),
     'tizen: terminateApp': Object.freeze({
       command: 'tizentvTerminateApp',
       params: {required: ['pkgId']},
@@ -789,6 +793,16 @@ class TizenTVDriver extends BaseDriver {
    */
   async tizentvListApps() {
     return await listApps({udid: this.opts.udid});
+  }
+
+
+  /**
+   * Launch the given appPackage. The process won't start as a debug mode.
+   * @param {string} appPackage
+   * @returns
+   */
+  async tizentvActivateApp(appPackage) {
+    return await launchApp({appPackage, udid: this.opts.udid});
   }
 
   /**
