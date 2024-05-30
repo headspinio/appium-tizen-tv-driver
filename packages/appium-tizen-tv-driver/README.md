@@ -217,7 +217,9 @@ npm run watch
 - The application under test keeps raising an error succh as `Could not launch the null application` (as part of the error message)
     - Please specify `appium:app` capability. Then usually tizentv driver uninstalls the app before installing the app to terminate the running app process forcefully.
     - Perhaps the TV device internal is weird state to launch the app process.
-
+- App uninstallation could fail silently. It means while tizen/shell command did not end with exit code non-zero, the command failed to uninstall the app.
+    - Please manually uninstall the application if you'd like to uninstall completely.
+    - Report this issue in [bug report](https://www.tizen.org/ko/community/bug-tracker/how-report-bugs)
 
 ## Credits
 

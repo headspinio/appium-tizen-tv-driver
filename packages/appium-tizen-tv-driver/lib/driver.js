@@ -351,10 +351,16 @@ class TizenTVDriver extends BaseDriver {
           // it
           throw new errors.SessionNotCreatedError('For now, the appPackage capability is required');
         }
+        // fast cleanup
         if (!caps.noReset) {
-          await tizenUninstall(
-            /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
-          );
+          try {
+            await tizenUninstall(
+              /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+            );
+          } catch (e) {
+            // Can be ignored. The next installation command will raise an error if this occurs exact error.
+            log.warn(`It might be failed to uninstall ${caps.appPackage}. Please uninstall the installed app by manual if needed. Error: ${e.message}`);
+          }
         }
         // XXX this is for typescript
         await tizenInstall({...caps, app: caps.app});
