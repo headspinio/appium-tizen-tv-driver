@@ -1,8 +1,20 @@
 import log from '../logger';
 import {runCmd, SDB_BIN_NAME} from './helpers';
+import {util} from 'appium/support';
+import _ from 'lodash';
 
-const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5})$/;
+const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5}).*/;
 const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
+
+const WAIT_TIME = '30';
+
+
+/**
+ * sdb shell debug command has different format lower/bigger than this version.
+ * At least 3.0.0 and 2.5.0 should be `shell 0 debug <app> <number>`,
+ * 5.0 and newer should be `shell 0 debug <app> <number>`.
+ */
+const PLATFORM_VERSION_COMMAND_COMPATIBILITY = '4.0.0';
 
 /**
  *
@@ -15,13 +27,38 @@ async function runSDBCmd(udid, args) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * Return a list of debug command for the given platform version
+ * @param {string} platformVersion the platform version available via `sdb capability` result
+ * @param {string} appPackage
+ * @returns {Array<string>}
  */
-async function debugApp({appPackage, udid}) {
+function _buildDebugCommand(platformVersion, appPackage) {
+  const cmd = ['shell', '0', 'debug', appPackage];
+  if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
+    // this WAIT_TIME is maybe in seconds, or it could be attempt count.
+    cmd.push(WAIT_TIME);
+  }
+  return cmd;
+}
+
+/**
+ *
+ * @param {*} stdout
+ * @returns
+ */
+function _parseDebugPort(stdout) {
+  return stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
+}
+
+/**
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {string|number} platformVersion Platform version info available via `sdb capability` command
+ */
+async function debugApp({appPackage, udid}, platformVersion) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'debug', appPackage]);
+  const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
   try {
-    const port = stdout.trim().match(DEBUG_PORT_RE)?.groups?.port;
+    const port = _parseDebugPort(stdout);
     if (!port) {
       throw new Error(`Cannot parse debug port from sdb output`);
     }
@@ -53,9 +90,16 @@ async function launchApp({appPackage, udid}) {
  * Return the list of installed applications with the pair of
  * an application name and the package name.
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
- * @returns {Promise<[{appName: string, appPackage: string}]>}
+ * @param {string} platformVersion
+ * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
  */
-async function listApps({udid}) {
+async function listApps({udid}, platformVersion) {
+  if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
+    // Old output needs more complex parsing logic.
+    log.info(`listApps is not supported for platform version ${platformVersion}`);
+    return [];
+  }
+
   log.info(`Listing apps installed on '${udid}'`);
   const {stdout} = await runSDBCmd(udid, ['shell', '0', 'applist']);
   const apps = _parseListAppsCmd(stdout);
@@ -76,6 +120,30 @@ function _parseListAppsCmd(input) {
       return {appName: match.groups.name, appPackage: match.groups.id};
     })
     .filter(Boolean);
+}
+
+/**
+ * Return a dictionary of the result of 'sdb capability'
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @returns {Promise<{}>}
+ */
+async function deviceCapabilities({udid}) {
+  log.info(`Getting capabilities on '${udid}'`);
+  const {stdout} = await runSDBCmd(udid, ['capability']);
+  return _parseCapability(stdout);
+}
+
+function _parseCapability (input) {
+  const eachLine = input.split(/\r\n|\n/);
+  const caps = {};
+  for (const line of eachLine) {
+    const [key, value] = line.split(':');
+    if (_.isEmpty(key)) {
+      continue;
+    }
+    caps[key] = value;
+  }
+  return caps;
 }
 
 /**
@@ -129,6 +197,10 @@ export {
   connectDevice,
   disconnectDevice,
   removeForwardedPort,
+  _buildDebugCommand,
+  _parseDebugPort,
+  _parseCapability,
+  deviceCapabilities
 };
 
 /**

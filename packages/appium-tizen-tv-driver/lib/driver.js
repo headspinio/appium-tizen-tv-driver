@@ -13,12 +13,14 @@ import {
   forwardPort,
   listApps,
   removeForwardedPort,
+  deviceCapabilities
 } from './cli/sdb';
 import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
 import {desiredCapConstraints} from './desired-caps';
 import {getKeyData, isRcKeyCode} from './keymap';
 import log from './logger';
 import {AsyncScripts, SyncScripts} from './scripts';
+import { util } from 'appium/support';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const GALLERY_APP_ID = 'com.samsung.tv.gallery';
@@ -57,6 +59,14 @@ const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
  * A security flag to enable chromedriver auto download feature
  */
 const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
+
+
+/**
+ * Use '5.0' platform version to handle the session is for newer device if it was not available.
+ * https://developer.samsung.com/smarttv/develop/specifications/web-engine-specifications.html
+ */
+const DEFAULT_PLATFORM_VERSION = '5.0';
+
 
 /**
  * Constant for "rc" text input mode, which uses the Tizen Remote Control API
@@ -171,6 +181,10 @@ class TizenTVDriver extends BaseDriver {
   /** @type {number} */
   #rcKeypressCooldown = DEFAULT_RC_KEYPRESS_COOLDOWN;
 
+  /** @type {string}  Tizen OS platform version*/
+  #platformVersion = DEFAULT_PLATFORM_VERSION;
+
+
   /**
    *
    * @param {DriverOpts<TizenTVDriverCapConstraints>} [opts]
@@ -255,10 +269,34 @@ class TizenTVDriver extends BaseDriver {
 
     const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
 
+    // Raise an error if the `sdb capabilities` might raise an exception
+    const deviceCaps = await deviceCapabilities({udid: this.opts.udid});
+    // @ts-ignore
+    this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
+    // @ts-ignore
+    if (deviceCaps?.platform_version) {
+      log.info(`The Tizen platform version is ${this.#platformVersion}`);
+    } else {
+      log.info(`The Tizen platform version is unknown, using ${DEFAULT_PLATFORM_VERSION} as preset version.`);
+    }
+
     if (caps.rcOnly && caps.rcMode !== RC_MODE_REMOTE) {
       log.info(`The rcMode capability was not set to remote but we are in rcOnly mode, so ` +
                `forcing it to remote`);
       caps.rcMode = this.opts.rcMode = RC_MODE_REMOTE;
+    }
+
+    // At least tizen tv platform 2.5 and lower should support rcMode only.
+    if (util.compareVersions(this.#platformVersion, '<', '3')) {
+      if (caps.rcMode === RC_MODE_REMOTE) {
+        log.info(`The ${this.opts.udid} Tizen platform version supports only rcOnly mode.`);
+        caps.rcOnly = true;
+      } else {
+        throw new errors.SessionNotCreatedError(
+          `The session needs to be 'appium:rcMode': 'remote' because the Tizen ${this.#platformVersion} version ` +
+            `is WebKit based engine. It does not work for Chromium based toolchains like WebInspector and chromedriver.`
+        );
+      }
     }
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
@@ -420,7 +458,8 @@ class TizenTVDriver extends BaseDriver {
     if (!caps.useOpenDebugPort) {
       try {
         remoteDebugPort = await debugApp(
-          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
+          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps),
+          this.#platformVersion
         );
       } catch (e) {
         // While the app was debuggable, the `debug` command could succeed. Then the device could be weird. It may require the device config check.
@@ -784,10 +823,10 @@ class TizenTVDriver extends BaseDriver {
   /**
    * Return the list of installed applications with the pair of
    * an application name and the package name.
-   * @returns {Promise<[{appName: string, appPackage: string}]>}
+   * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
    */
   async tizentvListApps() {
-    return await listApps({udid: this.opts.udid});
+    return await listApps({udid: this.opts.udid}, this.#platformVersion);
   }
 }
 
