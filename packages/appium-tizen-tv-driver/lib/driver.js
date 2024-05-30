@@ -12,6 +12,8 @@ import {
   disconnectDevice,
   forwardPort,
   listApps,
+  terminateApp,
+  launchApp,
   removeForwardedPort,
   deviceCapabilities
 } from './cli/sdb';
@@ -158,6 +160,15 @@ class TizenTVDriver extends BaseDriver {
       command: 'tizentvListApps',
       params: {},
     }),
+    'tizen: activateApp': Object.freeze({
+      command: 'tizentvActivateApp',
+      params: {required: ['appPackage']},
+    }),
+    'tizen: terminateApp': Object.freeze({
+      command: 'tizentvTerminateApp',
+      params: {required: ['pkgId']},
+    }),
+
   });
 
   /** @type {TizenRemote|undefined} */
@@ -821,6 +832,25 @@ class TizenTVDriver extends BaseDriver {
    */
   async tizentvListApps() {
     return await listApps({udid: this.opts.udid}, this.#platformVersion);
+  }
+
+
+  /**
+   * Launch the given appPackage. The process won't start as a debug mode.
+   * @param {string} appPackage
+   * @returns
+   */
+  async tizentvActivateApp(appPackage) {
+    return await launchApp({appPackage, udid: this.opts.udid});
+  }
+
+  /**
+   * Terminate the given app package id.
+   * @param {string} pkgId
+   * @returns
+   */
+  async tizentvTerminateApp(pkgId) {
+    return await terminateApp({udid: this.opts.udid}, pkgId);
   }
 }
 

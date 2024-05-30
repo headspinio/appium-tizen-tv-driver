@@ -87,6 +87,21 @@ async function launchApp({appPackage, udid}) {
 }
 
 /**
+ * Launch (but do not attempt to debug) an app on the TV
+ *
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'udid'>, 'udid'>} caps
+ * @param {string} pkgId package id to kill the process.
+ */
+async function terminateApp({udid}, pkgId) {
+  log.info(`Terminating ${pkgId} in on ${udid}`);
+  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'kill', pkgId]);
+  if (/failed/i.test(stdout)) {
+    throw new Error(`Could not terminate app. Please make sure if the given '${pkgId}' was correct package id. Stdout from kill call was: ${stdout}`);
+  }
+}
+
+
+/**
  * Return the list of installed applications with the pair of
  * an application name and the package name.
  * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
@@ -190,6 +205,7 @@ export {
   runSDBCmd,
   debugApp,
   launchApp,
+  terminateApp,
   listApps,
   _parseListAppsCmd,
   forwardPort,
