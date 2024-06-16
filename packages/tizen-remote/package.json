@@ -56,7 +56,7 @@
     "p-retry": "4.6.2",
     "strict-event-emitter-types": "2.0.0",
     "type-fest": "3.13.1",
-    "ws": "8.17.0"
+    "ws": "8.17.1"
   },
   "tsd": {
     "directory": "test/types"
