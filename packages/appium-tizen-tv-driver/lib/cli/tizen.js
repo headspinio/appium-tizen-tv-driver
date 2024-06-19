@@ -1,5 +1,9 @@
 import log from '../logger';
 import {runCmd, TIZEN_BIN_NAME} from './helpers';
+import path from 'path';
+import {createWriteStream, mkdtempSync, rmSync} from 'fs';
+import https from 'https';
+import {tmpdir} from 'os';
 
 /**
  * @param {string[]} args
@@ -13,6 +17,11 @@ async function runTizenCmd(args) {
  */
 async function tizenInstall({app, udid}) {
   log.info(`Installing tizen app '${app}' on device '${udid}'`);
+
+  const isRemoteApp = app.startsWith('https://');
+  if (isRemoteApp) {
+    app = await downloadRemoteTizenAppToTempFile(app);
+  }
 
   // $ tizen install -t biF5E2SN9M.AppiumHelper  -n /path/to/AppiumHelper.wgt -s <device>
   // Transferring the package...
@@ -40,10 +49,40 @@ async function tizenInstall({app, udid}) {
   // If an error occurred in the installation command, it will raise an error as well.
   // e.g. Different signature app is already installed.
   const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid]);
+  if (isRemoteApp) {
+    rmSync(app);
+  }
   if (/successfully/i.test(stdout)) {
     return;
   }
   throw new Error(`Could not install app ${app}. Stdout from install call was: ${stdout}`);
+}
+
+function downloadRemoteTizenAppToTempFile(appUrl) {
+  const tempDir = mkdtempSync(`${tmpdir()}${path.sep}`);
+  const filePath = path.join(tempDir, 'app.wgt');
+  const file = createWriteStream(filePath);
+
+  return new Promise((resolve, reject) => {
+    https.get(appUrl, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to get '${appUrl}' (${response.statusCode})`));
+        return;
+      }
+
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close(() => resolve(filePath));
+      });
+      file.on('error', (err) => {
+        rmSync(filePath);
+        reject(err);
+      });
+    }).on('error', (err) => {
+      rmSync(filePath);
+      reject(err);
+    });
+  });
 }
 
 /**
