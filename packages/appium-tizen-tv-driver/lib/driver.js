@@ -503,9 +503,10 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    * Set chrome version v63.0.3239.0 as the minimal version
-   * for autodownload to use proper chromedriver version.
-   * Older than the chromedriver version could raise no Chrome binary found error,
-   * which no makes sense for TV automation usage.
+   * for autodownload to use proper chromedriver version if
+   *     - the 'Browser' info does not have proper chrome version, or
+   *     - older than the chromedriver version could raise no Chrome binary found error,
+   *       which no makes sense for TV automation usage.
    *
    * @param {BrowserVersionInfo} browserVersionInfo
    * @return {BrowserVersionInfo}
@@ -513,6 +514,7 @@ class TizenTVDriver extends BaseDriver {
   fixChromeVersionForAutodownload(browserVersionInfo) {
     const chromeVersion = VERSION_PATTERN.exec(browserVersionInfo.Browser ?? '');
     if (!chromeVersion) {
+      browserVersionInfo.Browser = MIN_CHROME_VERSION;
       return browserVersionInfo;
     }
 
@@ -542,6 +544,7 @@ class TizenTVDriver extends BaseDriver {
         result = await got.get(`http://${debuggerAddress}/json/version`).json();
         log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
         result = this.fixChromeVersionForAutodownload(result);
+        log.info(`Fixed browser info is ${JSON.stringify(result)}`);
         // To respect the executableDir.
         executable = undefined;
       } catch (err) {
