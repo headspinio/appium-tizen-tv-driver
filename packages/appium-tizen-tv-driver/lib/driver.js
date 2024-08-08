@@ -113,7 +113,7 @@ export const DEFAULT_LONG_KEYPRESS_DELAY = 1000;
 export const DEFAULT_RC_KEYPRESS_COOLDOWN = 750;
 
 /**
- * App extension for tizen tv applications.
+ * App extension for tizen tv applications
  */
 const APP_EXTENSION = '.wgt';
 
