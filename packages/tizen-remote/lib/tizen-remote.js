@@ -16,7 +16,7 @@ export {Keys};
 const format = _.partial(formatWithOptions, {depth: null, colors: true});
 
 /**
- * This tricks TS into typing the events and associated data in {@linkcode TizenRemote}.
+ * This tricks TS into typing the events and associated data in {@linkcode TizenRemote}
  *
  * See {@linkcode TizenRemoteInstance}
  * @internal
