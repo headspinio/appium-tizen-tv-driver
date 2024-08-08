@@ -167,7 +167,7 @@ class TizenTVDriver extends BaseDriver {
     }),
     'tizen: activateApp': Object.freeze({
       command: 'tizentvActivateApp',
-      params: {required: ['appPackage']},
+      params: {required: ['appPackage'], optional: ['debug']},
     }),
     'tizen: terminateApp': Object.freeze({
       command: 'tizentvTerminateApp',
@@ -469,15 +469,22 @@ class TizenTVDriver extends BaseDriver {
   /**
    *
    * @param {StrictTizenTVDriverCaps} caps
+   * @param {string|undefined} debugAppPackage Use the given app pacakge prior than the caps's one
    * @returns {Promise<number>}
    */
-  async setupDebugger(caps) {
+  async setupDebugger(caps, debugAppPackage = undefined) {
     let remoteDebugPort;
 
     if (!caps.useOpenDebugPort) {
       try {
+        const {
+          udid,
+          appPackage
+        } = caps;
         remoteDebugPort = await debugApp(
-          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps),
+          /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (
+            {udid, appPackage: debugAppPackage || appPackage}
+          ),
           this.#platformVersion
         );
       } catch (e) {
@@ -646,26 +653,32 @@ class TizenTVDriver extends BaseDriver {
     return await this.#executeChromedriverScript('/execute/async', script, args);
   }
 
-  async deleteSession() {
-    if (this.#chromedriver) {
-      log.debug('Terminating app under test');
-      try {
-        await this.executeChromedriverScript(SyncScripts.exit);
-      } catch (err) {
-        log.warn(err);
-      }
-      log.debug(`Stopping chromedriver`);
-      // stop listening for the stopped state event
-      // @ts-ignore
-      this.#chromedriver.removeAllListeners(Chromedriver.EVENT_CHANGED);
-      try {
-        await this.#chromedriver.stop();
-      } catch (err) {
-        log.warn(`Error stopping Chromedriver: ${/** @type {Error} */ (err).message}`);
-      }
-      this.#chromedriver = undefined;
+  async #cleanupChromedriver() {
+    if (!this.#chromedriver) {
+      return;
     }
 
+    log.debug('Terminating app under test');
+    try {
+      await this.executeChromedriverScript(SyncScripts.exit);
+    } catch (err) {
+      log.warn(err);
+    }
+    log.debug(`Stopping chromedriver`);
+    // stop listening for the stopped state event
+    // @ts-ignore
+    this.#chromedriver.removeAllListeners(Chromedriver.EVENT_CHANGED);
+    try {
+      await this.#chromedriver.stop();
+    } catch (err) {
+      log.warn(`Error stopping Chromedriver: ${/** @type {Error} */ (err).message}`);
+    }
+    this.#chromedriver = undefined;
+
+  }
+
+  async deleteSession() {
+    await this.#cleanupChromedriver();
     await this.#disconnectRemote();
     await this.cleanUpPorts();
     return await super.deleteSession();
@@ -855,10 +868,47 @@ class TizenTVDriver extends BaseDriver {
   /**
    * Launch the given appPackage. The process won't start as a debug mode.
    * @param {string} appPackage
+   * @param {boolean} [debug=false] If launch the appPackage with debug mode.
+   *                                Then, running chromedriver session will stop.
    * @returns
    */
-  async tizentvActivateApp(appPackage) {
-    return await launchApp({appPackage, udid: this.opts.udid});
+  async tizentvActivateApp(appPackage, debug = false) {
+    return debug
+      ? await launchApp({appPackage, udid: this.opts.udid})
+      : await this.#tizentvActivateAppWithDebug(appPackage);
+  }
+
+  async #tizentvActivateAppWithDebug(appPackage) {
+    const {
+      noReset,
+      appLaunchCooldown,
+      chromedriverExecutable,
+      chromedriverExecutableDir,
+    } = this.caps;
+
+    await this.#cleanupChromedriver();
+    await this.cleanUpPorts();
+
+    const localDebugPort = await this.setupDebugger(this.caps, appPackage);
+    if (!_.isString(chromedriverExecutable) && !_.isString(chromedriverExecutableDir)) {
+      throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
+    }
+
+    await this.startChromedriver({
+      debuggerPort: localDebugPort,
+      executable: /** @type {string} */ (chromedriverExecutable),
+      executableDir: /** @type {string} */ (chromedriverExecutableDir),
+      isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
+    });
+
+    if (!noReset) {
+      log.info('Waiting for app launch to take effect');
+      await B.delay(/** @type {number} */ (appLaunchCooldown));
+      log.info('Clearing app local storage & reloading...');
+      await this.executeChromedriverScript(SyncScripts.reset);
+      log.info('Waiting for app launch to take effect again post-reload');
+      await B.delay(/** @type {number} */ (appLaunchCooldown));
+    }
   }
 
   /**
