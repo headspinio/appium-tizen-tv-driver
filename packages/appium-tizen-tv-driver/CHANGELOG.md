@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.11.1...appium-tizen-tv-driver@0.12.0) (2024-08-08)
+
+### Features
+
+- add launch app with debug mode ([#664](https://github.com/headspinio/appium-tizen-tv-driver/issues/664)) ([c94a05d](https://github.com/headspinio/appium-tizen-tv-driver/commit/c94a05d2a89967eb4187d922af0990a2da1516ba))
+- use configureApp to configure the app ([#663](https://github.com/headspinio/appium-tizen-tv-driver/issues/663)) ([8ef0669](https://github.com/headspinio/appium-tizen-tv-driver/commit/8ef06696a88d6fa4ac2bc6fc5fc515d47eaf949a))
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.63 ([b5cb01e](https://github.com/headspinio/appium-tizen-tv-driver/commit/b5cb01e9d1b4fcabd7d1120d0179720f08ba15f8))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.64 ([0e97d64](https://github.com/headspinio/appium-tizen-tv-driver/commit/0e97d647ec29f613dc0718ba6047a31819a4662a))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.66 ([9bc45c4](https://github.com/headspinio/appium-tizen-tv-driver/commit/9bc45c47e7cd943723b3e139caf251da81eec56b))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.67 ([17085ef](https://github.com/headspinio/appium-tizen-tv-driver/commit/17085ef2339f0413d848d67bdbe3193742eddc47))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.68 ([9f64877](https://github.com/headspinio/appium-tizen-tv-driver/commit/9f64877eacad199e5ec2651009049a92af82cc00))
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.69 ([61c0548](https://github.com/headspinio/appium-tizen-tv-driver/commit/61c05480676d91f0ef9934ec868322a2aca7923e))
+- **appium-tizen-tv-driver:** update dependency teen_process to v2.1.10 ([92da100](https://github.com/headspinio/appium-tizen-tv-driver/commit/92da100686c7af3a786eec70c02098c115896904))
+- **appium-tizen-tv-driver:** update dependency teen_process to v2.1.7 ([a741ea1](https://github.com/headspinio/appium-tizen-tv-driver/commit/a741ea161b7e1cf33b636be65f808db74430ea5a))
+- **appium-tizen-tv-driver:** update dependency teen_process to v2.1.8 ([8c54254](https://github.com/headspinio/appium-tizen-tv-driver/commit/8c542542bb868146612ceb23d72766685fa7d2a3))
+- **appium-tizen-tv-driver:** update dependency teen_process to v2.2.0 ([127593d](https://github.com/headspinio/appium-tizen-tv-driver/commit/127593d9a67c654d85a1850033ee4fe967c3e422))
+
 ## [0.11.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.11.0...appium-tizen-tv-driver@0.11.1) (2024-06-28)
 
 ### Bug Fixes
