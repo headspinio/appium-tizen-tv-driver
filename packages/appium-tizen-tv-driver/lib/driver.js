@@ -113,6 +113,11 @@ export const DEFAULT_LONG_KEYPRESS_DELAY = 1000;
 export const DEFAULT_RC_KEYPRESS_COOLDOWN = 750;
 
 /**
+ * App extension for tizen tv applications.
+ */
+const APP_EXTENSION = '.wgt';
+
+/**
  * @type {import('@appium/types').RouteMatcher[]}
  */
 const NO_PROXY = [
@@ -264,7 +269,6 @@ class TizenTVDriver extends BaseDriver {
 
     // now we need to ensure that, one way or another, those capabilities were sent in
     if (!tempCaps.udid) {
-
       throw new errors.SessionNotCreatedError(
         `The 'appium:udid' capability is required, or 'appium:deviceName' must ` +
           `look like <host>:<port>`
@@ -308,6 +312,10 @@ class TizenTVDriver extends BaseDriver {
             `is WebKit based engine. It does not work for Chromium based toolchains like WebInspector and chromedriver.`
         );
       }
+    }
+
+    if (caps.app) {
+      caps.app = await this.helpers.configureApp(caps.app, [APP_EXTENSION]);
     }
 
     // XXX: remote setup _may_ need to happen after the power-cycling business below.
