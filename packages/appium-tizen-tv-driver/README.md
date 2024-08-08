@@ -168,8 +168,6 @@ Refer to your Appium client library for how to use this method.
 
 > Send a launch command with the given package name to the device under test.
 > This package name is the same as what you give as `appium:appPackage`.
-> Note that this command does not start the package with debug mode.
-> Chromedriver automation will not start against the package name.
 
 - `POST /session/:sessionId/execute`
 
@@ -177,6 +175,8 @@ Refer to your Appium client library for how to use this method.
 
 - `script`: `tizen: activateApp`
 - `appPackage`: application package name to launch
+- `debug`: if activating the app with 'debug' mode.
+It launches the `appPackage` with `sdb -s <device> shell 0 debug <package id>` so that the session can automate it via chromedriver. Existing chromedriver session will be terminated to keep one chormedriver session.
 
 ### Terminate the package id
 
