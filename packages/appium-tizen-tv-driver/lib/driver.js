@@ -182,6 +182,9 @@ class TizenTVDriver extends BaseDriver {
   /** @type {number[]} */
   #forwardedPorts;
 
+  /** @type {number[]} port forwards for chromedriver usage*/
+  #forwardedPortsForChromedriver;
+
   /** @type {string[]} */
   locatorStrategies;
 
@@ -221,6 +224,7 @@ class TizenTVDriver extends BaseDriver {
     this.#jwpProxyAvoid = [...NO_PROXY];
 
     this.#forwardedPorts = [];
+    this.#forwardedPortsForChromedriver = [];
   }
 
   /**
@@ -421,6 +425,7 @@ class TizenTVDriver extends BaseDriver {
         executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
         isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
       });
+      this.#forwardedPortsForChromedriver.push(localDebugPort);
 
       if (!caps.noReset) {
         log.info('Waiting for app launch to take effect');
@@ -653,6 +658,11 @@ class TizenTVDriver extends BaseDriver {
     return await this.#executeChromedriverScript('/execute/async', script, args);
   }
 
+  /**
+   * Cleanup chromedriver related processes such as
+   * the app under test via chromedriver and chromedriver itself.
+   * @returns {Promise<void>}
+   */
   async #cleanupChromedriver() {
     if (!this.#chromedriver) {
       return;
@@ -674,7 +684,6 @@ class TizenTVDriver extends BaseDriver {
       log.warn(`Error stopping Chromedriver: ${/** @type {Error} */ (err).message}`);
     }
     this.#chromedriver = undefined;
-
   }
 
   async deleteSession() {
@@ -715,10 +724,27 @@ class TizenTVDriver extends BaseDriver {
     }
   }
 
-  async cleanUpPorts() {
-    log.info(`Cleaning up any ports which have been forwarded`);
-    for (const localPort of this.#forwardedPorts) {
+  /**
+   * Cleanup ports used only by chromedriver.
+   */
+  async #cleanUpChromedriverPorts () {
+    log.info(`Cleaning up ports which have been forwarded used by chromedriver`);
+    for (const localPort of this.#forwardedPortsForChromedriver) {
       await removeForwardedPort({udid: /** @type {string} */ (this.opts.udid), localPort});
+      _.pull(this.#forwardedPorts, localPort);
+      _.pull(this.#forwardedPortsForChromedriver, localPort);
+    }
+  }
+
+  /**
+   * Cleanup any ports used by this driver instance.
+   */
+  async cleanUpPorts() {
+      log.info(`Cleaning up any ports which have been forwarded`);
+      for (const localPort of this.#forwardedPorts) {
+      await removeForwardedPort({udid: /** @type {string} */ (this.opts.udid), localPort});
+      _.pull(this.#forwardedPorts, localPort);
+      _.pull(this.#forwardedPortsForChromedriver, localPort);
     }
   }
 
@@ -874,8 +900,8 @@ class TizenTVDriver extends BaseDriver {
    */
   async tizentvActivateApp(appPackage, debug = false) {
     return debug
-      ? await launchApp({appPackage, udid: this.opts.udid})
-      : await this.#tizentvActivateAppWithDebug(appPackage);
+      ? await this.#tizentvActivateAppWithDebug(appPackage)
+      : await launchApp({appPackage, udid: this.opts.udid});
   }
 
   async #tizentvActivateAppWithDebug(appPackage) {
@@ -887,7 +913,7 @@ class TizenTVDriver extends BaseDriver {
     } = this.caps;
 
     await this.#cleanupChromedriver();
-    await this.cleanUpPorts();
+    await this.#cleanUpChromedriverPorts();
 
     const localDebugPort = await this.setupDebugger(this.caps, appPackage);
     if (!_.isString(chromedriverExecutable) && !_.isString(chromedriverExecutableDir)) {
@@ -900,6 +926,7 @@ class TizenTVDriver extends BaseDriver {
       executableDir: /** @type {string} */ (chromedriverExecutableDir),
       isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
     });
+    this.#forwardedPortsForChromedriver.push(localDebugPort);
 
     if (!noReset) {
       log.info('Waiting for app launch to take effect');
