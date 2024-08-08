@@ -19,6 +19,8 @@ README](https://github.com/headspinio/appium-tizen-tv-driver/blob/main/packages/
 npx lerna publish
 ```
 
+Please run `npm publish` in each directories if the lerna raised error in the publish.
+
 ## License
 
 Copyright © 2022 [HeadSpin](https://headspin.io), Inc. Licensed Apache-2.0
