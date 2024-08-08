@@ -11,6 +11,15 @@ README](https://github.com/headspinio/appium-tizen-tv-driver/blob/main/packages/
 - [`tizen-remote`](https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-remote)
 - [`tizen-sample-app`](https://github.com/headspinio/appium-tizen-tv-driver/tree/main/packages/tizen-sample-app)
 
+## Release
+
+- `GH_TOKEN`
+
+```
+npx lerna version
+npx lerna publish
+```
+
 ## License
 
 Copyright © 2022 [HeadSpin](https://headspin.io), Inc. Licensed Apache-2.0
