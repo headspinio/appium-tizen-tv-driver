@@ -16,7 +16,6 @@ README](https://github.com/headspinio/appium-tizen-tv-driver/blob/main/packages/
 - `GH_TOKEN`
 
 ```
-npx lerna version
 npx lerna publish
 ```
 
