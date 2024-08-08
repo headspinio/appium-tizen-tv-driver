@@ -58,6 +58,10 @@ async function debugApp({appPackage, udid}, platformVersion) {
   log.info(`Starting ${appPackage} in debug mode on ${udid}`);
   const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
   try {
+    if (stdout.includes('failed')) {
+      throw new Error(`Launching ${appPackage} might failed. Is it debuggable app or Did you terminate the package properly? Original error: ${stdout}}`);
+    }
+
     const port = _parseDebugPort(stdout);
     if (!port) {
       throw new Error(`Cannot parse debug port from sdb output`);
