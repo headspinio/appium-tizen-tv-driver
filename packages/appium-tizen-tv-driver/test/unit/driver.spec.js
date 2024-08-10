@@ -99,7 +99,7 @@ describe('TizenTVDriver', function () {
           driver.fixChromeVersionForAutodownload(browserInfo),
           'to equal',
           {
-            'Browser': 'Chrome/63.0.3239.0',
+            'Browser': 'Chrome/58.0.3029.0',
             'Protocol-Version': '1.2',
             'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 4.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 TV Safari/537.36',
             'WebKit-Version': '537.36 (@24d4006dbb9188e920764a35a60873d6a0157c12)'
@@ -118,7 +118,7 @@ describe('TizenTVDriver', function () {
           driver.fixChromeVersionForAutodownload(browserInfo),
           'to equal',
           {
-            'Browser': 'Chrome/63.0.3239.0',
+            'Browser': 'Chrome/58.0.3029.0',
             'Protocol-Version': '1.2',
             'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 4.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 TV Safari/537.36',
             'WebKit-Version': '537.36 (@24d4006dbb9188e920764a35a60873d6a0157c12)'
@@ -128,7 +128,7 @@ describe('TizenTVDriver', function () {
 
       it('Use the given chrome version', function () {
         const browserInfo = {
-          'Browser': 'Chrome/63.0.3239.0',
+          'Browser': 'Chrome/58.0.3029.0',
           'Protocol-Version': '1.2',
           'User-Agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/5.0 TV Safari/537.36',
           'V8-Version': '6.3.294',
