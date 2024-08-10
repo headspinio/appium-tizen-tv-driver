@@ -43,8 +43,8 @@ const VERSION_PATTERN = /([\d.]+)/;
  * Chromedriver for older than this chrome version could have an issue
  * to raise no chrome binary error.
  */
-const MIN_CHROME_MAJOR_VERSION = 63;
-const MIN_CHROME_VERSION = 'Chrome/63.0.3239.0';
+const MIN_CHROME_MAJOR_VERSION = 58;
+const MIN_CHROME_VERSION = 'Chrome/58.0.3029.0';
 
 /** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode'>} */
 const DEFAULT_CAPS = {
@@ -540,9 +540,10 @@ class TizenTVDriver extends BaseDriver {
 
     const majorV = chromeVersion[1].split('.')[0];
     if (_.toInteger(majorV) < MIN_CHROME_MAJOR_VERSION) {
-      log.info(`The device chrome version is ${chromeVersion[1]}, ` +
+      log.warn(`The device chrome version is ${chromeVersion[1]}, ` +
         `which could cause an issue for the matched chromedriver version. ` +
-        `Setting ${MIN_CHROME_VERSION} as browser forcefully`);
+        `Setting ${MIN_CHROME_VERSION} as browser forcefully, ` +
+        `but the session would fail to start.`);
       browserVersionInfo.Browser = MIN_CHROME_VERSION;
     }
 

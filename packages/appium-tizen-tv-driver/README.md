@@ -58,6 +58,8 @@ package in your `package.json`)
 
 - WebKit based Tizen TV models (Tizen 2.4 (2016) and lower versions) do not support chromedriver based automation. Please use `'appium:rcMode':'remote'`. Then, the session will work as rcOnly mode.
   -  Reference: [Web Engine Specifications](https://developer.samsung.com/smarttv/develop/specifications/web-engine-specifications.html)
+- Tizen TV models that have Chrome 57 and lower versions do not support chormedriver based automation because chromedriver for such old versions requires chrome binary. `debuggerAddress` only mode does not work. Please use `'appium:rcMode':'remote'`. Then, the session will work as rcOnly mode.
+  - `cannot connect to chrome at 127.0.0.1:35713 from session not created exception: Chrome version must be >= 58.0.3029.0`
 
 ## Capabilities
 
