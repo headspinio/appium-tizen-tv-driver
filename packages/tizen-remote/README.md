@@ -2,6 +2,8 @@
 
 > Remote control automation for Tizen devices
 
+[![npm version](https://img.shields.io/npm/v/@headspinio/tizen-remote.svg)](https://www.npmjs.com/package/@headspinio/tizen-remote)
+
 ## Basic Usage
 
 ```js
