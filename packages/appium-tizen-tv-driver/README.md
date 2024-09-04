@@ -179,9 +179,17 @@ Refer to your Appium client library for how to use this method.
 - `script`: `tizen: activateApp`
 - `appPackage`: application package name to launch
 - `debug`: if activating the app with 'debug' mode.
-It launches the `appPackage` with `sdb -s <device> shell 0 debug <package id>` so that the session can automate it via chromedriver.
+It launches the `appPackage` with `sdb -s <device> shell 0 debug <appPackage>` so that the session can automate it via chromedriver.
 The `appPackage` must be terminated before the launch.
 Existing chromedriver session will be terminated to keep one chormedriver session.
+
+#### Example
+
+```ruby
+# Ruby
+driver.execute_script "tizen: activateApp", {appPackage: "biF5E2SN9M.AppiumHelper"}
+driver.execute_script "tizen: activateApp", {appPackage: "biF5E2SN9M.AppiumHelper", debug: true}
+```
 
 ### Terminate the package id
 
@@ -197,6 +205,13 @@ Existing chromedriver session will be terminated to keep one chormedriver sessio
 
 - `script`: `tizen: terminateApp`
 - `pkgId`: package id to terminate
+
+#### Example
+
+```ruby
+# Ruby
+driver.execute_script "tizen: terminateApp", {pkgId: "biF5E2SN9M"}
+```
 
 ### Proxied Commands
 
