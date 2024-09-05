@@ -186,7 +186,7 @@ Existing chromedriver session will be terminated to keep one chormedriver sessio
 > [!NOTE]
 > The launching with `debug` mode could clear the local data as the `sdb` command behavior.
 > i.e. If you store some data in the `localStorage` like `driver.execute_script "localStorage.setItem('cat', 'dog');"`,
-> `driver.execute_script "return localStorage.getItem('cat');"` will return `nil` instead of `dog` after the `debug` app restart.
+> `driver.execute_script "return localStorage.getItem('cat');"` will return `nil` instead of `dog` after the activateApp with `debug` option restart.
 > Please consider handling the `localStorage` directly without `debug` launching option.
 
 #### Example
