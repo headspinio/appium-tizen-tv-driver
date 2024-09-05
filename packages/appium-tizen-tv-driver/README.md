@@ -183,6 +183,12 @@ It launches the `appPackage` with `sdb -s <device> shell 0 debug <appPackage>` s
 The `appPackage` must be terminated before the launch.
 Existing chromedriver session will be terminated to keep one chormedriver session.
 
+> [!NOTE]
+> The launching with `debug` mode could clear the local data as the `sdb` command behavior.
+> i.e. If you store some data in the `localStorage` like `driver.execute_script "localStorage.setItem('cat', 'dog');"`,
+> `driver.execute_script "return localStorage.getItem('cat');"` will return `nil` instead of `dog` after the `debug` app restart.
+> Please consider handling the `localStorage` directly without `debug` launching option.
+
 #### Example
 
 ```ruby
@@ -240,6 +246,8 @@ npm run watch
 - App uninstallation could fail silently. It means while tizen/shell command did not end with exit code non-zero, the command failed to uninstall the app.
     - Please manually uninstall the application if you'd like to uninstall completely.
     - Report this issue in [bug report](https://www.tizen.org/ko/community/bug-tracker/how-report-bugs)
+- Clear the localStorage without application restart
+    - Try out `driver.execute_script "localStorage.clear();"` to clear the localStorage. [Storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage)
 
 ## Credits
 
