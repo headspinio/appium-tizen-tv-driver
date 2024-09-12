@@ -173,6 +173,10 @@ class TizenTVDriver extends BaseDriver {
       command: 'tizentvTerminateApp',
       params: {required: ['pkgId']},
     }),
+    'tizen: clearApp': Object.freeze({
+      command: 'tizentvClearApp',
+      params: {},
+    }),
 
   });
 
@@ -907,8 +911,6 @@ class TizenTVDriver extends BaseDriver {
 
   async #tizentvActivateAppWithDebug(appPackage) {
     const {
-      noReset,
-      appLaunchCooldown,
       chromedriverExecutable,
       chromedriverExecutableDir,
     } = this.caps;
@@ -928,15 +930,6 @@ class TizenTVDriver extends BaseDriver {
       isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
     });
     this.#forwardedPortsForChromedriver.push(localDebugPort);
-
-    if (!noReset) {
-      log.info('Waiting for app launch to take effect');
-      await B.delay(/** @type {number} */ (appLaunchCooldown));
-      log.info('Clearing app local storage & reloading...');
-      await this.executeChromedriverScript(SyncScripts.reset);
-      log.info('Waiting for app launch to take effect again post-reload');
-      await B.delay(/** @type {number} */ (appLaunchCooldown));
-    }
   }
 
   /**
@@ -946,6 +939,14 @@ class TizenTVDriver extends BaseDriver {
    */
   async tizentvTerminateApp(pkgId) {
     return await terminateApp({udid: this.opts.udid}, pkgId);
+  }
+
+  /**
+   * Clear the local data of the application under test.
+   */
+  async tizentvClearApp() {
+    log.info('Clearing app local storage & reloading...');
+    await this.executeChromedriverScript(SyncScripts.reset);
   }
 }
 
