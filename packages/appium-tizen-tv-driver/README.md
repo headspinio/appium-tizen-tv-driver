@@ -227,6 +227,10 @@ driver.execute_script "tizen: terminateApp", {pkgId: "biF5E2SN9M"}
 
 - `POST /session/:sessionId/execute`
 
+#### Arguments
+
+- `script`: `tizen: clearApp`
+
 #### Example
 
 ```ruby
