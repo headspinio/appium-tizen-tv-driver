@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.12.2...appium-tizen-tv-driver@0.13.0) (2024-09-12)
+
+### Features
+
+- extract clearing local data from activateApp with debug: true to clearApp ([#672](https://github.com/headspinio/appium-tizen-tv-driver/issues/672)) ([ffa4e2e](https://github.com/headspinio/appium-tizen-tv-driver/commit/ffa4e2e229976d86b489ef4ab017f8595d3a2587))
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v5.6.71 ([49a15a2](https://github.com/headspinio/appium-tizen-tv-driver/commit/49a15a231c310a56349620abe341e5c30adca9dc))
+
 ## [0.12.2](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.12.1...appium-tizen-tv-driver@0.12.2) (2024-08-10)
 
 **Note:** Version bump only for package appium-tizen-tv-driver
