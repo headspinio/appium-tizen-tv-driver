@@ -265,8 +265,6 @@ npm run watch
 - App uninstallation could fail silently. It means while tizen/shell command did not end with exit code non-zero, the command failed to uninstall the app.
     - Please manually uninstall the application if you'd like to uninstall completely.
     - Report this issue in [bug report](https://www.tizen.org/ko/community/bug-tracker/how-report-bugs)
-- Clear the localStorage without application restart
-    - Try out `driver.execute_script "localStorage.clear();"` to clear the localStorage. [Storage](https://developer.mozilla.org/en-US/docs/Web/API/Storage)
 
 ## Credits
 
