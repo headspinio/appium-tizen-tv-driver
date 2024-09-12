@@ -223,7 +223,7 @@ driver.execute_script "tizen: terminateApp", {pkgId: "biF5E2SN9M"}
 
 ### Clear the local data of the application under test
 
-> Calls `window.localStorage.clear()` and `window.location.reload()` methods to reset and reload the content.
+> Calls `window.localStorage.clear()` and `window.location.reload()` methods to clear the local data and reload the content of the application under test to reset it.
 
 - `POST /session/:sessionId/execute`
 
