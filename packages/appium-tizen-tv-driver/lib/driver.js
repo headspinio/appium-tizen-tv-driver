@@ -869,8 +869,14 @@ class TizenTVDriver extends BaseDriver {
       this.opts.sendKeysStrategy !== TEXT_STRATEGY_PROXY &&
       this.opts.sendKeysStrategy !== TEXT_STRATEGY_REMOTE
     ) {
+      if (_.isUndefined(this.opts.sendKeysStrategy)) {
+        throw new TypeError(
+          `Please specify appium:sendKeysStrategy to set the '${text}'. ` +
+            `It should be one of: ${TEXT_STRATEGY_PROXY} or ${TEXT_STRATEGY_REMOTE}`
+        );
+      }
       throw new TypeError(
-        `Attempted to send keys with invalid sendKeysStrategy ` +
+        `Attempted to send keys with invalid appium:sendKeysStrategy ` +
           `'${this.opts.sendKeysStrategy}'. It should be one of: ` +
           `${TEXT_STRATEGY_PROXY} or ${TEXT_STRATEGY_REMOTE}`
       );
