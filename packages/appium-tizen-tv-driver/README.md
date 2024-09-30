@@ -84,6 +84,7 @@ package in your `package.json`)
 | `appium:rcKeypressCooldown` | Cooldown (in milliseconds) after each keypress via remote.  Only applies if `appium:rcMode` is `remote`.  Increase this number if keypress commands complete before the app under test reflects the keypress. Defaults to `750` ms. |
 | `appium:noReset` | If the driver resets the local data of the application under test. It calls `window.localStorage.clear()` and `window.location.reload()` to clear the local data and reload the content. Defaults to `true`.
 | `appium:powerCyclePostUrl` | If the driver cycling the device power with `appium:fullReset` capability. Both capabilities are set, the session creation will try to cycle the device power.
+| `appium:sendKeysStrategy` | If the driver uses the device's remote control API to send keys or proxies to the running chromedriver session. `proxy` or `rc` is available. Please read `Set Value (Send Keys)` section below for more details. Default to `undefined`. Please configure it explicitly.
 
 (*) `appium:chromedriverExecutable` or `appium:chromedriverExecutableDir` are required. The chromedriver autodwonload works only when `appium:chromedriverExecutableDir` is provided.
 If both capabilities are given, `appium:chromedriverExecutableDir` take priority.
