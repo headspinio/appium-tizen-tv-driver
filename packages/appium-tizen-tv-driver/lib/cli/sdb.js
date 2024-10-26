@@ -70,7 +70,7 @@ async function debugApp({appPackage, udid}, platformVersion, retryTimes = 3) {
       throw new Error(`Cannot parse debug port from sdb output`);
     }
     return port;
-  }
+  };
 
   log.info(`Starting ${appPackage} in debug mode on ${udid} up to ${retryTimes} times`);
   try {
