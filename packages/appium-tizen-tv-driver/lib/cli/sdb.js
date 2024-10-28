@@ -54,8 +54,8 @@ function _parseDebugPort(stdout) {
 /**
  * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  * @param {string|number} platformVersion Platform version info available via `sdb capability` command
- * @param {number} [retryTimes=1] How many the command attemps to start the debug command. The launching app with debugger fails
- *                            a bit frequently. This retry will reduce the failure rate.
+ * @param {number} [retryTimes=3] How many the command attemps to start the debug command. The launching app with debugger could fail
+ *                                frequently. This retry will reduce the failure ratio.
  */
 async function debugApp({appPackage, udid}, platformVersion, retryTimes = 3) {
   const getDebugPort = async () => {
