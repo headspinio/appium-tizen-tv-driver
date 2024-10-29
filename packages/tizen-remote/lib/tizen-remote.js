@@ -630,7 +630,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   #listenWs(event, listener, {context, once = false} = {}) {
     if (!this.#ws) {
-      throw new Error('Not connected');
+      throw new Error('Failed to establish the websocket connection to the TV device. The rcToken was invalid or might need to be refreshed.');
     }
 
     const method = once ? this.#ws.once : this.#ws.on;
