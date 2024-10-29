@@ -755,8 +755,8 @@ export class TizenRemote extends createdTypedEmitterClass() {
         this.emit(Event.TOKEN, token);
         return token;
       }
-      if (await this.isTokenSupportedDevice()) {
-        throw new Error(`Could not get token; server responded with: ${format('%O', res)}`);
+      if (!(await this.isTokenSupportedDevice())) {
+        throw new Error(`The device does not support token or it could not get token; server responded with: ${format('%O', res)}`);
       }
       this.#debug('The device may not support token as old model.');
       return;
