@@ -2,6 +2,7 @@ import log from '../logger';
 import {runCmd, SDB_BIN_NAME} from './helpers';
 import {util} from 'appium/support';
 import _ from 'lodash';
+import {retry} from 'asyncbox';
 
 const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5}).*/;
 const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
@@ -53,11 +54,13 @@ function _parseDebugPort(stdout) {
 /**
  * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
  * @param {string|number} platformVersion Platform version info available via `sdb capability` command
+ * @param {number} [retryTimes=3] How many the command attemps to start the debug command. The launching app with debugger could fail
+ *                                frequently. This retry will reduce the failure ratio.
  */
-async function debugApp({appPackage, udid}, platformVersion) {
-  log.info(`Starting ${appPackage} in debug mode on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
-  try {
+async function debugApp({appPackage, udid}, platformVersion, retryTimes = 3) {
+  const getDebugPort = async () => {
+    const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
+
     if (stdout.includes('failed')) {
       throw new Error(`Launching ${appPackage} might failed. Is it debuggable app or Did you terminate the package properly? Original error: ${stdout}}`);
     }
@@ -66,6 +69,12 @@ async function debugApp({appPackage, udid}, platformVersion) {
     if (!port) {
       throw new Error(`Cannot parse debug port from sdb output`);
     }
+    return port;
+  };
+
+  log.info(`Starting ${appPackage} in debug mode on ${udid} up to ${retryTimes} times`);
+  try {
+    const port = await retry(retryTimes, getDebugPort);
     log.info(`Debug port opened on ${port}`);
     return port;
   } catch (e) {
