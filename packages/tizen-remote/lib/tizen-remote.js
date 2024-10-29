@@ -94,6 +94,13 @@ export const constants = /** @type {const} */ ({
   COMMAND_METHOD: 'ms.remote.control',
 
   /**
+   * The `timeout` property in msg payload when sending commands to the Tizen device
+   *
+   * This could occur when the given api token was valid but needs a fresh token?
+   */
+  COMMAND_TIMEOUT: 'ms.channel.timeOut',
+
+  /**
    * The `Event` property in msg payload when requesting a token
    *
    * Likewise the `event` property in a message payload when receiving the new token
@@ -187,6 +194,16 @@ function isKnownBadCode(code) {
  */
 function isTokenMessage(msg) {
   return Boolean(msg?.event === constants.TOKEN_EVENT && msg?.data?.token);
+}
+
+/**
+ * Type guard for incoming messages
+ * @internal
+ * @param {any} msg
+ * @returns {msg is NewTokenMessage}
+ */
+function isCommandTimeout(msg) {
+  return Boolean(msg?.event === constants.COMMAND_TIMEOUT);
 }
 
 /**
@@ -956,6 +973,10 @@ export class TizenRemote extends createdTypedEmitterClass() {
         } else {
           this.#debug('Warning: received token update, but token (%s) is unchanged', this.#token);
         }
+      } else if (isCommandTimeout(msg)) {
+        this.#debug('Received ms.channel.timeOut message. The token (%s) might need a fresh one. ' +
+          'Unset the token to start from a fresh token. Please complete the device paring if needed.', this.#token);
+        this.unsetToken();
       }
     } catch (err) {
       this.#debug('Warning: could not parse message: %s', err);
