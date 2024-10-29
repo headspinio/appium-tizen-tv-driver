@@ -21,6 +21,6 @@ npx lerna publish
 
 Please run `npm publish` in each directories if the lerna raised error in the publish.
 
-## License
+## Credits
 
-Copyright © 2022 [HeadSpin](https://headspin.io), Inc. Licensed Apache-2.0
+- Development for this driver is sponsored by [HeadSpin](https://www.headspin.io/).
