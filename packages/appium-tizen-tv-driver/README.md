@@ -266,6 +266,8 @@ npm run watch
 - App uninstallation could fail silently. It means while tizen/shell command did not end with exit code non-zero, the command failed to uninstall the app.
     - Please manually uninstall the application if you'd like to uninstall completely.
     - Report this issue in [bug report](https://www.tizen.org/ko/community/bug-tracker/how-report-bugs)
+- `data-focused=""` property on an element/the page source hierarchy would indicate the element is currently haveing "focus"
+    - It needs chromedriver automation
 
 ## Credits
 
