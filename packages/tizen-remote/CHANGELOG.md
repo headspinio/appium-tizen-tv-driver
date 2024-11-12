@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.8...@headspinio/tizen-remote@0.6.0) (2024-11-12)
+
+### Features
+
+- **tizen-remote:** unset if the request got timeout in remote mode ([#688](https://github.com/headspinio/appium-tizen-tv-driver/issues/688)) ([abebfcd](https://github.com/headspinio/appium-tizen-tv-driver/commit/abebfcdbe5ac6d7f9d517c6cb2a9890e986bace9))
+
+### Bug Fixes
+
+- fix condtiion of this.isTokenSupportedDevice with appium:resetRcToken ([#687](https://github.com/headspinio/appium-tizen-tv-driver/issues/687)) ([789c010](https://github.com/headspinio/appium-tizen-tv-driver/commit/789c01078358af51f16d8af426229732301da54d))
+
 ## [0.5.8](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.7...@headspinio/tizen-remote@0.5.8) (2024-10-29)
 
 ### Bug Fixes
