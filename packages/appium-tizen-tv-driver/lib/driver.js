@@ -370,7 +370,7 @@ class TizenTVDriver extends BaseDriver {
         }
         // fast cleanup
         if (!caps.noReset) {
-          this.#checkAppInstalled(caps.appPackage);
+          const appInstalled = await this.#isAppInstalled(caps.appPackage);
           try {
             await tizenUninstall(
               /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
@@ -378,6 +378,12 @@ class TizenTVDriver extends BaseDriver {
           } catch (e) {
             // Can be ignored. The next installation command will raise an error if this occurs exact error.
             log.warn(`It might be failed to uninstall ${caps.appPackage}. Please uninstall the installed app by manual if needed. Error: ${e.message}`);
+          }
+
+          // Double check if the app was uninstalled successfully.
+          if (appInstalled && await this.#isAppInstalled(caps.appPackage)) {
+            log.warn(`The package ${caps.appPackage} still remains on the device ${caps.udid}. Please uninstall the installed app by manual if needed. ` +
+              `sdb/tizen CLI or the device could be weird for the package.`);
           }
         }
         // XXX this is for typescript
@@ -396,7 +402,7 @@ class TizenTVDriver extends BaseDriver {
     }
 
     if (caps.appPackage) {
-      this.#checkAppInstalled(caps.appPackage);
+      await this.#isAppInstalled(caps.appPackage);
     }
 
     try {
@@ -959,11 +965,13 @@ class TizenTVDriver extends BaseDriver {
   }
 
   /**
-   * Leave log if the appPackage is probably installed
+   * Leave log if the appPackage is probably installed. This method returns 'false'
+   * if the target device DOES NOT support get 'applist' command such as old models e.g. 2016
    *
    * @param {string} appPackage
+   * @returns {Promise<boolean>}
    */
-  async #checkAppInstalled(appPackage) {
+  async #isAppInstalled(appPackage) {
     let installedPackages;
     try {
       installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
@@ -972,11 +980,14 @@ class TizenTVDriver extends BaseDriver {
         `but it may be ignorable. Proceeding the app installation.`);
     }
     if (!_.isArray(installedPackages)) {
-      return;
+      return false;
     }
-    installedPackages.includes(appPackage)
-      ? log.info(`${appPackage} is on the device`)
-      : log.info(`${appPackage} might not exist on the device, or the TV model is old thus no installed app information existed.`);
+    if (installedPackages.includes(appPackage)) {
+      log.info(`${appPackage} is on the device`);
+      return true;
+    }
+    log.info(`${appPackage} might not exist on the device, or the TV model is old thus no installed app information existed.`);
+    return false;
   }
 }
 
