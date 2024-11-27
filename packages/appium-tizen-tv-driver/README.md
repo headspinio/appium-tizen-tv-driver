@@ -110,11 +110,11 @@ End a session, close the app and make the driver ready for new sessions.
 
 ### Get current context
 
-> Return NATIVE_APP.
+> Return the current context name.
 
 - `GET /session/:sessionId/context`
 
-Return NATIVE_APP context for Appium command compatibility
+Return NATIVE_APP context name.
 
 ### Set Value (Send Keys)
 
