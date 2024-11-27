@@ -954,6 +954,17 @@ class TizenTVDriver extends BaseDriver {
     log.info('Clearing app local storage & reloading...');
     await this.executeChromedriverScript(SyncScripts.reset);
   }
+
+  /**
+   * A dummy implementation to return 200 ok with NATIVE_APP context for
+   * webdriverio compatibility. https://github.com/headspinio/appium-roku-driver/issues/175
+   *
+   * @this RokuDriver
+   * @returns {Promise<string>}
+   */
+  async function getCurrentContext() {
+    return 'NATIVE_APP';
+  }
 }
 
 export {TizenTVDriver, Keys};
