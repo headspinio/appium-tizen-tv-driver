@@ -959,10 +959,9 @@ class TizenTVDriver extends BaseDriver {
    * A dummy implementation to return 200 ok with NATIVE_APP context for
    * webdriverio compatibility. https://github.com/headspinio/appium-roku-driver/issues/175
    *
-   * @this RokuDriver
    * @returns {Promise<string>}
    */
-  async function getCurrentContext() {
+  async getCurrentContext() {
     return 'NATIVE_APP';
   }
 }

@@ -108,6 +108,14 @@ start an automation session on your app.
 
 End a session, close the app and make the driver ready for new sessions.
 
+### Get current context
+
+> Return NATIVE_APP.
+
+- `GET /session/:sessionId/context`
+
+Return NATIVE_APP context for Appium command compatibility
+
 ### Set Value (Send Keys)
 
 > Send keys to an input element.
