@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.14.1...appium-tizen-tv-driver@0.15.0) (2024-11-27)
+
+### Features
+
+- add getCurrentContext which returns NATIVE_APP only ([#689](https://github.com/headspinio/appium-tizen-tv-driver/issues/689)) ([13532d4](https://github.com/headspinio/appium-tizen-tv-driver/commit/13532d49bb67494567725e04f4a2919e9cccf236))
+
 ## [0.14.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.14.0...appium-tizen-tv-driver@0.14.1) (2024-11-12)
 
 **Note:** Version bump only for package appium-tizen-tv-driver
