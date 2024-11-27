@@ -123,6 +123,7 @@ const APP_EXTENSION = '.wgt';
 const NO_PROXY = [
   ['POST', new RegExp('^/session/[^/]+/appium')],
   ['GET', new RegExp('^/session/[^/]+/appium')],
+  ['GET', new RegExp('^/session/[^/]+/context')],
   ['POST', new RegExp('^/session/[^/]+/element/[^/]+/value')],
   ['POST', new RegExp('^/session/[^/]+/execute')],
 ];
@@ -369,6 +370,7 @@ class TizenTVDriver extends BaseDriver {
         }
         // fast cleanup
         if (!caps.noReset) {
+          this.#checkAppInstalled(caps.appPackage);
           try {
             await tizenUninstall(
               /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (caps)
@@ -394,16 +396,7 @@ class TizenTVDriver extends BaseDriver {
     }
 
     if (caps.appPackage) {
-      let installedPackages;
-      try {
-        installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
-      } catch (e) {
-        log.info(`An error '${e.message}' occurred during checking ${caps.appPackage} existence on the device, ` +
-          `but it may be ignorable. Proceeding the app installation.`);
-      }
-      if (_.isArray(installedPackages) && !installedPackages.includes(caps.appPackage)) {
-        log.info(`${caps.appPackage} might not exist on the device, or the TV model is old thus no installed app information existed.`);
-      }
+      this.#checkAppInstalled(caps.appPackage);
     }
 
     try {
@@ -963,6 +956,27 @@ class TizenTVDriver extends BaseDriver {
    */
   async getCurrentContext() {
     return 'NATIVE_APP';
+  }
+
+  /**
+   * Leave log if the appPackage is probably installed
+   *
+   * @param {string} appPackage
+   */
+  async #checkAppInstalled(appPackage) {
+    let installedPackages;
+    try {
+      installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);
+    } catch (e) {
+      log.info(`An error '${e.message}' occurred during checking ${appPackage} existence on the device, ` +
+        `but it may be ignorable. Proceeding the app installation.`);
+    }
+    if (!_.isArray(installedPackages)) {
+      return;
+    }
+    installedPackages.includes(appPackage)
+      ? log.info(`${appPackage} is on the device`)
+      : log.info(`${appPackage} might not exist on the device, or the TV model is old thus no installed app information existed.`);
   }
 }
 
