@@ -1,0 +1,5 @@
+# to use this file, run:
+# git config --local include.path ../.gitconfig
+
+[mergetool "npm"]
+cmd = npm install
