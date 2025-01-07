@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.1](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.6.0...@headspinio/tizen-remote@0.6.1) (2025-01-07)
+
+### Bug Fixes
+
+- **tizen-remote:** update dependency debug to v4.4.0 ([#697](https://github.com/headspinio/appium-tizen-tv-driver/issues/697)) ([2dddfd8](https://github.com/headspinio/appium-tizen-tv-driver/commit/2dddfd85504e67a90f4305ed0e2dc31b77c5b656))
+
 ## [0.6.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/@headspinio/tizen-remote@0.5.8...@headspinio/tizen-remote@0.6.0) (2024-11-12)
 
 ### Features
