@@ -295,9 +295,9 @@ class TizenTVDriver extends BaseDriver {
 
     // Raise an error if the `sdb capabilities` might raise an exception
     const deviceCaps = await deviceCapabilities({udid: this.opts.udid});
-    // @ts-ignore
+    // @ts-ignore to avoid error for platform_version
     this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
-    // @ts-ignore
+    // @ts-ignore to avoid error for platform_version
     if (deviceCaps?.platform_version) {
       log.info(`The Tizen platform version is ${this.#platformVersion}`);
     } else {
@@ -427,6 +427,7 @@ class TizenTVDriver extends BaseDriver {
         executable: /** @type {string} */ (caps.chromedriverExecutable),
         executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
         isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
+        verbose: /** @type {Boolean} */ (caps.showChromedriverLog),
       });
       this.#forwardedPortsForChromedriver.push(localDebugPort);
 
@@ -557,7 +558,7 @@ class TizenTVDriver extends BaseDriver {
    *
    * @param {StartChromedriverOptions} opts
    */
-  async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled}) {
+  async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled, verbose}) {
 
     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
@@ -585,7 +586,8 @@ class TizenTVDriver extends BaseDriver {
       executableDir,
       isAutodownloadEnabled,
       // @ts-ignore
-      details: {info: result}
+      details: {info: result},
+      verbose
     });
 
     await this.#chromedriver.start({
@@ -918,6 +920,7 @@ class TizenTVDriver extends BaseDriver {
     const {
       chromedriverExecutable,
       chromedriverExecutableDir,
+      showChromedriverLog,
     } = this.caps;
 
     await this.#cleanupChromedriver();
@@ -933,6 +936,7 @@ class TizenTVDriver extends BaseDriver {
       executable: /** @type {string} */ (chromedriverExecutable),
       executableDir: /** @type {string} */ (chromedriverExecutableDir),
       isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
+      verbose: /** @type {Boolean} */ (showChromedriverLog),
     });
     this.#forwardedPortsForChromedriver.push(localDebugPort);
   }
@@ -1022,6 +1026,7 @@ export {TizenTVDriver, Keys};
  * @property {string|undefined} executable
  * @property {string|undefined} executableDir
  * @property {boolean} isAutodownloadEnabled
+ * @property {boolean} verbose
  * @property {number} debuggerPort
  */
 
