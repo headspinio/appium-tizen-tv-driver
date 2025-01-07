@@ -59,6 +59,9 @@ export const desiredCapConstraints = /** @type {const} */({
   },
   appLaunchCooldown: {
     isNumber: true
+  },
+  showChromedriverLog: {
+    isBoolean: true
   }
 });
 
