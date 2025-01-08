@@ -34,7 +34,7 @@
   ],
   "types": "build/lib/index.d.ts",
   "dependencies": {
-    "@appium/types": "0.13.4",
+    "@appium/types": "0.24.0",
     "@headspinio/tizen-remote": "^0.6.1",
     "appium-chromedriver": "6.1.14",
     "asyncbox": "3.0.0",
