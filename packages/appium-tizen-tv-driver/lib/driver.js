@@ -23,7 +23,7 @@ import {getKeyData, isRcKeyCode} from './keymap';
 import log from './logger';
 import {AsyncScripts, SyncScripts} from './scripts';
 import { util } from 'appium/support';
-import { CMD_TIMEOUT_MS } from './cli/helpers';
+import { CMD_RETRY_MAX, CMD_TIMEOUT_MS } from './cli/helpers';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const GALLERY_APP_ID = 'com.samsung.tv.gallery';
@@ -295,7 +295,11 @@ class TizenTVDriver extends BaseDriver {
     const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
 
     // Raise an error if the `sdb capabilities` might raise an exception
-    const deviceCaps = await deviceCapabilities({udid: this.opts.udid, sdbExecTimeout: this.opts.sdbExecTimeout});
+    const deviceCaps = await deviceCapabilities({
+      udid: this.opts.udid,
+      sdbExecTimeout: this.sdbExecTimeout,
+      sdbExecRetryCount: this.sdbExecRetryCount
+    });
     // @ts-ignore to avoid error for platform_version
     this.#platformVersion = deviceCaps?.platform_version || DEFAULT_PLATFORM_VERSION;
     // @ts-ignore to avoid error for platform_version
@@ -353,7 +357,11 @@ class TizenTVDriver extends BaseDriver {
     if (!caps.useOpenDebugPort) {
       if (caps.powerCyclePostUrl && caps.fullReset) {
         // first disconnect the device if connected
-        await disconnectDevice({udid: caps.udid, sdbExecTimeout: this.sdbExecTimeout()});
+        await disconnectDevice({
+          udid: caps.udid,
+          sdbExecTimeout: this.sdbExecTimeout,
+          sdbExecRetryCount: this.sdbExecRetryCount,
+        });
         // power cycle the TV and reconnect sdb
         log.info(`Power cycling device`);
         await got.post(caps.powerCyclePostUrl);
@@ -376,7 +384,8 @@ class TizenTVDriver extends BaseDriver {
             await tizenUninstall({
               udid: caps.udid,
               appPackage: caps.appPackage,
-              sdbExecTimeout: this.sdbExecTimeout()
+              sdbExecTimeout: this.sdbExecTimeout,
+              sdbExecRetryCount: this.sdbExecRetryCount,
             });
           } catch (e) {
             // Can be ignored. The next installation command will raise an error if this occurs exact error.
@@ -390,7 +399,7 @@ class TizenTVDriver extends BaseDriver {
           }
         }
         // XXX this is for typescript
-        await tizenInstall({...caps, app: caps.app, sdbExecTimeout: this.sdbExecTimeout()});
+        await tizenInstall({...caps, app: caps.app, sdbExecTimeout: this.sdbExecTimeout});
       } else if (!(caps.powerCyclePostUrl && caps.fullReset) && !caps.rcOnly) {
         // if the user wants to run an existing app, it might already be running and therefore we
         // can't start it. But if we launch another app, it will kill any already-running app. So
@@ -412,7 +421,12 @@ class TizenTVDriver extends BaseDriver {
       if (caps.rcOnly) {
         log.info(`RC-only mode requested, will not launch app in debug mode`);
         if (caps.appPackage) {
-          await tizenRun({appPackage: caps.appPackage, udid: caps.udid, sdbExecTimeout: this.sdbExecTimeout()});
+          await tizenRun({
+            appPackage: caps.appPackage,
+            udid: caps.udid,
+            sdbExecTimeout: this.sdbExecTimeout,
+            sdbExecRetryCount: this.sdbExecRetryCount,
+          });
         } else {
           log.info(`No app package provided, will not launch any apps`);
         }
@@ -463,7 +477,12 @@ class TizenTVDriver extends BaseDriver {
       }
 
       try {
-        await tizenRun({appPackage: pkgId, udid, sdbExecTimeout: this.sdbExecTimeout()});
+        await tizenRun({
+          appPackage: pkgId,
+          udid,
+          sdbExecTimeout: this.sdbExecTimeout,
+          sdbExecRetryCount: this.sdbExecRetryCount,
+        });
         log.info(`${pkgId} started successfully`);
         return;
       } catch (e) {
@@ -495,7 +514,7 @@ class TizenTVDriver extends BaseDriver {
         } = caps;
         remoteDebugPort = await debugApp(
           /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (
-            {udid, appPackage: debugAppPackage || appPackage, sdbExecTimeout: this.sdbExecTimeout()}
+            {udid, appPackage: debugAppPackage || appPackage, sdbExecTimeout: this.sdbExecTimeout}
           ),
           this.#platformVersion
         );
@@ -513,7 +532,8 @@ class TizenTVDriver extends BaseDriver {
       udid: caps.udid,
       remotePort: Number(remoteDebugPort),
       localPort: localDebugPort,
-      sdbExecTimeout: this.sdbExecTimeout()
+      sdbExecTimeout: this.sdbExecTimeout,
+      sdbExecRetryCount: this.sdbExecRetryCount,
     });
     this.#forwardedPorts.push(localDebugPort);
     return localDebugPort;
@@ -743,7 +763,8 @@ class TizenTVDriver extends BaseDriver {
       await removeForwardedPort({
         udid: /** @type {string} */ (this.opts.udid),
         localPort,
-        sdbExecTimeout: this.sdbExecTimeout()
+        sdbExecTimeout: this.sdbExecTimeout,
+        sdbExecRetryCount: this.sdbExecRetryCount,
       });
       _.pull(this.#forwardedPorts, localPort);
       _.pull(this.#forwardedPortsForChromedriver, localPort);
@@ -759,7 +780,8 @@ class TizenTVDriver extends BaseDriver {
       await removeForwardedPort({
         udid: /** @type {string} */ (this.opts.udid),
         localPort,
-        sdbExecTimeout: this.sdbExecTimeout()
+        sdbExecTimeout: this.sdbExecTimeout,
+        sdbExecRetryCount: this.sdbExecRetryCount,
       });
       _.pull(this.#forwardedPorts, localPort);
       _.pull(this.#forwardedPortsForChromedriver, localPort);
@@ -911,7 +933,11 @@ class TizenTVDriver extends BaseDriver {
    * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
    */
   async tizentvListApps() {
-    return await listApps({udid: this.opts.udid, sdbExecTimeout: this.sdbExecTimeout()}, this.#platformVersion);
+    return await listApps({
+      udid: this.opts.udid,
+      sdbExecTimeout: this.sdbExecTimeout,
+      sdbExecRetryCount: this.sdbExecRetryCount
+    }, this.#platformVersion);
   }
 
 
@@ -925,7 +951,12 @@ class TizenTVDriver extends BaseDriver {
   async tizentvActivateApp(appPackage, debug = false) {
     return debug
       ? await this.#tizentvActivateAppWithDebug(appPackage)
-      : await launchApp({appPackage, udid: this.opts.udid, sdbExecTimeout: this.sdbExecTimeout()});
+      : await launchApp({
+        appPackage, udid:
+        this.opts.udid,
+        sdbExecTimeout: this.sdbExecTimeout,
+        sdbExecRetryCount: this.sdbExecRetryCount
+      });
   }
 
   async #tizentvActivateAppWithDebug(appPackage) {
@@ -959,7 +990,11 @@ class TizenTVDriver extends BaseDriver {
    * @returns
    */
   async tizentvTerminateApp(pkgId) {
-    return await terminateApp({udid: this.opts.udid, sdbExecTimeout: this.sdbExecTimeout()}, pkgId);
+    return await terminateApp({
+      udid: this.opts.udid,
+      sdbExecTimeout: this.sdbExecTimeout,
+      sdbExecRetryCount: this.sdbExecRetryCount
+    }, pkgId);
   }
 
   /**
@@ -1008,9 +1043,20 @@ class TizenTVDriver extends BaseDriver {
 
   /**
    * Tiemout to run sdb or tizen command
+   * @returns {number}
   */
-  sdbExecTimeout() {
-    return this.caps.sdbExecTimeout || CMD_TIMEOUT_MS;
+  get sdbExecTimeout() {
+    const timeout = _.parseInt(this.caps.sdbExecTimeout) || CMD_TIMEOUT_MS;
+    return timeout > 0 ? timeout : CMD_TIMEOUT_MS;
+  }
+
+  /**
+   * Tiemout to run sdb or tizen command
+   * @returns {number}
+  */
+  get sdbExecRetryCount() {
+    const count = _.parseInt(this.caps.sdbExecRetryCount) || CMD_RETRY_MAX;
+    return count > 0 ? count : CMD_RETRY_MAX;
   }
 }
 

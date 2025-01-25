@@ -9,7 +9,12 @@ const SDB_BIN_NAME = 'sdb';
 /**
  * Default timeout to wait for the tizen command.
  */
-export const CMD_TIMEOUT_MS = 240000;
+export const CMD_TIMEOUT_MS = 120000;
+
+/**
+ * Default retry count for the tizen command.
+ */
+export const CMD_RETRY_MAX = 2;
 
 /**
  * Lookup of path parts by bin name, relative to `TIZEN_HOME` env var

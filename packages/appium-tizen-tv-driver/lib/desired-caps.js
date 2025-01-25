@@ -65,6 +65,9 @@ export const desiredCapConstraints = /** @type {const} */({
   },
   sdbExecTimeout: {
     isNumber: true
+  },
+  sdbExecRetryCount: {
+    isNumber: true
   }
 });
 

@@ -1,18 +1,21 @@
+import { retry } from 'asyncbox';
 import log from '../logger';
 import {runCmd, TIZEN_BIN_NAME} from './helpers';
 
 /**
  * @param {string[]} args
- * @param {number} [timeout] Timeout to raise an error
+ * @param {number} timeout Timeout to raise an error
+ * @param {number} retryCount
  */
-async function runTizenCmd(args, timeout) {
-  return await runCmd(TIZEN_BIN_NAME, args, timeout);
+async function runTizenCmd(args, timeout, retryCount) {
+  const _runCmd = async () => await runCmd(TIZEN_BIN_NAME, args, timeout);
+  return await retry(retryCount, _runCmd);
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'app' | 'udid'| 'sdbExecTimeout'>, 'app'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'app' | 'udid'| 'sdbExecTimeout'|'sdbExecRetryCount'>, 'app'>} caps
  */
-async function tizenInstall({app, udid, sdbExecTimeout}) {
+async function tizenInstall({app, udid, sdbExecTimeout, sdbExecRetryCount}) {
   log.info(`Installing tizen app '${app}' on device '${udid}'`);
 
   // $ tizen install -t biF5E2SN9M.AppiumHelper  -n /path/to/AppiumHelper.wgt -s <device>
@@ -40,7 +43,7 @@ async function tizenInstall({app, udid, sdbExecTimeout}) {
 
   // If an error occurred in the installation command, it will raise an error as well.
   // e.g. Different signature app is already installed.
-  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid], sdbExecTimeout);
+  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
   if (/successfully/i.test(stdout)) {
     return;
   }
@@ -52,9 +55,9 @@ async function tizenInstall({app, udid, sdbExecTimeout}) {
  * Raises an error in case tizen command raises exit non-zero code, or
  * the tizen command silently failed with exit code 0.
  *
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'|'sdbExecRetryCount'>, 'appPackage'>} caps
  */
-async function tizenUninstall({appPackage, udid, sdbExecTimeout}) {
+async function tizenUninstall({appPackage, udid, sdbExecTimeout, sdbExecRetryCount}) {
   log.info(`Uninstalling tizen app '${appPackage}' on device '${udid}'`);
 
   // $ tizen uninstall -p biF5E2SN9M.AppiumHelper -s <device>
@@ -82,7 +85,7 @@ async function tizenUninstall({appPackage, udid, sdbExecTimeout}) {
   // --------------------
   // Total time: 00:00:00.324
 
-  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid], sdbExecTimeout);
+  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
   if (/uninstall completed/i.test(stdout)) {
     // ok
     return;
@@ -96,11 +99,11 @@ async function tizenUninstall({appPackage, udid, sdbExecTimeout}) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'|'sdbExecRetryCount'>, 'appPackage'>} caps
  */
-async function tizenRun({appPackage, udid, sdbExecTimeout}) {
+async function tizenRun({appPackage, udid, sdbExecTimeout, sdbExecRetryCount}) {
   log.info(`Running tizen app '${appPackage}' on device '${udid}'`);
-  return await runTizenCmd(['run', '-p', appPackage, '-s', udid], sdbExecTimeout);
+  return await runTizenCmd(['run', '-p', appPackage, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
 }
 
 export {runTizenCmd, tizenInstall, tizenUninstall, tizenRun};
