@@ -21,10 +21,11 @@ const PLATFORM_VERSION_COMMAND_COMPATIBILITY = '4.0.0';
  *
  * @param {string?} udid
  * @param {string[]} args
+ * @param {number} timeout
  */
-async function runSDBCmd(udid, args) {
+async function runSDBCmd(udid, args, timeout) {
   const restriction = udid ? ['-s', udid] : [];
-  return await runCmd(SDB_BIN_NAME, [...restriction, ...args]);
+  return await runCmd(SDB_BIN_NAME, [...restriction, ...args], timeout);
 }
 
 /**
@@ -52,14 +53,14 @@ function _parseDebugPort(stdout) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
  * @param {string|number} platformVersion Platform version info available via `sdb capability` command
  * @param {number} [retryTimes=3] How many the command attemps to start the debug command. The launching app with debugger could fail
  *                                frequently. This retry will reduce the failure ratio.
  */
-async function debugApp({appPackage, udid}, platformVersion, retryTimes = 3) {
+async function debugApp({appPackage, udid, sdbExecTimeout}, platformVersion, retryTimes = 3) {
   const getDebugPort = async () => {
-    const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage));
+    const {stdout} = await runSDBCmd(udid, _buildDebugCommand(`${platformVersion}`, appPackage), sdbExecTimeout);
 
     if (stdout.includes('failed')) {
       throw new Error(`Launching ${appPackage} might failed. Is it debuggable app or Did you terminate the package properly? Original error: ${stdout}}`);
@@ -89,11 +90,11 @@ async function debugApp({appPackage, udid}, platformVersion, retryTimes = 3) {
 /**
  * Launch (but do not attempt to debug) an app on the TV
  *
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
  */
-async function launchApp({appPackage, udid}) {
+async function launchApp({appPackage, udid, sdbExecTimeout}) {
   log.info(`Starting ${appPackage} in on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'was_execute', appPackage]);
+  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'was_execute', appPackage], sdbExecTimeout);
   if (/launch app failed/.test(stdout)) {
     throw new Error(`Could not launch app. Stdout from launch call was: ${stdout}`);
   }
@@ -102,12 +103,12 @@ async function launchApp({appPackage, udid}) {
 /**
  * Launch (but do not attempt to debug) an app on the TV
  *
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'udid'>, 'udid'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>, 'udid'>} caps
  * @param {string} pkgId package id to kill the process.
  */
-async function terminateApp({udid}, pkgId) {
+async function terminateApp({udid, sdbExecTimeout}, pkgId) {
   log.info(`Terminating ${pkgId} in on ${udid}`);
-  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'kill', pkgId]);
+  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'kill', pkgId], sdbExecTimeout);
   if (/failed/i.test(stdout)) {
     throw new Error(`Could not terminate app. Please make sure if the given '${pkgId}' was correct package id. Stdout from kill call was: ${stdout}`);
   }
@@ -117,11 +118,11 @@ async function terminateApp({udid}, pkgId) {
 /**
  * Return the list of installed applications with the pair of
  * an application name and the package name.
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>} caps
  * @param {string} platformVersion
  * @returns {Promise<[{appName: string, appPackage: string}]|[]>}
  */
-async function listApps({udid}, platformVersion) {
+async function listApps({udid, sdbExecTimeout}, platformVersion) {
   if (util.compareVersions(platformVersion, '<', PLATFORM_VERSION_COMMAND_COMPATIBILITY)) {
     // Old output needs more complex parsing logic.
     log.info(`listApps is not supported for platform version ${platformVersion}`);
@@ -129,7 +130,7 @@ async function listApps({udid}, platformVersion) {
   }
 
   log.info(`Listing apps installed on '${udid}'`);
-  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'applist']);
+  const {stdout} = await runSDBCmd(udid, ['shell', '0', 'applist'], sdbExecTimeout);
   const apps = _parseListAppsCmd(stdout);
   log.info(`There are ${apps.length} apps installed`);
   return apps;
@@ -152,12 +153,12 @@ function _parseListAppsCmd(input) {
 
 /**
  * Return a dictionary of the result of 'sdb capability'
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>} caps
  * @returns {Promise<{}>}
  */
-async function deviceCapabilities({udid}) {
+async function deviceCapabilities({udid, sdbExecTimeout}) {
   log.info(`Getting capabilities on '${udid}'`);
-  const {stdout} = await runSDBCmd(udid, ['capability']);
+  const {stdout} = await runSDBCmd(udid, ['capability'], sdbExecTimeout);
   return _parseCapability(stdout);
 }
 
@@ -175,43 +176,43 @@ function _parseCapability (input) {
 }
 
 /**
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'> & {localPort: number, remotePort: number}} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'> & {localPort: number, remotePort: number}} caps
  */
-async function forwardPort({udid, localPort, remotePort}) {
+async function forwardPort({udid, localPort, remotePort, sdbExecTimeout}) {
   log.info(`Forwarding local TCP port ${localPort} to port ${remotePort} on device ${udid}`);
-  await runSDBCmd(udid, ['forward', `tcp:${localPort}`, `tcp:${remotePort}`]);
+  await runSDBCmd(udid, ['forward', `tcp:${localPort}`, `tcp:${remotePort}`], sdbExecTimeout);
 }
 
 /**
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'> & {localPort: number}} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'> & {localPort: number}} caps
  */
-async function removeForwardedPort({udid, localPort}) {
+async function removeForwardedPort({udid, localPort, sdbExecTimeout}) {
   log.info(`Removing port forwarding for device ${udid} and local port ${localPort}`);
-  await runSDBCmd(udid, ['forward', '--remove', String(localPort)]);
+  await runSDBCmd(udid, ['forward', '--remove', String(localPort)], sdbExecTimeout);
 }
 
 /**
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>} caps
  */
-async function removeForwardedPorts({udid}) {
+async function removeForwardedPorts({udid, sdbExecTimeout}) {
   log.info(`Removing all port forwarding for device ${udid}`);
-  await runSDBCmd(udid, ['forward', '--remove-all']);
+  await runSDBCmd(udid, ['forward', '--remove-all'], sdbExecTimeout);
 }
 
 /**
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>} caps
  */
-async function connectDevice({udid}) {
+async function connectDevice({udid, sdbExecTimeout}) {
   log.info(`Connecting device '${udid}' via sdb`);
-  await runSDBCmd(null, ['connect', udid]);
+  await runSDBCmd(null, ['connect', udid], sdbExecTimeout);
 }
 
 /**
- * @param {Pick<StrictTizenTVDriverCaps, 'udid'>} caps
+ * @param {Pick<StrictTizenTVDriverCaps, 'udid'|'sdbExecTimeout'>} caps
  */
-async function disconnectDevice({udid}) {
+async function disconnectDevice({udid, sdbExecTimeout}) {
   log.info(`Disconnecting device '${udid}' via sdb`);
-  await runSDBCmd(null, ['disconnect', udid]);
+  await runSDBCmd(null, ['disconnect', udid], sdbExecTimeout);
 }
 
 export {

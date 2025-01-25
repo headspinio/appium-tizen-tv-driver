@@ -62,6 +62,9 @@ export const desiredCapConstraints = /** @type {const} */({
   },
   showChromedriverLog: {
     isBoolean: true
+  },
+  sdbExecTimeout: {
+    isNumber: true
   }
 });
 

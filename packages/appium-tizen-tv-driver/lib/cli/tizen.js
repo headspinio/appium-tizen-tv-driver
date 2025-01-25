@@ -3,15 +3,16 @@ import {runCmd, TIZEN_BIN_NAME} from './helpers';
 
 /**
  * @param {string[]} args
+ * @param {number} [timeout] Timeout to raise an error
  */
-async function runTizenCmd(args) {
-  return await runCmd(TIZEN_BIN_NAME, args);
+async function runTizenCmd(args, timeout) {
+  return await runCmd(TIZEN_BIN_NAME, args, timeout);
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'app' | 'udid'>, 'app'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'app' | 'udid'| 'sdbExecTimeout'>, 'app'>} caps
  */
-async function tizenInstall({app, udid}) {
+async function tizenInstall({app, udid, sdbExecTimeout}) {
   log.info(`Installing tizen app '${app}' on device '${udid}'`);
 
   // $ tizen install -t biF5E2SN9M.AppiumHelper  -n /path/to/AppiumHelper.wgt -s <device>
@@ -39,7 +40,7 @@ async function tizenInstall({app, udid}) {
 
   // If an error occurred in the installation command, it will raise an error as well.
   // e.g. Different signature app is already installed.
-  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid]);
+  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid], sdbExecTimeout);
   if (/successfully/i.test(stdout)) {
     return;
   }
@@ -51,9 +52,9 @@ async function tizenInstall({app, udid}) {
  * Raises an error in case tizen command raises exit non-zero code, or
  * the tizen command silently failed with exit code 0.
  *
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
  */
-async function tizenUninstall({appPackage, udid}) {
+async function tizenUninstall({appPackage, udid, sdbExecTimeout}) {
   log.info(`Uninstalling tizen app '${appPackage}' on device '${udid}'`);
 
   // $ tizen uninstall -p biF5E2SN9M.AppiumHelper -s <device>
@@ -81,7 +82,7 @@ async function tizenUninstall({appPackage, udid}) {
   // --------------------
   // Total time: 00:00:00.324
 
-  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid]);
+  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid], sdbExecTimeout);
   if (/uninstall completed/i.test(stdout)) {
     // ok
     return;
@@ -95,11 +96,11 @@ async function tizenUninstall({appPackage, udid}) {
 }
 
 /**
- * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'>, 'appPackage'>} caps
+ * @param {import('type-fest').SetRequired<Pick<StrictTizenTVDriverCaps, 'appPackage'|'udid'|'sdbExecTimeout'>, 'appPackage'>} caps
  */
-async function tizenRun({appPackage, udid}) {
+async function tizenRun({appPackage, udid, sdbExecTimeout}) {
   log.info(`Running tizen app '${appPackage}' on device '${udid}'`);
-  return await runTizenCmd(['run', '-p', appPackage, '-s', udid]);
+  return await runTizenCmd(['run', '-p', appPackage, '-s', udid], sdbExecTimeout);
 }
 
 export {runTizenCmd, tizenInstall, tizenUninstall, tizenRun};
