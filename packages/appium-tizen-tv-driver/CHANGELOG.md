@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.17.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.16.0...appium-tizen-tv-driver@0.17.0) (2025-01-25)
+
+### Features
+
+- add sdbExecTimeout and sdbExecRetryCount ([#705](https://github.com/headspinio/appium-tizen-tv-driver/issues/705)) ([fba3e69](https://github.com/headspinio/appium-tizen-tv-driver/commit/fba3e698e0afada54b0cdd4019ad3396bcffe949))
+
+### Bug Fixes
+
+- **appium-tizen-tv-driver:** update dependency appium-chromedriver to v6.1.14 ([#702](https://github.com/headspinio/appium-tizen-tv-driver/issues/702)) ([5a3daad](https://github.com/headspinio/appium-tizen-tv-driver/commit/5a3daad350734dd2b85a849642400b51456849fa))
+- **appium-tizen-tv-driver:** update dependency teen_process to v2.2.3 ([#700](https://github.com/headspinio/appium-tizen-tv-driver/issues/700)) ([9f6cbb9](https://github.com/headspinio/appium-tizen-tv-driver/commit/9f6cbb9402d3504fbaf9d3a31934bd93c3fe8ad3))
+
 ## [0.16.0](https://github.com/headspinio/appium-tizen-tv-driver/compare/appium-tizen-tv-driver@0.15.0...appium-tizen-tv-driver@0.16.0) (2025-01-07)
 
 ### Features
