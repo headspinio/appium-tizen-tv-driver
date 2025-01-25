@@ -399,7 +399,12 @@ class TizenTVDriver extends BaseDriver {
           }
         }
         // XXX this is for typescript
-        await tizenInstall({...caps, app: caps.app, sdbExecTimeout: this.sdbExecTimeout});
+        await tizenInstall({
+          app: caps.app,
+          udid: caps.udid,
+          sdbExecTimeout: this.sdbExecTimeout,
+          sdbExecRetryCount: this.sdbExecRetryCount
+        });
       } else if (!(caps.powerCyclePostUrl && caps.fullReset) && !caps.rcOnly) {
         // if the user wants to run an existing app, it might already be running and therefore we
         // can't start it. But if we launch another app, it will kill any already-running app. So
@@ -514,7 +519,12 @@ class TizenTVDriver extends BaseDriver {
         } = caps;
         remoteDebugPort = await debugApp(
           /** @type {import('type-fest').SetRequired<typeof caps, 'appPackage'>} */ (
-            {udid, appPackage: debugAppPackage || appPackage, sdbExecTimeout: this.sdbExecTimeout}
+            {
+              udid,
+              appPackage: debugAppPackage || appPackage,
+              sdbExecTimeout: this.sdbExecTimeout,
+              sdbExecRetryCount: this.sdbExecRetryCount,
+            }
           ),
           this.#platformVersion
         );

@@ -39,13 +39,13 @@ const bins = {};
  * Runs external command by "bin name"
  * @param {KnownBinName} bin
  * @param {string[]} args
- * @param {number} [timeout] Timeout to raise an error
+ * @param {number} timeout Timeout to raise an error
  */
 async function runCmd(bin, args, timeout) {
   if (!(bin in bins)) {
     await setBin(bin);
   }
-  log.info(`Running command: ${bins[bin]} ${args.join(' ')}`);
+  log.info(`Running command with timeout ${timeout}ms: ${bins[bin]} ${args.join(' ')}`);
   try {
     return await exec(bins[bin], args, {timeout});
   } catch (err) {

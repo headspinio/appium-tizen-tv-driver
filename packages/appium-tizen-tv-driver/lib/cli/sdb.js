@@ -66,7 +66,8 @@ async function debugApp({appPackage, udid, sdbExecTimeout, sdbExecRetryCount}, p
       sdbExecTimeout,
       // This command wants to retry entirely including error handling,
       // so the sdb command itself runs only once.
-      1);
+      1
+    );
 
     if (stdout.includes('failed')) {
       throw new Error(`Launching ${appPackage} might failed. Is it debuggable app or Did you terminate the package properly? Original error: ${stdout}}`);
