@@ -374,7 +374,8 @@ class TizenTVDriver extends BaseDriver {
           const appInstalled = await this.#isAppInstalled(caps.appPackage);
           try {
             await tizenUninstall({
-              ...caps,
+              udid: caps.udid,
+              appPackage: caps.appPackage,
               sdbExecTimeout: this.sdbExecTimeout()
             });
           } catch (e) {
@@ -739,7 +740,11 @@ class TizenTVDriver extends BaseDriver {
   async #cleanUpChromedriverPorts () {
     log.info(`Cleaning up ports which have been forwarded used by chromedriver`);
     for (const localPort of this.#forwardedPortsForChromedriver) {
-      await removeForwardedPort({udid: /** @type {string} */ (this.opts.udid), localPort, sdbExecTimeout: this.sdbExecTimeout()});
+      await removeForwardedPort({
+        udid: /** @type {string} */ (this.opts.udid),
+        localPort,
+        sdbExecTimeout: this.sdbExecTimeout()
+      });
       _.pull(this.#forwardedPorts, localPort);
       _.pull(this.#forwardedPortsForChromedriver, localPort);
     }
@@ -751,7 +756,11 @@ class TizenTVDriver extends BaseDriver {
   async cleanUpPorts() {
       log.info(`Cleaning up any ports which have been forwarded`);
       for (const localPort of this.#forwardedPorts) {
-      await removeForwardedPort({udid: /** @type {string} */ (this.opts.udid), localPort, sdbExecTimeout: this.sdbExecTimeout()});
+      await removeForwardedPort({
+        udid: /** @type {string} */ (this.opts.udid),
+        localPort,
+        sdbExecTimeout: this.sdbExecTimeout()
+      });
       _.pull(this.#forwardedPorts, localPort);
       _.pull(this.#forwardedPortsForChromedriver, localPort);
     }
