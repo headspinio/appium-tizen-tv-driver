@@ -56,8 +56,10 @@ async function ensureDeviceConnection (udid) {
       if (isConnected) {
         log.info(`Running sdb connect to ensure the connection of '${udid}'.`);
         try {
-          connectDevice({udid, sdbExecTimeout: 60000, sdbExecRetryCount: 1});
-        } catch {};
+          await connectDevice({udid, sdbExecTimeout: 30000, sdbExecRetryCount: 1});
+        } catch (err) {
+          log.warn(`Error occurred in ensuring the connection: ${err.message}`);
+        };
       }
     } else {
       log.info(`Skipping the connection check since '${udid}' is not <host:port>.`);
