@@ -1,8 +1,8 @@
 import log from '../logger';
-import {runCmd, SDB_BIN_NAME} from './helpers';
+import {CMD_RETRY_BACKOFF_MS, runCmd, SDB_BIN_NAME, checkConnection} from './helpers';
 import {util} from 'appium/support';
 import _ from 'lodash';
-import {retry} from 'asyncbox';
+import { retryInterval } from 'asyncbox';
 
 const DEBUG_PORT_RE = /^(?:.*port:\s)(?<port>\d{1,5}).*/;
 const APP_LIST_RE = /^[^']*'(?<name>[^']*)'[^']+'(?<id>[^']+)'\s*$/;
@@ -26,8 +26,43 @@ const PLATFORM_VERSION_COMMAND_COMPATIBILITY = '4.0.0';
  */
 async function runSDBCmd(udid, args, timeout, retryCount) {
   const restriction = udid ? ['-s', udid] : [];
-  const _runCmd = async () => await runCmd(SDB_BIN_NAME, [...restriction, ...args], timeout);
-  return await retry(retryCount, _runCmd);
+  const _runCmd = async () => {
+    try {
+      return await runCmd(SDB_BIN_NAME, [...restriction, ...args], timeout);
+    } catch (err) {
+      await ensureDeviceConnection(udid);
+      // throw the original error.
+      throw err;
+    }
+  };
+  return await retryInterval(
+    retryCount,
+    CMD_RETRY_BACKOFF_MS,
+    _runCmd
+  );
+}
+
+
+/**
+ * Ensure the device connection if it is reachable.
+ * @param {string?} udid
+ */
+async function ensureDeviceConnection (udid) {
+  try {
+    if (_.isString(udid)) {
+      log.info(`Checking if '${udid}' is reachable.`);
+      const isConnected = await checkConnection(udid);
+      log.info(`${udid} is ${isConnected ? 'reachable' : 'unreachable'}.`);
+      if (isConnected) {
+        log.info(`Running sdb connect to ensure the connection of '${udid}'.`);
+        try {
+          connectDevice({udid, sdbExecTimeout: 30000, sdbExecRetryCount: 1});
+        } catch {};
+      }
+    } else {
+      log.info(`Skipping the connection check since '${udid}' is not <host:port>.`);
+    }
+  } catch {};
 }
 
 /**
@@ -82,7 +117,11 @@ async function debugApp({appPackage, udid, sdbExecTimeout, sdbExecRetryCount}, p
 
   log.info(`Starting ${appPackage} in debug mode on ${udid} up to ${sdbExecRetryCount} times`);
   try {
-    const port = await retry(sdbExecRetryCount, getDebugPort);
+    const port = await retryInterval(
+      sdbExecRetryCount,
+      CMD_RETRY_BACKOFF_MS,
+      getDebugPort
+    );
     log.info(`Debug port opened on ${port}`);
     return port;
   } catch (e) {
@@ -237,7 +276,8 @@ export {
   _buildDebugCommand,
   _parseDebugPort,
   _parseCapability,
-  deviceCapabilities
+  deviceCapabilities,
+  ensureDeviceConnection
 };
 
 /**
