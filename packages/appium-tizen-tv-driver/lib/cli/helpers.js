@@ -21,7 +21,7 @@ export const CMD_RETRY_MAX = 2;
 /**
  * back off time in each retry
  */
-export const CMD_RETRY_BACKOFF_MS = 500;
+export const CMD_RETRY_BACKOFF_MS = 1000;
 
 /**
  * Lookup of path parts by bin name, relative to `TIZEN_HOME` env var

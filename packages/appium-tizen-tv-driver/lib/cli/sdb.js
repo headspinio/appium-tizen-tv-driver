@@ -56,7 +56,7 @@ async function ensureDeviceConnection (udid) {
       if (isConnected) {
         log.info(`Running sdb connect to ensure the connection of '${udid}'.`);
         try {
-          connectDevice({udid, sdbExecTimeout: 30000, sdbExecRetryCount: 1});
+          connectDevice({udid, sdbExecTimeout: 60000, sdbExecRetryCount: 1});
         } catch {};
       }
     } else {
