@@ -2,6 +2,8 @@ import {exec} from 'teen_process';
 import {fs, system} from 'appium/support';
 import path from 'path';
 import log from '../logger';
+import net from 'node:net';
+import _ from 'lodash';
 
 const TIZEN_BIN_NAME = 'tizen';
 const SDB_BIN_NAME = 'sdb';
@@ -15,6 +17,11 @@ export const CMD_TIMEOUT_MS = 120000;
  * Default retry count for the tizen command.
  */
 export const CMD_RETRY_MAX = 2;
+
+/**
+ * back off time in each retry
+ */
+export const CMD_RETRY_BACKOFF_MS = 1000;
 
 /**
  * Lookup of path parts by bin name, relative to `TIZEN_HOME` env var
@@ -90,7 +97,39 @@ async function setBin(name) {
   bins[name] = bin;
   log.info(`Binary was found at ${bin}`);
 }
-export {runCmd, setBin, TIZEN_BIN_NAME, SDB_BIN_NAME};
+
+/**
+ * Check the connection of the given host:port
+ * @param {string} udid Expected to be <host:port> string
+ * @param {number} timeout
+ * @returns
+ */
+async function checkConnection(udid, timeout = 5000) {
+  const [host, port] = _.split(udid, ':');
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+
+    socket.setTimeout(timeout);
+    socket.on('connect', () => {
+          socket.destroy();
+          resolve(true);
+    });
+
+    socket.on('timeout', () => {
+          socket.destroy();
+          reject(new Error('Connection timed out'));
+    });
+
+    socket.on('error', (err) => {
+          socket.destroy();
+          reject(err);
+    });
+
+    socket.connect(_.toNumber(port), host);
+  });
+}
+
+export {runCmd, setBin, TIZEN_BIN_NAME, SDB_BIN_NAME, checkConnection};
 
 /**
  * @typedef {typeof TIZEN_BIN_NAME|typeof SDB_BIN_NAME} KnownBinName

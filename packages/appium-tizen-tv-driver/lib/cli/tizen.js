@@ -1,15 +1,29 @@
-import { retry } from 'asyncbox';
+import { retryInterval } from 'asyncbox';
 import log from '../logger';
-import {runCmd, TIZEN_BIN_NAME} from './helpers';
+import {CMD_RETRY_BACKOFF_MS, runCmd, TIZEN_BIN_NAME} from './helpers';
+import { ensureDeviceConnection } from './sdb';
 
 /**
  * @param {string[]} args
+ * @param {string} udid
  * @param {number} timeout Timeout to raise an error
  * @param {number} retryCount
  */
-async function runTizenCmd(args, timeout, retryCount) {
-  const _runCmd = async () => await runCmd(TIZEN_BIN_NAME, args, timeout);
-  return await retry(retryCount, _runCmd);
+async function runTizenCmd(args, udid, timeout, retryCount) {
+  const _runCmd = async () => {
+    try {
+      return await runCmd(TIZEN_BIN_NAME, args, timeout);
+    } catch (err) {
+      await ensureDeviceConnection(udid);
+      // throw the original error.
+      throw err;
+    }
+  };
+  return await retryInterval(
+    retryCount,
+    CMD_RETRY_BACKOFF_MS,
+    _runCmd
+  );
 }
 
 /**
@@ -43,7 +57,7 @@ async function tizenInstall({app, udid, sdbExecTimeout, sdbExecRetryCount}) {
 
   // If an error occurred in the installation command, it will raise an error as well.
   // e.g. Different signature app is already installed.
-  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
+  const {stdout} = await runTizenCmd(['install', '-n', app, '-s', udid], udid, sdbExecTimeout, sdbExecRetryCount);
   if (/successfully/i.test(stdout)) {
     return;
   }
@@ -85,7 +99,7 @@ async function tizenUninstall({appPackage, udid, sdbExecTimeout, sdbExecRetryCou
   // --------------------
   // Total time: 00:00:00.324
 
-  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
+  const {stdout} = await runTizenCmd(['uninstall', '-p', appPackage, '-s', udid], udid, sdbExecTimeout, sdbExecRetryCount);
   if (/uninstall completed/i.test(stdout)) {
     // ok
     return;
@@ -103,7 +117,7 @@ async function tizenUninstall({appPackage, udid, sdbExecTimeout, sdbExecRetryCou
  */
 async function tizenRun({appPackage, udid, sdbExecTimeout, sdbExecRetryCount}) {
   log.info(`Running tizen app '${appPackage}' on device '${udid}'`);
-  return await runTizenCmd(['run', '-p', appPackage, '-s', udid], sdbExecTimeout, sdbExecRetryCount);
+  return await runTizenCmd(['run', '-p', appPackage, '-s', udid], udid, sdbExecTimeout, sdbExecRetryCount);
 }
 
 export {runTizenCmd, tizenInstall, tizenUninstall, tizenRun};
