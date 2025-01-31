@@ -11,12 +11,12 @@ const SDB_BIN_NAME = 'sdb';
 /**
  * Default timeout to wait for the tizen command.
  */
-export const CMD_TIMEOUT_MS = 120000;
+export const CMD_TIMEOUT_MS = 90000;
 
 /**
  * Default retry count for the tizen command.
  */
-export const CMD_RETRY_MAX = 2;
+export const CMD_RETRY_MAX = 3;
 
 /**
  * back off time in each retry
