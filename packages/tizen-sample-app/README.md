@@ -58,11 +58,13 @@ tizen build-web
 
 This outputs a "built" project to `.buildResult`.
 
-Then you can package the built project with:
+To package the built project, use the following command:
 
 ```bash
-tizen package -s <YOUR_CERTIFICATE_PROFILE> -t wgt -- .buildResult
+tizen package -s <CERTIFICATE_PROFILE_NAME> -t wgt -- .buildResult
 ```
+
+Note: `<CERTIFICATE_PROFILE_NAME>` should be replaced with the actual name of your certificate profile. To find your certificate profile name, in the Tizen Studio menu, select "Tools > Certificate Manager", and find the name of the active profile in the "Certificate Profile" panel.
 
 You should see output like:
 
