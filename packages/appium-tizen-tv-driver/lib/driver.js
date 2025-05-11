@@ -554,7 +554,7 @@ class TizenTVDriver extends BaseDriver {
     await forwardPort({
       udid: caps.udid,
       remotePort: Number(remoteDebugPort),
-      localPort: localDebugPort,
+      localPort: Number(remoteDebugPort),
       sdbExecTimeout: this.sdbExecTimeout,
       sdbExecRetryCount: this.sdbExecRetryCount,
     });
