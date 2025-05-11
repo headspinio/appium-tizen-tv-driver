@@ -186,15 +186,6 @@ class TizenTVDriver extends BaseDriver {
 
   });
 
-  async executeMethod(command, params) {
-    switch (command) {
-      case 'getTizenTVPort':
-        return await this.getTizenTVPort();
-      default:
-        throw new Error(`Unknown execute command: ${command}`);
-    }
-  }
-
   /** @type {TizenRemote|undefined} */
   #remote;
 
