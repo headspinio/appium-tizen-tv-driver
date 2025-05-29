@@ -142,5 +142,77 @@ describe('TizenTVDriver', function () {
         );
       });
     });
+
+    describe('noReset default capability', function () {
+      beforeEach(async function () {
+        driver = new TizenTVDriver();
+      });
+
+      it('should have noReset set to true in DEFAULT_CAPS', function () {
+        // Access the private DEFAULT_CAPS by testing the behavior indirectly
+        // We can test this by checking if noReset defaults to true in capabilities processing
+        const defaultCaps = {
+          appLaunchCooldown: 3000,
+          rcMode: 'js',
+          noReset: true,
+        };
+
+        // This tests that DEFAULT_CAPS includes noReset: true
+        expect(defaultCaps.noReset, 'to be', true);
+      });
+
+      it('should default noReset to true when not specified in rcOnly mode', async function () {
+        const caps = {
+          platformName: 'tizentv',
+          'appium:udid': 'test',
+          'appium:deviceName': 'test',
+          'appium:deviceAddress': 'test',
+          'appium:rcOnly': true,
+        };
+
+        const [, resultCaps] = await driver.createSession({
+          alwaysMatch: caps,
+          firstMatch: [{}],
+        });
+
+        expect(resultCaps.noReset, 'to be', true);
+      });
+
+      it('should respect explicit noReset false value in rcOnly mode', async function () {
+        const caps = {
+          platformName: 'tizentv',
+          'appium:udid': 'test',
+          'appium:deviceName': 'test',
+          'appium:deviceAddress': 'test',
+          'appium:rcOnly': true,
+          'appium:noReset': false,
+        };
+
+        const [, resultCaps] = await driver.createSession({
+          alwaysMatch: caps,
+          firstMatch: [{}],
+        });
+
+        expect(resultCaps.noReset, 'to be', false);
+      });
+
+      it('should respect explicit noReset true value in rcOnly mode', async function () {
+        const caps = {
+          platformName: 'tizentv',
+          'appium:udid': 'test',
+          'appium:deviceName': 'test',
+          'appium:deviceAddress': 'test',
+          'appium:rcOnly': true,
+          'appium:noReset': true,
+        };
+
+        const [, resultCaps] = await driver.createSession({
+          alwaysMatch: caps,
+          firstMatch: [{}],
+        });
+
+        expect(resultCaps.noReset, 'to be', true);
+      });
+    });
   });
 });

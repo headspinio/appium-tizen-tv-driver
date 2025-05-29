@@ -47,10 +47,11 @@ const VERSION_PATTERN = /([\d.]+)/;
 const MIN_CHROME_MAJOR_VERSION = 58;
 const MIN_CHROME_VERSION = 'Chrome/58.0.3029.0';
 
-/** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode'>} */
+/** @type {Pick<TizenTVDriverCaps, 'appLaunchCooldown' | 'rcMode' | 'noReset'>} */
 const DEFAULT_CAPS = {
   appLaunchCooldown: DEFAULT_APP_LAUNCH_COOLDOWN,
   rcMode: 'js',
+  noReset: true,
 };
 
 /**
