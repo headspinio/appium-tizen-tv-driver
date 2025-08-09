@@ -25,11 +25,11 @@ import {AsyncScripts, SyncScripts} from './scripts';
 import { util } from 'appium/support';
 import { CMD_RETRY_MAX, CMD_TIMEOUT_MS } from './cli/helpers';
 
-const BROWSER_APP_ID = 'org.tizen.browser';
-const GALLERY_APP_ID = 'com.samsung.tv.gallery';
+// const BROWSER_APP_ID = 'org.tizen.browser';
+// const GALLERY_APP_ID = 'com.samsung.tv.gallery';
 const DEFAULT_APP_LAUNCH_CANDIDATES = [
-  BROWSER_APP_ID,
-  GALLERY_APP_ID
+  // BROWSER_APP_ID,
+  // GALLERY_APP_ID
 ];
 
 const DEFAULT_APP_LAUNCH_COOLDOWN = 3000;
@@ -475,33 +475,23 @@ class TizenTVDriver extends BaseDriver {
    * @param {string?} appPackage
    */
   async #launchExistingAppInForeground(udid, appPackage) {
-    log.info(`Attempt to launch existing apps from candidates.`);
-    for (const pkgId of DEFAULT_APP_LAUNCH_CANDIDATES) {
-      if (appPackage === pkgId) {
-        continue;
-      }
-
-      try {
+    log.info(`Attempting to launch app: ${appPackage}`);
+    
+    try {
         await tizenRun({
-          appPackage: pkgId,
-          udid,
-          sdbExecTimeout: this.sdbExecTimeout,
-          sdbExecRetryCount: this.sdbExecRetryCount,
+            appPackage: appPackage,
+            udid,
+            sdbExecTimeout: this.sdbExecTimeout,
+            sdbExecRetryCount: this.sdbExecRetryCount,
         });
-        log.info(`${pkgId} started successfully`);
+        log.info(`${appPackage} started successfully`);
         return;
-      } catch (e) {
-        log.info(`Failed to run ${pkgId} as ${e.message}. Attempt to the next package from candidate.`);
-      }
+    } catch (e) {
+        log.error(`Failed to launch ${appPackage}: ${e.message}`);
+        throw new Error(`Unable to launch the specified app: ${appPackage}. Error: ${e.message}`);
     }
-
-    // Apps such as "org.tizen.homesetting" succeeds in launching with the tzien run command,
-    // but nothing is shown on the screen. It might not help to
-    throw new Error(
-      `None of ${DEFAULT_APP_LAUNCH_CANDIDATES.join(',')} existed on the device was launchable.`
-    );
   }
-
+  
   /**
    *
    * @param {StrictTizenTVDriverCaps} caps
