@@ -55,7 +55,7 @@
     "lodash": "4.17.21",
     "p-retry": "4.6.2",
     "strict-event-emitter-types": "2.0.0",
-    "type-fest": "3.13.1",
+    "type-fest": "4.41.0",
     "ws": "8.18.3"
   },
   "tsd": {
