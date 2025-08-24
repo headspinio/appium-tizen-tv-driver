@@ -1,4 +1,5 @@
 import {strongbox} from '@appium/strongbox';
+// @ts-ignore
 import {Env} from '@humanwhocodes/env';
 import debug from 'debug';
 import delay from 'delay';

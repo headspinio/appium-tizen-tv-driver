@@ -27,6 +27,7 @@ import {constants, Event, KeyCmd, Keys, TizenRemote} from '../../lib/tizen-remot
 import d from 'debug';
 import unexpectedSinon from 'unexpected-sinon';
 import unexpectedEventEmitter from 'unexpected-eventemitter';
+// @ts-ignore
 import {Env} from '@humanwhocodes/env';
 import {promises as fs} from 'node:fs';
 

@@ -1,4 +1,5 @@
 import {RcKeyCode} from '@headspinio/tizen-remote';
+// @ts-ignore
 import {Browser, RemoteOptions, remote} from 'webdriverio';
 
 export async function tizenBrowser(opts: RemoteOptions) {
