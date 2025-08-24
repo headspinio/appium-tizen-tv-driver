@@ -344,14 +344,14 @@ describe('TizenRemote', function () {
     });
 
     describe('unsetToken()', function () {
-      describe('when token persistence is enabled', function () {
+      describe('when token persistence is enabled 1', function () {
         it('should remove the token from the cache', async function () {
           await remote.unsetToken();
           expect(mockItem.clear, 'was called once');
         });
       });
 
-      describe('when token persistence is enabled', function () {
+      describe('when token persistence is enabled 2', function () {
         beforeEach(function () {
           remote = new TizenRemote('host', {persistToken: false});
         });
