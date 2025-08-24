@@ -68,6 +68,6 @@
     }
   },
   "peerDependencies": {
-    "appium": "^2.0.0-beta.46"
+    "appium": "^2.0.0-beta.46 || ^3.0.0"
   }
 }
