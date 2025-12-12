@@ -39,7 +39,7 @@
     "appium-chromedriver": "6.1.16",
     "asyncbox": "3.0.0",
     "bluebird": "3.7.2",
-    "get-port": "5.1.1",
+    "get-port": "7.1.0",
     "got": "11.8.6",
     "keycode": "2.2.1",
     "lodash": "4.17.21",
