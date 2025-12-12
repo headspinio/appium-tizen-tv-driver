@@ -96,6 +96,6 @@
     "npm": ">=8"
   },
   "overrides": {
-    "@phenomnomnominal/tsquery": "5.0.1"
+    "@phenomnomnominal/tsquery": "6.1.4"
   }
 }
