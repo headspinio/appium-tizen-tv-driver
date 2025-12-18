@@ -179,6 +179,10 @@ class TizenTVDriver extends BaseDriver {
       command: 'tizentvClearApp',
       params: {},
     }),
+    'tizen: getPort': Object.freeze({
+      command: 'getTizenTVPort',
+      params: {},
+    }),
 
   });
 
@@ -467,7 +471,7 @@ class TizenTVDriver extends BaseDriver {
       throw e;
     }
   }
-
+  
   /**
    * Runs "tizen run -p <package>" command to bring the app foreground.
    *
@@ -541,7 +545,7 @@ class TizenTVDriver extends BaseDriver {
     await forwardPort({
       udid: caps.udid,
       remotePort: Number(remoteDebugPort),
-      localPort: localDebugPort,
+      localPort: Number(remoteDebugPort),
       sdbExecTimeout: this.sdbExecTimeout,
       sdbExecRetryCount: this.sdbExecRetryCount,
     });
@@ -950,6 +954,10 @@ class TizenTVDriver extends BaseDriver {
     }, this.#platformVersion);
   }
 
+  async getTizenTVPort() {
+    console.log("Port Forwarding : ",this.#forwardedPorts)
+    return this.#forwardedPorts
+  }
 
   /**
    * Launch the given appPackage. The process won't start as a debug mode.
