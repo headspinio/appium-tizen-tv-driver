@@ -47,7 +47,7 @@
   "dependencies": {
     "@appium/strongbox": "0.3.2",
     "@humanwhocodes/env": "2.2.2",
-    "@types/node": "18.17.12",
+    "@types/node": "24.10.7",
     "@types/ws": "8.5.5",
     "debug": "4.4.3",
     "delay": "4.4.1",
