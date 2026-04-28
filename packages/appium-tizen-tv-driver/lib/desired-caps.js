@@ -26,6 +26,9 @@ export const desiredCapConstraints = /** @type {const} */({
   chromedriverExecutableDir: {
     isString: true,
   },
+  autodownloadEnabled: {
+    isBoolean: true,
+  },
   isDeviceApiSsl: {
     isBoolean: true,
   },
@@ -46,7 +49,7 @@ export const desiredCapConstraints = /** @type {const} */({
   },
   rcMode: {
     isString: true,
-    inclusionCaseInsensitive: ['remote', 'js']
+    inclusionCaseInsensitive: ['remote', 'js', 'api']
   },
   rcOnly: {
     isBoolean: true,

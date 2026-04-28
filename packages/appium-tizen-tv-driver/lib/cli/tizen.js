@@ -1,7 +1,7 @@
 import { retryInterval } from 'asyncbox';
-import log from '../logger';
-import {CMD_RETRY_BACKOFF_MS, runCmd, TIZEN_BIN_NAME} from './helpers';
-import { ensureDeviceConnection } from './sdb';
+import log from '../logger.js';
+import {CMD_RETRY_BACKOFF_MS, runCmd, TIZEN_BIN_NAME} from './helpers.js';
+import { ensureDeviceConnection } from './sdb.js';
 
 /**
  * @param {string[]} args
