@@ -1,11 +1,13 @@
 import {Keys, TizenRemote} from '@headspinio/tizen-remote';
-import Chromedriver from 'appium-chromedriver';
-import {BaseDriver, errors} from 'appium/driver';
+import {Chromedriver} from 'appium-chromedriver';
+import {BaseDriver, errors} from 'appium/driver.js';
 import {retryInterval} from 'asyncbox';
 import B from 'bluebird';
 import getPort from 'get-port';
 import got from 'got';
 import _ from 'lodash';
+import path from 'path';
+import os from 'os';
 import {
   connectDevice,
   debugApp,
@@ -16,14 +18,14 @@ import {
   launchApp,
   removeForwardedPort,
   deviceCapabilities
-} from './cli/sdb';
-import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen';
-import {desiredCapConstraints} from './desired-caps';
-import {getKeyData, isRcKeyCode} from './keymap';
-import log from './logger';
-import {AsyncScripts, SyncScripts} from './scripts';
-import { util } from 'appium/support';
-import { CMD_RETRY_MAX, CMD_TIMEOUT_MS } from './cli/helpers';
+} from './cli/sdb.js';
+import {tizenInstall, tizenRun, tizenUninstall} from './cli/tizen.js';
+import {desiredCapConstraints} from './desired-caps.js';
+import {getKeyData, isRcKeyCode} from './keymap.js';
+import log from './logger.js';
+import {AsyncScripts, SyncScripts} from './scripts.js';
+import { util } from 'appium/support.js';
+import { CMD_RETRY_MAX, CMD_TIMEOUT_MS } from './cli/helpers.js';
 
 const BROWSER_APP_ID = 'org.tizen.browser';
 const GALLERY_APP_ID = 'com.samsung.tv.gallery';
@@ -59,9 +61,9 @@ const DEFAULT_CAPS = {
 const DEVICE_ADDR_IN_DEVICE_NAME_REGEX = /^(.+):\d+/;
 
 /**
- * A security flag to enable chromedriver auto download feature
+ * Default directory for storing Chromedriver executables
  */
-const CHROMEDRIVER_AUTODOWNLOAD_FEATURE = 'chromedriver_autodownload';
+const DEFAULT_CHROMEDRIVER_DIR = path.join(os.homedir(), '.appium', 'chromedrivers');
 
 
 /**
@@ -91,6 +93,11 @@ export const RC_MODE_JS = 'js';
  */
 
 export const RC_MODE_REMOTE = 'remote';
+
+/**
+ * Constant for "api" RC mode, which uses Tizen TV Input Device API
+ */
+export const RC_MODE_API = 'api';
 /**
  * Platform name of this Driver.  Defined in `package.json`
  */
@@ -118,6 +125,7 @@ export const DEFAULT_RC_KEYPRESS_COOLDOWN = 750;
  */
 const APP_EXTENSION = '.wgt';
 
+// don't proxy any 'appium' routes
 /**
  * @type {import('@appium/types').RouteMatcher[]}
  */
@@ -125,8 +133,28 @@ const NO_PROXY = [
   ['POST', new RegExp('^/session/[^/]+/appium')],
   ['GET', new RegExp('^/session/[^/]+/appium')],
   ['GET', new RegExp('^/session/[^/]+/context')],
-  ['POST', new RegExp('^/session/[^/]+/element/[^/]+/value')],
-  ['POST', new RegExp('^/session/[^/]+/execute')],
+  ['POST', new RegExp('^/session/[^/]+/execute/sync')],
+  // Element finding routes - intercept to fix invalid locator strategies
+  ['POST', new RegExp('^/session/[^/]+/element$')],
+  ['POST', new RegExp('^/session/[^/]+/elements$')],
+  // Source route - intercept to inject synthetic attributes
+  ['GET', new RegExp('^/session/[^/]+/source')],
+  // Window routes - override unsupported commands
+  ['GET', new RegExp('^/session/[^/]+/window/rect')],
+  // Element property routes - override Chromedriver to use JS execution
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/text')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/size')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/location')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/rect')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/displayed')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/enabled')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/selected')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/attribute/[^/]+')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/property/[^/]+')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/css/[^/]+')],
+  ['GET', new RegExp('^/session/[^/]+/element/[^/]+/name')],
+  // Element interaction routes - override Chromedriver for better compatibility
+  ['POST', new RegExp('^/session/[^/]+/element/[^/]+/click')],
 ];
 
 /**
@@ -151,15 +179,32 @@ export const RC_OPTS = {
 const isPositiveInteger = _.overEvery([_.isNumber, _.isSafeInteger, _.partialRight(_.gt, 0)]);
 
 /**
- * @extends {BaseDriver<import('./desired-caps').TizenTVDriverCapConstraints>}
+ * @extends {BaseDriver<import('./desired-caps.js').TizenTVDriverCapConstraints>}
  */
+// @ts-ignore - Type inference issue with nested @appium/types
 class TizenTVDriver extends BaseDriver {
+  /**
+   * Make session discovery a free feature
+   * This allows Appium Inspector to work without --allow-insecure flag
+   */
+  static get freeFeatures() {
+    return ['session_discovery'];
+  }
+
   static executeMethodMap = Object.freeze({
     'tizen: pressKey': Object.freeze({
       command: 'pressKey',
       params: {required: ['key']},
     }),
+    'mobile: pressKey': Object.freeze({
+      command: 'pressKey',
+      params: {required: ['key']},
+    }),
     'tizen: longPressKey': Object.freeze({
+      command: 'longPressKey',
+      params: {required: ['key'], optional: ['duration']},
+    }),
+    'mobile: longPressKey': Object.freeze({
       command: 'longPressKey',
       params: {required: ['key'], optional: ['duration']},
     }),
@@ -219,6 +264,7 @@ class TizenTVDriver extends BaseDriver {
     opts = /** @type {DriverOpts<TizenTVDriverCapConstraints>} */ ({}),
     shouldValidateCaps = true
   ) {
+    // @ts-ignore - Type mismatch between driver opts and base driver constructor
     super(opts, shouldValidateCaps);
 
     this.locatorStrategies = [
@@ -293,6 +339,19 @@ class TizenTVDriver extends BaseDriver {
     }
 
     const caps = /** @type {StrictTizenTVDriverCaps} */ (tempCaps);
+
+    // Try to auto-connect to the device if not already connected
+    try {
+      log.info(`Attempting to connect to device '${caps.udid}' via sdb`);
+      await connectDevice({
+        udid: caps.udid,
+        sdbExecTimeout: this.sdbExecTimeout,
+        sdbExecRetryCount: this.sdbExecRetryCount
+      });
+      log.info(`Successfully connected to device '${caps.udid}'`);
+    } catch (err) {
+      log.warn(`Could not auto-connect to device: ${err.message}. Will attempt to proceed anyway.`);
+    }
 
     // Raise an error if the `sdb capabilities` might raise an exception
     const deviceCaps = await deviceCapabilities({
@@ -438,19 +497,24 @@ class TizenTVDriver extends BaseDriver {
         return [sessionId, caps];
       }
 
-      const localDebugPort = await this.setupDebugger(caps);
+       const localDebugPort = await this.setupDebugger(caps);
 
-      if (!_.isString(caps.chromedriverExecutable) && !_.isString(caps.chromedriverExecutableDir)) {
-        throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
-      }
+       // Set default chromedriver executable directory if not provided
+       if (!_.isString(caps.chromedriverExecutableDir)) {
+         caps.chromedriverExecutableDir = DEFAULT_CHROMEDRIVER_DIR;
+         log.info(`Using default Chromedriver directory: ${caps.chromedriverExecutableDir}`);
+       }
 
-      await this.startChromedriver({
-        debuggerPort: localDebugPort,
-        executable: /** @type {string} */ (caps.chromedriverExecutable),
-        executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
-        isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
-        verbose: /** @type {Boolean|undefined} */ (caps.showChromedriverLog),
-      });
+       // Enable autodownload by default unless explicitly disabled
+       const autodownloadEnabled = caps.autodownloadEnabled !== false;
+
+       await this.startChromedriver({
+         debuggerPort: localDebugPort,
+         executable: /** @type {string|undefined} */ (caps.chromedriverExecutable),
+         executableDir: /** @type {string} */ (caps.chromedriverExecutableDir),
+         isAutodownloadEnabled: autodownloadEnabled,
+         verbose: /** @type {Boolean|undefined} */ (caps.showChromedriverLog),
+       });
       this.#forwardedPortsForChromedriver.push(localDebugPort);
 
       if (!caps.noReset) {
@@ -588,51 +652,86 @@ class TizenTVDriver extends BaseDriver {
     return browserVersionInfo;
   }
 
-  /**
-   *
-   * @param {StartChromedriverOptions} opts
-   */
-  async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled, verbose}) {
+   /**
+    *
+    * @param {StartChromedriverOptions} opts
+    */
+   async startChromedriver({debuggerPort, executable, executableDir, isAutodownloadEnabled, verbose}) {
 
-    const debuggerAddress = `127.0.0.1:${debuggerPort}`;
+     const debuggerAddress = `127.0.0.1:${debuggerPort}`;
 
-    let result;
-    if (executableDir) {
-      // get the result of chrome info to use auto detection.
-      try {
-        result = await got.get(`http://${debuggerAddress}/json/version`).json();
-        log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
-        result = this.fixChromeVersionForAutodownload(result);
-        log.info(`Fixed browser info is ${JSON.stringify(result)}`);
-        // To respect the executableDir.
-        executable = undefined;
-      } catch (err) {
-        throw new errors.SessionNotCreatedError(
-          `Could not get the chrome browser information to detect proper chromedriver version. Error: ${err.message}`
-        );
-      }
-    }
+     let result;
+     if (executableDir && !executable) {
+       // get the result of chrome info to use auto detection.
+       try {
+         log.info(`Attempting to connect to Chrome debugger at http://${debuggerAddress}/json/version`);
+         result = await got.get(`http://${debuggerAddress}/json/version`).json();
+         log.info(`The response of http://${debuggerAddress}/json/version was ${JSON.stringify(result)}`);
+         result = this.fixChromeVersionForAutodownload(result);
+         log.info(`Fixed browser info is ${JSON.stringify(result)}`);
+         // To respect the executableDir.
+         executable = undefined;
+         if (_.isEmpty(result.Browser)) {
+           log.info(`No browser version info was available. If no proper chromedrivers exist in ${executableDir}, the session creation will fail.`);
+         }
+       } catch (err) {
+         log.error(`Failed to connect to Chrome debugger at http://${debuggerAddress}/json/version`);
+         log.error(`Error details: ${err.message}`);
+         throw new errors.SessionNotCreatedError(
+           `Could not get the chrome browser information to detect proper chromedriver version. ` +
+           `Please verify:\n` +
+           `1. The app is launched and running on the TV\n` +
+           `2. The app is debuggable (web-based with debugger enabled)\n` +
+           `3. The debugger port ${debuggerPort} is accessible\n` +
+           `4. Try accessing http://${debuggerAddress}/json/version from your browser\n` +
+           `Original error: ${err.message}`
+         );
+       }
+     }
 
-    this.#chromedriver = new Chromedriver({
-      // @ts-ignore bad types
-      port: await getPort(),
-      executable,
-      executableDir,
-      isAutodownloadEnabled,
-      // @ts-ignore
-      details: {info: result},
-      verbose
-    });
+     this.#chromedriver = new Chromedriver({
+       // @ts-ignore bad types
+       port: await getPort(),
+       executable,
+       executableDir,
+       isAutodownloadEnabled,
+       // @ts-ignore
+       details: {info: result},
+       verbose
+     });
 
-    await this.#chromedriver.start({
-      'goog:chromeOptions': {
-        debuggerAddress,
-      },
-    });
-    this.proxyReqRes = this.#chromedriver.proxyReq.bind(this.#chromedriver);
-    this.proxyCommand = this.#chromedriver.jwproxy.proxyCommand.bind(this.#chromedriver.jwproxy);
-    this.#jwpProxyActive = true;
-  }
+     // XXX: goog:chromeOptions in newer versions, chromeOptions in older
+     try {
+       log.info(`Starting Chromedriver with debuggerAddress: ${debuggerAddress}`);
+       if (result?.Browser) {
+         log.info(`TV Chrome version: ${result.Browser}`);
+       }
+       await this.#chromedriver.start({
+         chromeOptions: {
+           debuggerAddress,
+         },
+       });
+       log.info(`Chromedriver started successfully`);
+     } catch (err) {
+       log.error(`Chromedriver failed to start: ${err.message}`);
+       const chromeVersion = result?.Browser ? ` (TV Chrome version: ${result.Browser})` : '';
+       if (err.message?.includes('ObjectId or executionContextId')) {
+         throw new errors.SessionNotCreatedError(
+           `Chromedriver could not connect to the app's debugger${chromeVersion}. This usually means:\n` +
+           `1. The app hasn't fully loaded yet - try increasing 'appium:appLaunchCooldown' (currently waiting ${this.opts.appLaunchCooldown}ms)\n` +
+           `2. The Chrome version on the TV doesn't match the Chromedriver version\n` +
+           `3. The app's JavaScript context isn't ready\n` +
+           `Verify Chrome version with: curl http://${debuggerAddress}/json/version\n` +
+           `Original error: ${err.message}`
+         );
+       }
+       throw new errors.SessionNotCreatedError(
+         `Failed to start Chromedriver${chromeVersion}: ${err.message}`
+       );
+     }
+     this.proxyReqRes = this.#chromedriver.proxyReq.bind(this.#chromedriver);
+     this.#jwpProxyActive = true;
+   }
 
   /**
    * Given a script of {@linkcode ScriptId} or some arbitrary JS, figure out
@@ -643,14 +742,597 @@ class TizenTVDriver extends BaseDriver {
    * @param {TArgs} [args]
    * @returns {Promise<TReturn>}
    */
-  async execute(script, args) {
-    if (TizenTVDriver.isExecuteScript(script)) {
-      log.debug(`Calling script "${script}" with args: ${JSON.stringify(args)}`);
-      const methodArgs = /** @type {[Record<string,any>]} */ (args);
-      return await this.executeMethod(script, [methodArgs[0]]);
-    }
-    return /** @type {TReturn} */(await this.executeChromedriverScript(script, /** @type {readonly unknown[]} */(args)));
-  }
+   async execute(script, args) {
+     if (TizenTVDriver.isExecuteScript(script)) {
+       log.debug(`Calling script "${script}" with args: ${JSON.stringify(args)}`);
+       const methodArgs = /** @type {[Record<string,any>]} */ (args);
+       return await this.executeMethod(script, [methodArgs[0]]);
+     }
+     return /** @type {TReturn} */(await this.executeChromedriverScript(script, /** @type {readonly unknown[]} */(args)));
+   }
+
+   /**
+    * Injects custom attributes (@text, @bounds, @displayed, @enabled, @focused) into all DOM elements
+    * This enables mobile-style XPath selectors like //*[@text='Button']
+    * @returns {Promise<number>} Number of elements processed
+    */
+   async injectElementAttributes() {
+     const script = `
+       var allElements = document.body.getElementsByTagName('*');
+       var count = 0;
+       Array.from(allElements).forEach(function(el) {
+         var rect = el.getBoundingClientRect();
+         var style = window.getComputedStyle(el);
+         
+         // Calculate bounds in format: [left,top][right,bottom]
+         var left = Math.round(rect.left);
+         var top = Math.round(rect.top);
+         var right = Math.round(rect.right);
+         var bottom = Math.round(rect.bottom);
+         var boundsStr = '[' + left + ',' + top + '][' + right + ',' + bottom + ']';
+         
+         el.setAttribute('x', Math.round(rect.left));
+         el.setAttribute('y', Math.round(rect.top));
+         el.setAttribute('width', Math.round(rect.width));
+         el.setAttribute('height', Math.round(rect.height));
+         
+         // Set bounds attribute in format
+         el.setAttribute('bounds', boundsStr);
+         el.setAttribute('displayed', el.offsetParent !== null ? 'true' : 'false');
+         el.setAttribute('enabled', el.disabled ? 'false' : 'true');
+         el.setAttribute('focused', el === document.activeElement ? 'true' : 'false');
+         
+         // Add text content if available
+         var text = el.textContent ? el.textContent.trim() : '';
+         if (text && text.length > 0 && text.length < 100) {
+           el.setAttribute('text', text.substring(0, 100));
+         }
+         
+         count++;
+       });
+       return count;
+     `;
+
+     try {
+       const count = /** @type {number} */ (await this.#executeChromedriverScript('/execute/sync', script, []));
+       log.debug(`Injected attributes into ${count} elements`);
+       return count;
+     } catch (error) {
+       log.warn(`Failed to inject element attributes: ${error.message}`);
+       return 0;
+     }
+   }
+
+   /**
+    * Get page source - intercepts to inject synthetic attributes into HTML
+    * This is critical for Appium Inspector which parses the source XML to populate element attributes
+    * @returns {Promise<string>}
+    */
+   async getPageSource() {
+     // Refresh element attributes before returning source
+     await this.injectElementAttributes();
+
+     // Now get the modified source
+     // @ts-ignore
+     const modifiedSource = /** @type {string} */ (await this.#chromedriver.sendCommand('/source', 'GET'));
+
+     return modifiedSource;
+   }
+
+   /**
+    * Convert unsupported locator strategies to CSS selectors
+    * Tizen TV's older Chrome versions don't support W3C "id" locator
+    * @param {string} strategy - Original locator strategy
+    * @param {string} selector - Original selector value
+    * @returns {{strategy: string, selector: string}}
+    */
+   #convertLocatorStrategy(strategy, selector) {
+     // Convert "id" strategy to CSS selector
+     if (strategy === 'id') {
+       log.debug(`Converting locator strategy from "id" to "css selector" for: ${selector}`);
+       return {
+         strategy: 'css selector',
+         selector: `#${selector}`
+       };
+     }
+
+     // Convert "name" strategy to CSS selector
+     if (strategy === 'name') {
+       log.debug(`Converting locator strategy from "name" to "css selector" for: ${selector}`);
+       return {
+         strategy: 'css selector',
+         selector: `[name="${selector}"]`
+       };
+     }
+
+     // Convert "class name" with spaces or hyphens to CSS selector
+     if (strategy === 'class name' && (selector.includes(' ') || selector.includes('-'))) {
+       log.warn(`"class name" strategy only accepts a single class (no spaces or hyphens). Converting "${selector}" to CSS selector`);
+       const classes = selector.split(/\s+/).filter(c => c.length > 0);
+       const cssSelector = classes.map(c => {
+         const escaped = c.replace(/([\[\](){}:.<>#@!%^&*+~=|\\\/'"?,])/g, '\\$1');
+         return `.${escaped}`;
+       }).join('');
+       return {strategy: 'css selector', selector: cssSelector};
+     }
+
+     // Return as-is for supported strategies (css selector, xpath, tag name, link text, partial link text)
+     return {strategy, selector};
+   }
+
+   /**
+    * Find element - intercepts to fix invalid locator strategies and retry with attribute injection on failure
+    * @param {string} strategy - Locator strategy
+    * @param {string} selector - Selector value
+    * @returns {Promise<import('@appium/types').Element>}
+    */
+   async findElement(strategy, selector) {
+     const converted = this.#convertLocatorStrategy(strategy, selector);
+     if (converted.strategy !== strategy) {
+       log.info(`Converted locator: "${strategy}":"${selector}" -> "${converted.strategy}":"${converted.selector}"`);
+     }
+
+     try {
+       // @ts-ignore
+       return await this.#chromedriver.sendCommand('/element', 'POST', {
+         using: converted.strategy,
+         value: converted.selector
+       });
+     } catch (err) {
+       // If element not found and using XPath with @text or other custom attributes,
+       // re-inject attributes and retry once
+       if (err.message?.includes('no such element') &&
+           converted.strategy === 'xpath' &&
+           /@(text|bounds|displayed|enabled|x|y|width|height)/.test(converted.selector)) {
+         log.info('Element not found with custom attribute selector, re-injecting attributes and retrying');
+         await this.injectElementAttributes();
+         // @ts-ignore
+         return await this.#chromedriver.sendCommand('/element', 'POST', {
+           using: converted.strategy,
+           value: converted.selector
+         });
+       }
+       throw err;
+     }
+   }
+
+   /**
+    * Find elements - intercepts to fix invalid locator strategies and inject attributes for custom XPath
+    * @param {string} strategy - Locator strategy
+    * @param {string} selector - Selector value
+    * @returns {Promise<import('@appium/types').Element[]>}
+    */
+   async findElements(strategy, selector) {
+     const converted = this.#convertLocatorStrategy(strategy, selector);
+     if (converted.strategy !== strategy) {
+       log.info(`Converted locator: "${strategy}":"${selector}" -> "${converted.strategy}":"${converted.selector}"`);
+     }
+
+     // For XPath with custom attributes, always re-inject before searching
+     // This ensures attributes are fresh for queries that expect multiple results
+     if (converted.strategy === 'xpath' &&
+         /@(text|bounds|displayed|enabled|x|y|width|height)/.test(converted.selector)) {
+       await this.injectElementAttributes();
+     }
+
+     // @ts-ignore
+     return await this.#chromedriver.sendCommand('/elements', 'POST', {
+       using: converted.strategy,
+       value: converted.selector
+     });
+   }
+
+   /**
+    * Helper to build element object from element ID for Chromedriver
+    * @param {string} elementId - Element ID
+    * @returns {any}
+    */
+   #buildElementObject(elementId) {
+     // Use both JSONWP and W3C formats for compatibility
+     return {
+       ELEMENT: elementId,
+       'element-6066-11e4-a52e-4f735466cecf': elementId
+     };
+   }
+
+   /**
+    * Get element text - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<string>}
+    */
+   async getText(elementId) {
+     const script = `
+       var element = arguments[0];
+       return element.textContent || element.innerText || '';
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {string} */ (result);
+   }
+
+   /**
+    * Get element size - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<{width: number, height: number}>}
+    */
+   async getSize(elementId) {
+     log.info(`[getSize] Getting size for element ${elementId} via JS execution`);
+     const script = `
+       var element = arguments[0];
+       var rect = element.getBoundingClientRect();
+       return {
+         width: rect.width,
+         height: rect.height
+       };
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     log.info(`[getSize] Result:`, JSON.stringify(result));
+     return /** @type {{width: number, height: number}} */ (result);
+   }
+
+   /**
+    * Get element location - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<{x: number, y: number}>}
+    */
+   async getLocation(elementId) {
+     log.info(`[getLocation] Getting location for element ${elementId} via JS execution`);
+     const script = `
+       var element = arguments[0];
+       var rect = element.getBoundingClientRect();
+       return {
+         x: rect.left,
+         y: rect.top
+       };
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     log.info(`[getLocation] Result:`, JSON.stringify(result));
+     return /** @type {{x: number, y: number}} */ (result);
+   }
+
+   /**
+    * Get element rect (size + location) - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<{x: number, y: number, width: number, height: number}>}
+    */
+   async getElementRect(elementId) {
+     const script = `
+       var element = arguments[0];
+       var rect = element.getBoundingClientRect();
+       return {
+         x: rect.left,
+         y: rect.top,
+         width: rect.width,
+         height: rect.height
+       };
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {{x: number, y: number, width: number, height: number}} */ (result);
+   }
+
+   /**
+    * Check if element is displayed - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<boolean>}
+    */
+   async elementDisplayed(elementId) {
+     log.debug(`Checking if element ${elementId} is displayed via JS execution`);
+     const script = `
+       var element = arguments[0];
+       var rect = element.getBoundingClientRect();
+       var style = window.getComputedStyle(element);
+       return (
+         rect.width > 0 &&
+         rect.height > 0 &&
+         style.display !== 'none' &&
+         style.visibility !== 'hidden' &&
+         style.opacity !== '0'
+       );
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {boolean} */ (result);
+   }
+
+   /**
+    * Check if element is enabled - required for Appium Inspector
+    * @param {string} elementId - Element ID
+    * @returns {Promise<boolean>}
+    */
+   async elementEnabled(elementId) {
+     const script = `
+       var element = arguments[0];
+       // Check disabled property and attribute
+       if (element.disabled === true) return false;
+       if (element.getAttribute('disabled') !== null) return false;
+       // Check if element or any parent has disabled attribute
+       var current = element;
+       while (current && current !== document.body) {
+         if (current.disabled === true || current.getAttribute('disabled') !== null) {
+           return false;
+         }
+         current = current.parentElement;
+       }
+       return true;
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {boolean} */ (result);
+   }
+
+   /**
+    * Check if element is selected - required for Appium Inspector
+    * @param {string} elementId - Element ID
+    * @returns {Promise<boolean>}
+    */
+   async elementSelected(elementId) {
+     const script = `
+       var element = arguments[0];
+       // For input elements (checkbox, radio)
+       if (element.tagName === 'INPUT' && (element.type === 'checkbox' || element.type === 'radio')) {
+         return element.checked === true;
+       }
+       // For option elements
+       if (element.tagName === 'OPTION') {
+         return element.selected === true;
+       }
+       // Check for selected attribute
+       return element.getAttribute('selected') !== null;
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {boolean} */ (result);
+   }
+
+   /**
+    * Get element attribute - required for Appium Inspector
+    * @param {string} name - Attribute name
+    * @param {string} elementId - Element ID
+    * @returns {Promise<string|number|null>}
+    */
+   async getAttribute(name, elementId) {
+     const nameLower = name.toLowerCase();
+
+     // For dynamic attributes, compute them fresh to ensure accurate state
+     const dynamicAttrs = ['focused', 'displayed', 'enabled'];
+     if (dynamicAttrs.includes(nameLower)) {
+       const dynamicScript = `
+         var element = arguments[0];
+         var attrName = arguments[1].toLowerCase();
+         if (attrName === 'focused') {
+           return element === document.activeElement ? 'true' : 'false';
+         }
+         if (attrName === 'displayed') {
+           return element.offsetParent !== null ? 'true' : 'false';
+         }
+         if (attrName === 'enabled') {
+           return element.disabled ? 'false' : 'true';
+         }
+         return element.getAttribute(attrName);
+       `;
+       const result = await this.#executeChromedriverScript('/execute/sync', dynamicScript, [
+         this.#buildElementObject(elementId),
+         name
+       ]);
+       return /** @type {string|null} */ (result);
+     }
+
+     // Check if this is a positional/dimensional attribute request
+     const dimensionalAttrs = ['x', 'y', 'width', 'height'];
+     if (dimensionalAttrs.includes(nameLower)) {
+       // Try to get actual attribute first
+       const attrScript = `
+         var element = arguments[0];
+         var attrName = arguments[1];
+         return element.getAttribute(attrName);
+       `;
+       const attrResult = await this.#executeChromedriverScript('/execute/sync', attrScript, [
+         this.#buildElementObject(elementId),
+         name
+       ]);
+
+       // If attribute exists and is not empty, return it
+       if (attrResult !== null && attrResult !== '') {
+         return /** @type {string|null} */ (attrResult);
+       }
+
+       // Otherwise, compute from bounding rect as a number
+       const rectScript = `
+         var element = arguments[0];
+         var rect = element.getBoundingClientRect();
+         var attrName = arguments[1].toLowerCase();
+         if (attrName === 'x') return Math.round(rect.left);
+         if (attrName === 'y') return Math.round(rect.top);
+         if (attrName === 'width') return Math.round(rect.width);
+         if (attrName === 'height') return Math.round(rect.height);
+         return null;
+       `;
+       const computedValue = await this.#executeChromedriverScript('/execute/sync', rectScript, [
+         this.#buildElementObject(elementId),
+         name
+       ]);
+       return /** @type {number|null} */ (computedValue);
+     }
+
+     // For non-dimensional attributes, just return the attribute value
+     const script = `
+       var element = arguments[0];
+       var attrName = arguments[1];
+       return element.getAttribute(attrName);
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId),
+       name
+     ]);
+     return /** @type {string|null} */ (result);
+   }
+
+   /**
+    * Get element property (JavaScript property, not attribute) - required for Appium Inspector
+    * @param {string} name - Property name
+    * @param {string} elementId - Element ID
+    * @returns {Promise<any>}
+    */
+   async getProperty(name, elementId) {
+     const script = `
+       var element = arguments[0];
+       var propertyName = arguments[1];
+       // Get the property value directly from the element object
+       var value = element[propertyName];
+       // Return null for undefined to match WebDriver spec
+       if (value === undefined) return null;
+       return value;
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId),
+       name
+     ]);
+     return result;
+   }
+
+   /**
+    * Get element CSS value - required for Appium Inspector
+    * @param {string} propertyName - CSS property name
+    * @param {string} elementId - Element ID
+    * @returns {Promise<string>}
+    */
+   async getCssProperty(propertyName, elementId) {
+     const script = `
+       var element = arguments[0];
+       var propertyName = arguments[1];
+       var style = window.getComputedStyle(element);
+       return style.getPropertyValue(propertyName) || '';
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId),
+       propertyName
+     ]);
+     return /** @type {string} */ (result);
+   }
+
+   /**
+    * Get element tag name - required for Appium Inspector
+    * @param {string} elementId - Element ID
+    * @returns {Promise<string>}
+    */
+   async getName(elementId) {
+     const script = `
+       var element = arguments[0];
+       return element.tagName.toLowerCase();
+     `;
+     const result = await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     return /** @type {string} */ (result);
+   }
+
+   /**
+    * Click element - overrides default Chromedriver implementation
+    * @param {string} elementId - Element ID
+    * @returns {Promise<void>}
+    */
+   async click(elementId) {
+     log.info(`[click] Clicking element ${elementId} via JS execution`);
+     const script = `
+       var element = arguments[0];
+       // Try native click first
+       if (typeof element.click === 'function') {
+         element.click();
+         return true;
+       }
+       // Fallback to dispatching click event
+       var event = new MouseEvent('click', {
+         view: window,
+         bubbles: true,
+         cancelable: true
+       });
+       element.dispatchEvent(event);
+       return true;
+     `;
+     await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     log.info(`[click] Click completed successfully`);
+   }
+
+   /**
+    * Get window rect - overrides default Chromedriver implementation
+    * Tizen TV Chromedriver doesn't support Browser.getWindowForTarget command
+    * Uses document root element size as window dimensions
+    * @returns {Promise<{width: number, height: number, x: number, y: number}>}
+    */
+   async getWindowRect() {
+     log.info(`[getWindowRect] Getting window dimensions via document element size`);
+     try {
+       // @ts-ignore
+       const elementResult = await this.#chromedriver.sendCommand('/element', 'POST', {
+         using: 'css selector',
+         value: 'body'
+       });
+       log.info(`[getWindowRect] Element result:`, JSON.stringify(elementResult));
+
+       // @ts-ignore
+       const elementId = elementResult['element-6066-11e4-a52e-4f735466cecf'] || elementResult.ELEMENT;
+       log.info(`[getWindowRect] Found element: ${elementId}`);
+
+       // @ts-ignore
+       const sizeResult = await this.#chromedriver.sendCommand(`/element/${elementId}/rect`, 'GET', {});
+       log.info(`[getWindowRect] Size result:`, JSON.stringify(sizeResult));
+
+       // @ts-ignore
+       const width = sizeResult.width || 1920;
+       // @ts-ignore
+       const height = sizeResult.height || 1080;
+
+       return {
+         width,
+         height,
+         x: 0,
+         y: 0
+       };
+     } catch (error) {
+       log.error(`[getWindowRect] Error:`, error);
+       log.warn(`[getWindowRect] Using fallback resolution 1920x1080`);
+       return {
+         width: 1920,
+         height: 1080,
+         x: 0,
+         y: 0
+       };
+     }
+   }
+
+   /**
+    * Hide keyboard by blurring the active element
+    * @returns {Promise<void>}
+    */
+   async hideKeyboard() {
+     log.info('[hideKeyboard] Hiding keyboard by blurring active element');
+     try {
+       const script = `
+         if (document.activeElement && document.activeElement.blur) {
+           document.activeElement.blur();
+           return true;
+         }
+         return false;
+       `;
+       const result = await this.#executeChromedriverScript('/execute/sync', script, []);
+       log.info(`[hideKeyboard] Blur result: ${result}`);
+     } catch (error) {
+       log.warn(`[hideKeyboard] Failed to hide keyboard: ${error.message}`);
+       // Don't throw error - keyboard hiding is not critical
+     }
+   }
 
   /**
    * Execute some arbitrary JS via Chromedriver.
@@ -658,7 +1340,7 @@ class TizenTVDriver extends BaseDriver {
    * @template [TReturn=unknown]
    * @param {((...args: any[]) => TReturn)|string} script
    * @param {TArgs} [args]
-   * @returns {Promise<{value: TReturn}>}
+   * @returns {Promise<TReturn>}
    */
   async executeChromedriverScript(script, args) {
     return await this.#executeChromedriverScript('/execute/sync', script, args);
@@ -671,7 +1353,7 @@ class TizenTVDriver extends BaseDriver {
    * @param {string} endpointPath - Relative path of the endpoint URL
    * @param {((...args: any[]) => TReturn)|string} script
    * @param {TArgs} [args]
-   * @returns {Promise<{value: TReturn}>}
+   * @returns {Promise<TReturn>}
    */
   async #executeChromedriverScript(endpointPath, script, args) {
     const wrappedScript =
@@ -680,10 +1362,11 @@ class TizenTVDriver extends BaseDriver {
       throw new Error('Chromedriver is not running');
     }
     // @ts-ignore
-    return await this.#chromedriver.sendCommand(endpointPath, 'POST', {
+    const response = /** @type {any} */ (await this.#chromedriver.sendCommand(endpointPath, 'POST', {
       script: wrappedScript,
       args: args ?? [],
-    });
+    }));
+    return /** @type {TReturn} */ (response?.value);
   }
 
   /**
@@ -692,7 +1375,7 @@ class TizenTVDriver extends BaseDriver {
    * @template [TArg=any]
    * @param {((...args: any[]) => TReturn)|string} script
    * @param {TArg[]} [args]
-   * @returns {Promise<{value: TReturn}>}
+   * @returns {Promise<TReturn>}
    */
   async executeChromedriverAsyncScript(script, args = []) {
     return await this.#executeChromedriverScript('/execute/async', script, args);
@@ -726,43 +1409,28 @@ class TizenTVDriver extends BaseDriver {
     this.#chromedriver = undefined;
   }
 
-  async deleteSession() {
-    await this.#cleanupChromedriver();
-    await this.#disconnectRemote();
-    await this.cleanUpPorts();
-    return await super.deleteSession();
-  }
+   async deleteSession() {
+     await this.#cleanupChromedriver();
+     await this.#disconnectRemote();
+     await this.cleanUpPorts();
+     return await super.deleteSession();
+   }
 
-  /**
-   * Returns whether the session can enable autodownloadd feature.
-   * @returns {boolean}
-   */
-  #isChromedriverAutodownloadEnabled() {
-    if (this.isFeatureEnabled(CHROMEDRIVER_AUTODOWNLOAD_FEATURE)) {
-      return true;
-    }
-    this.log.debug(
-      `Automated Chromedriver download is disabled. ` +
-        `Use '${CHROMEDRIVER_AUTODOWNLOAD_FEATURE}' server feature to enable it`,
-    );
-    return false;
-  }
-
-  /**
-   * If we're in "remote" RC mode, disconnect from the remote server.
-   *
-   * Eats errors; they are emitted to the logger
-   */
-  async #disconnectRemote() {
-    if (this.#isRemoteRcMode) {
-      try {
-        await /** @type {TizenRemote} */ (this.#remote).disconnect();
-      } catch (err) {
-        log.warn(`Error disconnecting remote: ${/** @type {Error} */ (err).message}`);
-      }
-      this.#remote = undefined;
-    }
-  }
+   /**
+    * If we're in "remote" RC mode, disconnect from the remote server.
+    *
+    * Eats errors; they are emitted to the logger
+    */
+   async #disconnectRemote() {
+     if (this.#isRemoteRcMode) {
+       try {
+         await /** @type {TizenRemote} */ (this.#remote).disconnect();
+       } catch (err) {
+         log.warn(`Error disconnecting remote: ${/** @type {Error} */ (err).message}`);
+       }
+       this.#remote = undefined;
+     }
+   }
 
   /**
    * Cleanup ports used only by chromedriver.
@@ -821,54 +1489,154 @@ class TizenTVDriver extends BaseDriver {
     return Boolean(this.opts.rcMode === RC_MODE_REMOTE && this.#remote);
   }
 
-  /**
-   * Press a key on the remote control.
-   *
-   * Referenced in {@linkcode TizenTVDriver.executeMethodMap}
-   * @param {RcKeyCode} rcKeyCode
-   * @returns {Promise<void>}
-   */
-  async pressKey(rcKeyCode) {
-    if (!isRcKeyCode(rcKeyCode)) {
-      throw new TypeError(`Invalid key code: ${rcKeyCode}`);
-    }
-    if (this.#isRemoteRcMode) {
-      log.debug(`Clicking key ${rcKeyCode} via remote`);
-      return await this.#pressKeyRemote(rcKeyCode);
-    }
-    log.debug(`Clicking key ${rcKeyCode} via Chromedriver`);
-    await this.#pressKeyJs(rcKeyCode);
-  }
+   /**
+    * Press a key on the remote control.
+    *
+    * Referenced in {@linkcode TizenTVDriver.executeMethodMap}
+    * @param {RcKeyCode} rcKeyCode
+    * @returns {Promise<void>}
+    */
+   async pressKey(rcKeyCode) {
+     if (!isRcKeyCode(rcKeyCode)) {
+       throw new TypeError(`Invalid key code: ${rcKeyCode}`);
+     }
+     log.debug(`pressKey called with rcKeyCode: ${rcKeyCode}, rcMode: ${this.opts.rcMode}, hasRemote: ${Boolean(this.#remote)}`);
+     if (this.opts.rcMode === RC_MODE_REMOTE && this.#remote) {
+       log.debug(`Clicking key ${rcKeyCode} via remote`);
+       return await this.#pressKeyRemote(rcKeyCode);
+     }
+     if (this.opts.rcMode === RC_MODE_API) {
+       log.debug(`Clicking key ${rcKeyCode} via Tizen API`);
+       return await this.#pressKeyApi(rcKeyCode);
+     }
+     log.debug(`Clicking key ${rcKeyCode} via Chromedriver`);
+     await this.#pressKeyJs(rcKeyCode);
+   }
 
-  /**
-   * Mimics a keypress via {@linkcode document.dispatchEvent}.
-   *
-   * Also handles "long presses"
-   * @param {RcKeyCode} rcKeyCode
-   * @param {number} [duration]
-   * @returns {Promise<void>}
-   */
-  async #pressKeyJs(rcKeyCode, duration = DEFAULT_KEYPRESS_DELAY) {
-    const {code, key} = getKeyData(rcKeyCode);
-    if (!code && !key) {
-      throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
-    }
-    await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [code, key, duration]);
-  }
+   /**
+    * Mimics a keypress via {@linkcode document.dispatchEvent}.
+    *
+    * Also handles "long presses"
+    * @param {RcKeyCode} rcKeyCode
+    * @param {number} [duration]
+    * @returns {Promise<void>}
+    */
+   async #pressKeyJs(rcKeyCode, duration = DEFAULT_KEYPRESS_DELAY) {
+     const {code, key} = getKeyData(rcKeyCode);
+     if (!code && !key) {
+       throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
+     }
 
-  /**
-   * Mimics a keypress via Tizen Remote API.
-   * @param {RcKeyCode} key
-   * @returns {Promise<void>}
-   */
-  async #pressKeyRemote(key) {
-    if (!this.#isRemoteRcMode) {
-      throw new TypeError(`Must be in "remote" RC mode to use this method`);
-    }
-    await /** @type {TizenRemote} */ (this.#remote).click(key);
-    log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
-    await B.delay(this.#rcKeypressCooldown);
-  }
+     // Ensure window has focus before every key press
+     // This is critical for TV automation where focus can be lost
+     log.debug('Ensuring window focus before key press');
+     try {
+       await this.executeChromedriverScript(`
+         window.focus();
+         // Also try to focus document element
+         if (document.documentElement && typeof document.documentElement.focus === 'function') {
+           document.documentElement.focus();
+         }
+         // Ensure there's an active element to receive events
+         if (!document.activeElement || document.activeElement === document.body) {
+           var firstInput = document.querySelector('input, button, textarea, select, [tabindex]');
+           if (firstInput && typeof firstInput.focus === 'function') {
+             firstInput.focus();
+           }
+         }
+       `);
+     } catch (err) {
+       log.debug(`Could not ensure focus: ${err.message}`);
+     }
+
+     // Small delay to ensure focus takes effect
+     await B.delay(50);
+
+     await this.executeChromedriverAsyncScript(AsyncScripts.pressKey, [code, key, duration]);
+
+     // Add cooldown delay like remote mode
+     log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+     await B.delay(this.#rcKeypressCooldown);
+   }
+
+   /**
+    * Mimics a keypress via Tizen Remote API.
+    * @param {RcKeyCode} key
+    * @returns {Promise<void>}
+    */
+   async #pressKeyRemote(key) {
+     if (!this.#isRemoteRcMode) {
+       throw new TypeError(`Must be in "remote" RC mode to use this method`);
+     }
+     try {
+       log.debug(`Sending remote click command for key: ${key}`);
+       const remote = /** @type {TizenRemote} */ (this.#remote);
+       await remote.click(key);
+       log.debug(`Remote click command sent successfully for key: ${key}`);
+     } catch (err) {
+       log.error(`Error sending remote click command: ${err.message}`);
+       throw err;
+     }
+     log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+     await B.delay(this.#rcKeypressCooldown);
+   }
+
+   /**
+    * Mimics a keypress via Tizen TV Input Device API.
+    * Falls back to JS mode if the API is not available.
+    * @param {RcKeyCode} rcKeyCode
+    * @returns {Promise<void>}
+    */
+   async #pressKeyApi(rcKeyCode) {
+     const script = `
+       if (!window.tizen || !window.tizen.tvinputdevice) {
+         return {available: false};
+       }
+       
+       var keyName = arguments[0];
+       var keyCode = arguments[1];
+       
+       return new Promise(function(resolve, reject) {
+         try {
+           window.tizen.tvinputdevice.registerKey(
+             {name: keyName, code: keyCode},
+             function() {
+               resolve({available: true, success: true});
+             },
+             function(error) {
+               reject(new Error('Failed to register key: ' + error.message));
+             }
+           );
+         } catch (e) {
+           reject(e);
+         }
+       });
+     `;
+
+     const {code, key} = getKeyData(rcKeyCode);
+     if (!key) {
+       throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
+     }
+
+     try {
+       const result = await this.executeChromedriverAsyncScript(script, [key, code || 0]);
+
+       // Check if API was available
+        if (result && typeof result === 'object' && /** @type {any} */ (result).available === false) {
+         log.warn(`Tizen TV Input Device API not available, falling back to JS mode for key ${rcKeyCode}`);
+         return await this.#pressKeyJs(rcKeyCode);
+       }
+
+       log.debug(`Pressed key ${rcKeyCode} (${key}) via Tizen API`);
+     } catch (err) {
+       log.warn(`Tizen TV Input Device API error: ${err.message}, falling back to JS mode`);
+       return await this.#pressKeyJs(rcKeyCode);
+     }
+
+     // Add cooldown delay
+     log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+     await B.delay(this.#rcKeypressCooldown);
+   }
 
   /**
    * Mimics a long keypress via Tizen Remote API
@@ -888,20 +1656,86 @@ class TizenTVDriver extends BaseDriver {
     await B.delay(this.#rcKeypressCooldown);
   }
 
-  /**
-   * "Long press" a key with an optional duration.
-   *
-   * Default duration is {@linkcode DEFAULT_LONG_KEYPRESS_DELAY}.
-   * @param {RcKeyCode} key
-   * @param {number} [duration]
-   * @returns {Promise<void>}
-   */
-  async longPressKey(key, duration = DEFAULT_LONG_KEYPRESS_DELAY) {
-    if (this.#isRemoteRcMode) {
-      return await this.#longPressKeyRemote(key, duration);
-    }
-    await this.#pressKeyJs(key, duration);
-  }
+   /**
+    * "Long press" a key with an optional duration.
+    *
+    * Default duration is {@linkcode DEFAULT_LONG_KEYPRESS_DELAY}.
+    * @param {RcKeyCode} key
+    * @param {number} [duration]
+    * @returns {Promise<void>}
+    */
+   async longPressKey(key, duration = DEFAULT_LONG_KEYPRESS_DELAY) {
+     if (this.#isRemoteRcMode) {
+       return await this.#longPressKeyRemote(key, duration);
+     }
+     if (this.opts.rcMode === RC_MODE_API) {
+       return await this.#longPressKeyApi(key, duration);
+     }
+     await this.#pressKeyJs(key, duration);
+   }
+
+   /**
+    * Mimics a long keypress via Tizen TV Input Device API.
+    * Falls back to JS mode if the API is not available.
+    * @param {RcKeyCode} rcKeyCode
+    * @param {number} [duration]
+    * @returns {Promise<void>}
+    */
+   async #longPressKeyApi(rcKeyCode, duration = 1000) {
+     const script = `
+       if (!window.tizen || !window.tizen.tvinputdevice) {
+         return {available: false};
+       }
+       
+       var keyName = arguments[0];
+       var keyCode = arguments[1];
+       var duration = arguments[2];
+       
+       return new Promise(function(resolve, reject) {
+         try {
+           // Register and hold the key
+           window.tizen.tvinputdevice.registerKey(
+             {name: keyName, code: keyCode},
+             function() {
+               // Key registered, wait for duration then resolve
+               setTimeout(function() {
+                 resolve({available: true, success: true});
+               }, duration);
+             },
+             function(error) {
+               reject(new Error('Failed to register key: ' + error.message));
+             }
+           );
+         } catch (e) {
+           reject(e);
+         }
+       });
+     `;
+
+     const {code, key} = getKeyData(rcKeyCode);
+     if (!key) {
+       throw new Error(`Invalid/unknown key code: ${rcKeyCode}`);
+     }
+
+     try {
+       const result = await this.executeChromedriverAsyncScript(script, [key, code || 0, duration]);
+
+       // Check if API was available
+        if (result && typeof result === 'object' && /** @type {any} */ (result).available === false) {
+         log.warn(`Tizen TV Input Device API not available, falling back to JS mode for long press ${rcKeyCode}`);
+         return await this.#pressKeyJs(rcKeyCode, duration);
+       }
+
+       log.debug(`Long pressed key ${rcKeyCode} (${key}) for ${duration}ms via Tizen API`);
+     } catch (err) {
+       log.warn(`Tizen TV Input Device API error: ${err.message}, falling back to JS mode`);
+       return await this.#pressKeyJs(rcKeyCode, duration);
+     }
+
+     // Add cooldown delay
+     log.debug(`Waiting ${this.#rcKeypressCooldown}ms...`);
+     await B.delay(this.#rcKeypressCooldown);
+   }
 
   /**
    * Sets the value of a text input box
@@ -934,7 +1768,11 @@ class TizenTVDriver extends BaseDriver {
       return await /** @type {TizenRemote} */ (this.#remote).text(text);
     }
 
-    return await this.proxyCommand(`/element/${elId}/value`, 'POST', {text});
+    if (!this.#chromedriver) {
+      throw new Error('Chromedriver is not running');
+    }
+    // @ts-ignore
+    return await this.#chromedriver.sendCommand(`/element/${elId}/value`, 'POST', {text});
   }
 
   /**
@@ -969,30 +1807,32 @@ class TizenTVDriver extends BaseDriver {
       });
   }
 
-  async #tizentvActivateAppWithDebug(appPackage) {
-    const {
-      chromedriverExecutable,
-      chromedriverExecutableDir,
-      showChromedriverLog,
-    } = this.caps;
+   async #tizentvActivateAppWithDebug(appPackage) {
+     const {
+       chromedriverExecutable,
+       chromedriverExecutableDir,
+       showChromedriverLog,
+       autodownloadEnabled,
+     } = this.caps;
 
-    await this.#cleanupChromedriver();
-    await this.#cleanUpChromedriverPorts();
+     await this.#cleanupChromedriver();
+     await this.#cleanUpChromedriverPorts();
 
-    const localDebugPort = await this.setupDebugger(this.caps, appPackage);
-    if (!_.isString(chromedriverExecutable) && !_.isString(chromedriverExecutableDir)) {
-      throw new errors.InvalidArgumentError(`appium:chromedriverExecutable or appium:chromedriverExecutableDir is required`);
-    }
+     const localDebugPort = await this.setupDebugger(this.caps, appPackage);
 
-    await this.startChromedriver({
-      debuggerPort: localDebugPort,
-      executable: /** @type {string} */ (chromedriverExecutable),
-      executableDir: /** @type {string} */ (chromedriverExecutableDir),
-      isAutodownloadEnabled: /** @type {Boolean} */ (this.#isChromedriverAutodownloadEnabled()),
-      verbose: /** @type {Boolean|undefined} */ (showChromedriverLog),
-    });
-    this.#forwardedPortsForChromedriver.push(localDebugPort);
-  }
+     // Set default chromedriver executable directory if not provided
+     const executableDir = chromedriverExecutableDir || DEFAULT_CHROMEDRIVER_DIR;
+     const autodownload = autodownloadEnabled !== false;
+
+     await this.startChromedriver({
+       debuggerPort: localDebugPort,
+       executable: /** @type {string|undefined} */ (chromedriverExecutable),
+       executableDir,
+       isAutodownloadEnabled: autodownload,
+       verbose: /** @type {Boolean|undefined} */ (showChromedriverLog),
+     });
+     this.#forwardedPortsForChromedriver.push(localDebugPort);
+   }
 
   /**
    * Terminate the given app package id.
@@ -1015,24 +1855,80 @@ class TizenTVDriver extends BaseDriver {
     await this.executeChromedriverScript(SyncScripts.reset);
   }
 
-  /**
-   * A dummy implementation to return 200 ok with NATIVE_APP context for
-   * webdriverio compatibility. https://github.com/headspinio/appium-roku-driver/issues/175
-   *
-   * @returns {Promise<string>}
-   */
-  async getCurrentContext() {
-    return 'NATIVE_APP';
-  }
+   /**
+    * A dummy implementation to return 200 ok with NATIVE_APP context for
+    * webdriverio compatibility.
+    *
+    * @returns {Promise<string>}
+    */
+   async getCurrentContext() {
+     return 'NATIVE_APP';
+   }
 
-  /**
-   * Leave log if the appPackage is probably installed. This method returns 'false'
-   * if the target device DOES NOT support get 'applist' command such as old models e.g. 2016
-   *
-   * @param {string} appPackage
-   * @returns {Promise<boolean>}
-   */
-  async #isAppInstalled(appPackage) {
+   /**
+    * Get available contexts - required for Appium Inspector
+    * @returns {Promise<string[]>}
+    */
+   async getContexts() {
+     return ['NATIVE_APP'];
+   }
+
+   /**
+    * Set context - required for Appium Inspector
+    * @param {string} name - Context name
+    * @returns {Promise<void>}
+    */
+    async setContext(name) {
+      if (name !== 'NATIVE_APP') {
+        throw new errors.InvalidArgumentError(`Context '${name}' is not supported. Only 'NATIVE_APP' is available.`);
+      }
+      // Already in NATIVE_APP context, nothing to do
+    }
+
+   /**
+    * Clear an element - required for Appium Inspector
+    * @param {string} elementId - Element ID
+    * @returns {Promise<void>}
+    */
+   async clear(elementId) {
+     log.info(`[clear] Clearing element ${elementId}`);
+     const script = `
+       var element = arguments[0];
+       if (element.value !== undefined) {
+         element.value = '';
+       }
+       if (element.textContent !== undefined) {
+         element.textContent = '';
+       }
+       // Trigger change event
+       var event = new Event('change', { bubbles: true });
+       element.dispatchEvent(event);
+       return true;
+     `;
+     await this.#executeChromedriverScript('/execute/sync', script, [
+       this.#buildElementObject(elementId)
+     ]);
+     log.info(`[clear] Element cleared successfully`);
+   }
+
+   /**
+    * Get the currently active element - required for Appium Inspector
+    * @returns {Promise<import('@appium/types').Element>}
+    */
+   async active() {
+     log.debug('[active] Getting active element');
+     // @ts-ignore
+     return await this.#chromedriver.sendCommand('/element/active', 'POST', {});
+   }
+
+   /**
+    * Leave log if the appPackage is probably installed. This method returns 'false'
+    * if the target device DOES NOT support get 'applist' command such as old models e.g. 2016
+    *
+    * @param {string} appPackage
+    * @returns {Promise<boolean>}
+    */
+   async #isAppInstalled(appPackage) {
     let installedPackages;
     try {
       installedPackages = (await this.tizentvListApps()).map((installedApp) => installedApp.appPackage);

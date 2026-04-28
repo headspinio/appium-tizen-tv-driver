@@ -1,7 +1,7 @@
 import {exec} from 'teen_process';
-import {fs, system} from 'appium/support';
+import {fs, system} from 'appium/support.js';
 import path from 'path';
-import log from '../logger';
+import log from '../logger.js';
 import net from 'node:net';
 import _ from 'lodash';
 

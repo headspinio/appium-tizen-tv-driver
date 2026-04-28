@@ -1,3 +1,3 @@
-export * from './driver';
+export * from './driver.js';
 
-export {TizenTVDriver as default} from './driver';
+export {TizenTVDriver as default} from './driver.js';
