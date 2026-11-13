@@ -877,6 +877,7 @@ export class TizenRemote extends createdTypedEmitterClass() {
 
     this.#ws = ws;
 
+    this.#onWs(WsEvent.ERROR, this.#errorListener, {context: this});
     this.#onceWs(WsEvent.CLOSE, this.#closeListener, {context: this});
     this.#onWs(WsEvent.MESSAGE, this.#debugListener, {context: this});
     this.#onWs(WsEvent.MESSAGE, this.#updateTokenListener, {context: this});
@@ -934,6 +935,15 @@ export class TizenRemote extends createdTypedEmitterClass() {
    */
   get token() {
     return this.#token;
+  }
+
+  /**
+   * Logs an error on the open socket (e.g. a close frame with status 1005, which some Samsung TVs send),
+   * which would otherwise crash the process. The `close` event that follows reconnects as usual.
+   * @param {Error} err
+   */
+  #errorListener(err) {
+    this.#debug('Socket error: %s', err.message);
   }
 
   /**
