@@ -293,6 +293,26 @@ describe('websocket behavior', function () {
         });
       });
 
+      describe('when the server sends a close frame with an invalid status code', function () {
+        it('should not throw, and should reconnect', async function () {
+          this.timeout('5s');
+          await remote.connect();
+          return new Promise((resolve) => {
+            remote.once(Event.DISCONNECT, () => {
+              remote.once(Event.CONNECT, () => {
+                resolve();
+              });
+            });
+            // 1005 ("No Status") is reserved and must never be sent on the wire; `ws` rejects it with an error.
+            const closeWithStatus1005 = Buffer.from([0x88, 0x02, 0x03, 0xed]);
+            for (const client of server.clients) {
+              // @ts-expect-error - private API
+              client._socket.write(closeWithStatus1005);
+            }
+          });
+        });
+      });
+
       describe('when auto-reconnect is disabled', function () {
         beforeEach(function () {
           remote = new TizenRemote(HOST, {...remoteOpts, autoReconnect: false});
